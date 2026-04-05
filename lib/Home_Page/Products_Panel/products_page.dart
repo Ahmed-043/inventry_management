@@ -1,0 +1,473 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/sort_menu.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/product_card.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/update_product_stock.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/update_product_panel.dart';
+import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/topbar.dart';
+import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/colors.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_button.dart';
+import '../../Database/category.dart';
+import '../../Database/database.dart';
+import '../../Database/retrieve_products.dart';
+import '../../Shared_Widgets/fonts.dart';
+import 'add_new_product_panel.dart';
+
+class StockDashboard extends StatefulWidget {
+  const StockDashboard({super.key});
+
+  @override
+  State<StockDashboard> createState() => _StockDashboardState();
+}
+
+class _StockDashboardState extends State<StockDashboard> {
+  var cSize = cardSize ?? 300.0;
+  List<Product> products = [];
+  int page = 0;
+  bool isLoading = false;
+  final FocusNode _focusNode = FocusNode();
+  final int pSize = productsPerPage ?? 20;
+  TextEditingController searchController = TextEditingController();
+  Map<String, int> stocks = {};
+  int selectStock = 0, lowerLimit = 0;
+  int? upperLimit;
+  Timer? _searchTimer;
+  ScrollController scrollController = ScrollController();
+  Map<int, String> _categoryNames = {}; // id -> name
+  List<DBCategory> categories = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoryNames().then((_) => _loadProducts());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    searchController.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCategoryNames() async {
+    if (currentDB == null) return;
+
+    final result = await currentDB!.query(
+      'categories',
+      orderBy: 'sequence ASC, name ASC',
+    );
+
+    setState(() {
+      categories = result.map((row) => DBCategory.fromMap(row)).toList();
+      _categoryNames = {
+        for (var row in result) row['id'] as int: row['name'] as String
+      };
+    });
+  }
+
+  _loadStockInfo() async {
+    stocks = await getStockSummary(lowStockLimit, currentDB!);
+  }
+
+  Future<void> _loadProducts() async {
+    isLoading = true;
+    if (currentDB == null) return;
+
+    try {
+      await _loadStockInfo();
+
+      final list = await getProductsPage(
+        currentDB!,
+        page,
+        pSize,
+        false,
+        search: searchController.text.trim(),
+        lowerLimit: lowerLimit,
+        upperLimit: upperLimit,
+        sortMode: sort,
+        categorySortMode: sortCategory,
+      );
+
+      setState(() => products = list);
+    } catch (e, st) {
+      debugPrint("Error loading products: $e\n$st");
+      products = [];
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Map<int?, List<Product>> _groupProductsByCategory(List<Product> list) {
+    final Map<int?, List<Product>> grouped = {};
+    for (final p in list) {
+      final key = (p.category == 0) ? null : p.category;
+      grouped.putIfAbsent(key, () => []).add(p);
+    }
+    return grouped;
+  }
+
+  Widget _buildCategorySections() {
+    final grouped = _groupProductsByCategory(products);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: grouped.entries.map((entry) {
+        final catId = entry.key;
+        final items = entry.value;
+
+        final title = catId == null
+            ? "Other"
+            : _categoryNames[catId] ?? "Category $catId";
+
+        return Container(
+          padding: const EdgeInsets.only(bottom: 25),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  title,
+                  style: MyFont.bold(cSize >200 ? 24 :20, color: MyColors.blue),
+                ),
+              ),
+              Wrap(
+                spacing: 15,
+                runSpacing: 15,
+                children: List.generate(items.length, (index) {
+                  var size = (Platform.isAndroid || Platform.isIOS)
+                      ? cSize / 1.7
+                      : cSize;
+                  final product = items[index];
+
+                  return SizedBox(
+                    width: tileUi ? size * 1.5 : size * 0.85,
+                    height: tileUi ? size * 0.35 : size * 1.2,
+                    child: InkWell(
+                      child: ProductCard(product: product),
+                      onTap: () => stockUpdateDialog(product),
+                      onSecondaryTap: () => updateDialog(product),
+                      onDoubleTap: () => updateDialog(product),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    bool compress = MediaQuery.of(context).size.width < 600;
+    return Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft && page > 0) {
+            setState(() {
+              page--;
+              _loadProducts();
+            });
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
+              products.length == pSize) {
+            setState(() {
+              page++;
+              _loadProducts();
+            });
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Stack(
+        children: [
+          CustomScrollView(
+            controller: scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                pinned: false,
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                forceMaterialTransparency: true,
+                toolbarHeight: compress ? 100 : 50,
+                flexibleSpace: topBar(),
+              ),
+              if (products.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: emptyState(),
+                ),
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.only(top: 5, bottom: 10,left: 5,right: 5),
+                  width: double.infinity,
+                  child: Center(
+                    child: sortCategory == 1 || sortCategory == 2
+                        ? _buildCategorySections()
+                        : Wrap(
+                      spacing: cSize/17,
+                      runSpacing: cSize/17,
+                      children: List.generate(products.length, (index) {
+                        var size = (Platform.isAndroid || Platform.isIOS)
+                            ? cSize / 1.7
+                            : cSize;
+                        final product = products[index];
+
+                        return SizedBox(
+                          width: tileUi ? size * 1.5 : size * 0.85,
+                          height: tileUi ? size * 0.35 : size * 1.2,
+                          child: InkWell(
+                            child: ProductCard(product: product),
+                            onTap: () => stockUpdateDialog(product),
+                            onSecondaryTap: () => updateDialog(product),
+                            onDoubleTap: () => updateDialog(product),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 45)),
+            ],
+          ),
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: Builder(
+              builder: (context) => FloatingActionButton(
+                heroTag: null,
+                elevation: 0,
+                backgroundColor: MyColors.primary,
+                child: Icon(Icons.sort, color: MyColors.light),
+                onPressed: () async {
+                  await _loadCategoryNames();
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.transparent,
+                    barrierDismissible: true,
+                    builder: (_) {
+                      return Align(
+                        alignment: .bottomRight,
+                        child:
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4,right: 4),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: SortMenu(
+                                categories: categories,
+                                currentSortCategory: sortCategory,
+                                currentSort: sort,
+                                cSize: cSize,
+                                onChange: ()=>setState(() {}),
+                                onSizeChange: (){
+                                  setState(() {
+                                    cSize += 50;
+                                    if (cSize > 400) cSize = 150;
+                                    cardSize = cSize;
+                                    SharedPreferences.getInstance()
+                                        .then((prefs) => prefs.setDouble('cardSize', cSize));
+                                  });
+                                },
+                                onApply: (newCategory, newSort,updatedCategories) async {
+                                  categories = updatedCategories;
+                                  await updateAllSequences(currentDB!,categories);
+
+                                  setState(()  {
+                                    sortCategory = newCategory;
+                                    sort = newSort;
+                                    SharedPreferences.getInstance().then((prefs) {
+                                      prefs.setInt('sortCategory', sortCategory);
+                                      prefs.setInt('sort', sort);
+                                    });
+                                    _loadProducts();
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+
+          PaginationBar(
+            page: page,
+            pageSize: pSize,
+            itemCount: products.length,
+            scrollController: scrollController,
+            onPrevious: () {
+              setState(() {
+                page--;
+                _loadProducts();
+              });
+            },
+            onNext: () {
+              setState(() {
+                page++;
+                _loadProducts();
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget topBar() {
+    return ReusableTopBar(
+      title: MediaQuery.of(context).size.width < 850 ? "" : "Products",
+      searchHint: 'Search (Name, SKU, Description)',
+      applyBlur: !performanceMode,
+      actionButton: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 200,
+          child: AddNewProduct.addNew(
+            context: context,
+            action: InputNewProduct(onSave: (){
+              _loadProducts();
+              _loadCategoryNames();
+            }),
+          ),
+        ),
+      ),
+      searchController: searchController,
+      onSearch: () {
+        _searchTimer?.cancel();
+        _searchTimer = Timer(const Duration(milliseconds: 500), () {
+          _loadProducts();
+        });
+      },
+      onClear: () {
+        setState(() {
+          selectStock = 0;
+          upperLimit = null;
+          lowerLimit = 0;
+          searchController.clear();
+        });
+        _loadProducts();
+      },
+      stockButtons: [
+        {'title': 'All', 'count': stocks['all'] ?? 0},
+        {'title': 'In Stock', 'count': stocks['inStock'] ?? 0},
+        {'title': 'Low Stock', 'count': stocks['lowStock'] ?? 0},
+        {'title': 'Out Of Stock', 'count': stocks['outOfStock'] ?? 0},
+      ],
+      selectedIndex: selectStock,
+      onButtonSelect: (i) {
+        setState(() {
+          selectStock = i;
+          switch (i) {
+            case 1:
+              upperLimit = null;
+              lowerLimit = lowStockLimit;
+              break;
+            case 2:
+              upperLimit = lowStockLimit - 1;
+              lowerLimit = 1;
+              break;
+            case 3:
+              upperLimit = 0;
+              lowerLimit = 0;
+              break;
+            default:
+              upperLimit = null;
+              lowerLimit = 0;
+          }
+        });
+        _loadProducts();
+      },
+    );
+  }
+
+  Widget emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inventory_2_rounded, size: 100, color: MyColors.grey),
+          const SizedBox(height: 10),
+          Text(
+            "No Products Found",
+            style: MyFont.semiBold(20, color: MyColors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  updateDialog(Product product) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          constraints: const BoxConstraints(
+            maxWidth: 850,
+            maxHeight: 800,
+            minWidth: 400,
+          ),
+          insetPadding: EdgeInsets.zero,
+          backgroundColor: MyColors.translucent.withAlpha(230),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: UpdateProduct(
+            product: product,
+            callBack: () {
+              _loadProducts();
+              _loadCategoryNames();
+              setState(() {});
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  stockUpdateDialog(Product product) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          constraints: const BoxConstraints(
+            maxWidth: 500,
+            maxHeight: 500,
+            minWidth: 400,
+            minHeight: 400,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: UpdateProductStock(
+            id: product.id,
+            productStock: product.stock,
+            name: product.name,
+            onSave: () {
+              _loadProducts();
+              setState(() {});
+            },
+          ),
+        );
+      },
+    );
+  }
+}
