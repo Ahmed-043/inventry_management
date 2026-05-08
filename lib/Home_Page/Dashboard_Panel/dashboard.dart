@@ -1,6 +1,6 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Home_Page/Dashboard_Panel/stock_alerts.dart';
@@ -13,8 +13,7 @@ import '../../Database/db_info.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
 import '../Orders_panel/New_Order_Page/new_order_page.dart';
-import '../Products_Panel/update_product_panel.dart';
-import '../Products_Panel/update_product_stock.dart';
+
 import '../Transactions_Panels/new_transaction_button.dart';
 import '../Transactions_Panels/new_transaction_page.dart';
 import '../profile.dart';
@@ -53,8 +52,16 @@ class _DashboardState extends State<Dashboard> {
       isLoading = true;
     });
 
-    loadAllDashboardData();
-
+    // Defer heavy database work until after the frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SchedulerBinding.instance.endOfFrame.then((_) {
+        if (!mounted) return;
+        Future.delayed(const Duration(milliseconds: 50), () {
+          if (!mounted) return;
+          loadAllDashboardData();
+        });
+      });
+    });
   }
 
   Future<void> loadAllDashboardData() async {

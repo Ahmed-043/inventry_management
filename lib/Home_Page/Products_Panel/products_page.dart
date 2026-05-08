@@ -16,7 +16,6 @@ import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_but
 import '../../Database/category.dart';
 import '../../Database/database.dart';
 import '../../Database/retrieve_products.dart';
-import '../../Shared_Widgets/fonts.dart';
 import 'add_new_product_panel.dart';
 
 class StockDashboard extends StatefulWidget {
@@ -140,27 +139,40 @@ class _StockDashboardState extends State<StockDashboard> {
                   style: MyFont.bold(cSize >200 ? 24 :20, color: MyColors.blue),
                 ),
               ),
-              Wrap(
-                spacing: 15,
-                runSpacing: 15,
-                children: List.generate(items.length, (index) {
-                  var size = (Platform.isAndroid || Platform.isIOS)
-                      ? cSize / 1.7
-                      : cSize;
-                  final product = items[index];
+              // Use GridView.builder to lazily build category items while preserving
+              // the same tile sizing and spacing as the original Wrap.
+              Builder(builder: (context) {
+                final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
+                final tileWidth = tileUi ? size * 1.5 : size * 0.85;
+                final tileHeight = tileUi ? size * 0.35 : size * 1.2;
+                final childAspect = tileWidth / tileHeight;
 
-                  return SizedBox(
-                    width: tileUi ? size * 1.5 : size * 0.85,
-                    height: tileUi ? size * 0.35 : size * 1.2,
-                    child: InkWell(
-                      child: ProductCard(product: product),
-                      onTap: () => stockUpdateDialog(product),
-                      onSecondaryTap: () => updateDialog(product),
-                      onDoubleTap: () => updateDialog(product),
-                    ),
-                  );
-                }),
-              ),
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: tileWidth,
+                    mainAxisSpacing: 15,
+                    crossAxisSpacing: 15,
+                    childAspectRatio: childAspect,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final product = items[index];
+                    return SizedBox(
+                      width: tileWidth,
+                      height: tileHeight,
+                      child: InkWell(
+                        child: ProductCard(product: product),
+                        onTap: () => stockUpdateDialog(product),
+                        onSecondaryTap: () => updateDialog(product),
+                        onDoubleTap: () => updateDialog(product),
+                      ),
+                    );
+                  },
+                );
+              }),
             ],
           ),
         );
@@ -222,27 +234,38 @@ class _StockDashboardState extends State<StockDashboard> {
                   child: Center(
                     child: sortCategory == 1 || sortCategory == 2
                         ? _buildCategorySections()
-                        : Wrap(
-                      spacing: cSize/17,
-                      runSpacing: cSize/17,
-                      children: List.generate(products.length, (index) {
-                        var size = (Platform.isAndroid || Platform.isIOS)
-                            ? cSize / 1.7
-                            : cSize;
-                        final product = products[index];
+                        : Builder(builder: (context) {
+                      final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
+                      final tileWidth = tileUi ? size * 1.5 : size * 0.85;
+                      final tileHeight = tileUi ? size * 0.35 : size * 1.2;
+                      final childAspect = tileWidth / tileHeight;
 
-                        return SizedBox(
-                          width: tileUi ? size * 1.5 : size * 0.85,
-                          height: tileUi ? size * 0.35 : size * 1.2,
-                          child: InkWell(
-                            child: ProductCard(product: product),
-                            onTap: () => stockUpdateDialog(product),
-                            onSecondaryTap: () => updateDialog(product),
-                            onDoubleTap: () => updateDialog(product),
-                          ),
-                        );
-                      }),
-                    ),
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: tileWidth,
+                          mainAxisSpacing: cSize / 17,
+                          crossAxisSpacing: cSize / 17,
+                          childAspectRatio: childAspect,
+                        ),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          final product = products[index];
+                          return SizedBox(
+                            width: tileWidth,
+                            height: tileHeight,
+                            child: InkWell(
+                              child: ProductCard(product: product),
+                              onTap: () => stockUpdateDialog(product),
+                              onSecondaryTap: () => updateDialog(product),
+                              onDoubleTap: () => updateDialog(product),
+                            ),
+                          );
+                        },
+                      );
+                    }),
                   ),
                 ),
               ),

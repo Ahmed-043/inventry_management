@@ -150,9 +150,10 @@ class _ChoosePersonState extends State<ChoosePerson> {
                               width: 225,
 
                               child: StatusSegmentedControl(
+                                key: ValueKey('person_filter_segment'),
                                 selected: filters[filter],
                                 fontSize: 12,
-                                options: [
+                                options: const [
                                   TwoValue(first: "All", second: MyColors.info),
                                   TwoValue(
                                     first: "Customers",
@@ -179,22 +180,21 @@ class _ChoosePersonState extends State<ChoosePerson> {
                         ),
                       ),
                       Expanded(
-                        child: SingleChildScrollView(
+                        child: ListView.builder(
                           scrollDirection: Axis.vertical,
                           physics: BouncingScrollPhysics(),
-                          child: Column(
-                            children: List.generate(persons.length, (index) {
-                              return InkWell(
-                                onTap: () {
-                                  Navigator.pop(
-                                    context,
-                                    persons[index],
-                                  ); // return selected person
-                                },
-                                child: personCard(persons[index]),
-                              );
-                            }),
-                          ),
+                          itemCount: persons.length,
+                          itemBuilder: (context, index) {
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pop(
+                                  context,
+                                  persons[index],
+                                ); // return selected person
+                              },
+                              child: personCard(persons[index]),
+                            );
+                          },
                         ),
                       ),
                     ],

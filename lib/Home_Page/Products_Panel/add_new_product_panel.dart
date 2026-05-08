@@ -288,13 +288,13 @@ class _InputNewProductState extends State<InputNewProduct>
               child: DropdownMenuTheme(
                 data: DropdownMenuThemeData(
                   menuStyle: MenuStyle(
-                    padding: MaterialStateProperty.all(EdgeInsets.zero),
+                    padding: WidgetStateProperty.all(EdgeInsets.zero),
 
-                    backgroundColor: MaterialStateProperty.all(Colors.white), // white menu background
-                    shape: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
+                    shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ), // rounded corners
-                    elevation: MaterialStateProperty.all(6), // optional shadow
+                    elevation: WidgetStateProperty.all(6), // optional shadow
                   ),
                 ),
                 child: DropdownMenu<int>(
@@ -340,7 +340,7 @@ class _InputNewProductState extends State<InputNewProduct>
               Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Material(
-                  color: MyColors.success.withOpacity(0.1),
+                  color: MyColors.success.withAlpha((0.1*255).toInt()),
                   borderRadius: BorderRadius.circular(8),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
@@ -493,13 +493,10 @@ class _InputNewProductState extends State<InputNewProduct>
   Widget _buildQuantityBadge(Product product, int index, int quantity) {
     return StatefulBuilder(
       builder: (context, qtState) {
-        bool isHovering = false;
         Offset mousePos = Offset.zero;
 
         return MouseRegion(
           onHover: (e) => mousePos = e.position,
-          onEnter: (_) => qtState(() => isHovering = true),
-          onExit: (_) => qtState(() => isHovering = false),
           child: InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: () async {
@@ -510,13 +507,11 @@ class _InputNewProductState extends State<InputNewProduct>
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: isHovering
-                    ? MyColors.blue.withOpacity(0.1)
-                    : MyColors.lightGrey.withAlpha(50),
+                color:  MyColors.lightGrey.withAlpha(50),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isHovering ? MyColors.blue : MyColors.lightGrey,
-                  width: isHovering ? 2 : 1,
+                  color: MyColors.lightGrey,
+                  width: 1,
                 ),
               ),
               child: Row(
@@ -530,10 +525,7 @@ class _InputNewProductState extends State<InputNewProduct>
                     SizedBox(width: 2),
                     BlinkingCursor(),
                   ],
-                  if (isHovering) ...[
-                    SizedBox(width: 4),
-                    Icon(Icons.edit, size: 12, color: MyColors.blue),
-                  ],
+
                 ],
               ),
             ),

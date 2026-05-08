@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:inventry_management/Database/update_product.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/delete_confirmation.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';

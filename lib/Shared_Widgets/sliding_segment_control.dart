@@ -31,33 +31,37 @@ class StatusSegmentedControl extends StatelessWidget {
       groupValue: selected,
       children: {
         for (var option in options)
-          option.first: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (option.second is IconData)
-                Icon(
-                  option.second,
-                  size: fontSize + 2,
-                  color: selected == option.first
-                      ? MyColors.translucent
-                      : MyColors.black,
-                ),
-              if (option.second is IconData) const SizedBox(width: 4),
-              Text(
-                option.first,
-                style: MyFont.normal(
-                  fontSize,
-                  color: selected == option.first
-                      ? MyColors.translucent
-                      : MyColors.black,
-                ),
-              ),
-            ],
-          ),
+          option.first: _buildSegmentChild(option, selected == option.first),
       },
       onValueChanged: (String? value) {
         if (value != null) onChanged(value);
       },
+    );
+  }
+
+  Widget _buildSegmentChild(TwoValue option, bool isSelected) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (option.second is IconData)
+          Icon(
+            option.second,
+            size: fontSize + 2,
+            color: isSelected
+                ? MyColors.translucent
+                : MyColors.black,
+          ),
+        if (option.second is IconData) const SizedBox(width: 4),
+        Text(
+          option.first,
+          style: MyFont.normal(
+            fontSize,
+            color: isSelected
+                ? MyColors.translucent
+                : MyColors.black,
+          ),
+        ),
+      ],
     );
   }
 }

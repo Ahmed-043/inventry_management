@@ -5,10 +5,10 @@ import 'package:sqflite/sqflite.dart';
 import 'order_items.dart';
 
 class TwoValue {
-  String first;
-  dynamic second;
+  final String first;
+  final dynamic second;
 
-  TwoValue({this.first = '', this.second});
+  const TwoValue({this.first = '', this.second});
 }
 
 
@@ -407,7 +407,7 @@ Future<bool> updatePendingOrderFromObject(
 
     if (result.isEmpty) return false;
 
-    final currentStatus = result.first['order_status'] as String;
+    //final currentStatus = result.first['order_status'] as String;
 
     // 2️⃣ Always update REMARKS (both tables)
     await txn.update(

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/upload_circle.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../Database/database.dart';
 import '../Shared_Widgets/main_ui_helper.dart';
 

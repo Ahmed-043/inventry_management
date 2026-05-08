@@ -574,6 +574,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                   width: 400,
                   height: double.infinity,
                   child: InvoiceScreen(
+                    key: ValueKey('invoice_screen_modal_${widget.order.id}'),
                     order: widget.order,
                     selectedProducts: widget.selectedProducts,
                     sell: widget.sell,
@@ -636,6 +637,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
                                 child: OrderSidebar(
+                                  key: ValueKey('order_sidebar_modal_${widget.order.id}'),
                                   sell: widget.sell,
                                   selectedProducts: widget.selectedProducts,
                                   callback: () => setState(() {}),

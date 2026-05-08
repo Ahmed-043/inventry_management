@@ -26,8 +26,8 @@ Future<List<ChipData>> loadDashboardChipData(
   int endTimestamp, {
   String msg = 'from selected period',
 }) async {
-  int _i(Object? o) => (o as num?)?.toInt() ?? 0;
-  double _d(Object? o) => (o as num?)?.toDouble() ?? 0.0;
+  int i(Object? o) => (o as num?)?.toInt() ?? 0;
+  double d(Object? o) => (o as num?)?.toDouble() ?? 0.0;
 
   final r = (await db.rawQuery(
     '''
@@ -71,25 +71,25 @@ Future<List<ChipData>> loadDashboardChipData(
     ],
   )).first;
 
-  final salesAll = _i(r['salesAll']);
-  final salesPeriod = _i(r['salesPeriod']);
-  final purchaseAll = _i(r['purchaseAll']);
-  final purchasePeriod = _i(r['purchasePeriod']);
+  final salesAll = i(r['salesAll']);
+  final salesPeriod = i(r['salesPeriod']);
+  final purchaseAll = i(r['purchaseAll']);
+  final purchasePeriod = i(r['purchasePeriod']);
 
-  final incomeAll = _d(r['incomeAll']);
-  final incomePeriod = _d(r['incomePeriod']);
-  final outAll = _d(r['outAll']);
-  final outPeriod = _d(r['outPeriod']);
+  final incomeAll = d(r['incomeAll']);
+  final incomePeriod = d(r['incomePeriod']);
+  final outAll = d(r['outAll']);
+  final outPeriod = d(r['outPeriod']);
 
-  final pendingOrdersAll = _i(r['pendingOrdersAll']);
-  final pendingOrdersPeriod = _i(r['pendingOrdersPeriod']);
-  final pendingTxnAll = _i(r['pendingTxnAll']);
-  final pendingTxnPeriod = _i(r['pendingTxnPeriod']);
+  final pendingOrdersAll = i(r['pendingOrdersAll']);
+  final pendingOrdersPeriod = i(r['pendingOrdersPeriod']);
+  final pendingTxnAll = i(r['pendingTxnAll']);
+  final pendingTxnPeriod = i(r['pendingTxnPeriod']);
 
-  final lowStock = _i(r['lowStock']);
-  final outOfStock = _i(r['OutOfStock']);
-  final inStock = _i(r['inStock']);
-  final allStock = _i(r['allStock']);
+  final lowStock = i(r['lowStock']);
+  final outOfStock = i(r['OutOfStock']);
+  final inStock = i(r['inStock']);
+  final allStock = i(r['allStock']);
 
   return [
     ChipData(
@@ -206,7 +206,7 @@ Future<List<SalesData>> getMonthlySales({
 
     result.add(SalesData(label, total));
   }
-print(result[0].label);
+//print(result[0].label);
   return result;
 }
 

@@ -6,6 +6,7 @@ class HorizontalScroll extends StatelessWidget {
   final ScrollController? controller;
   final double speed;
   final bool scrollByWidth;
+  final bool enableOuterScroll;
 
   const HorizontalScroll({
     super.key,
@@ -13,6 +14,7 @@ class HorizontalScroll extends StatelessWidget {
     this.controller,
     this.speed = 1.0,
     this.scrollByWidth = false,
+    this.enableOuterScroll = true,
   });
 
   @override
@@ -34,11 +36,13 @@ class HorizontalScroll extends StatelessWidget {
               );
             }
           },
-          child: SingleChildScrollView(
-            controller: ctrl,
-            scrollDirection: Axis.horizontal,
-            child: child,
-          ),
+          child: enableOuterScroll
+              ? SingleChildScrollView(
+                  controller: ctrl,
+                  scrollDirection: Axis.horizontal,
+                  child: child,
+                )
+              : child,
         );
       },
     );

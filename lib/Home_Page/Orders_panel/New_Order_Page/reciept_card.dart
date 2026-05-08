@@ -1,26 +1,26 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/db_info.dart';
 import 'package:inventry_management/Database/orders.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
 import 'dart:typed_data';
 import '../../../Database/database.dart';
 import '../../../Database/order_items.dart';
-import '../../../Database/payment_transactions.dart';
 import '../../../Database/pdf.dart';
 import '../../../Database/product_stock.dart';
 import '../../../Shared_Widgets/product_selector_panel.dart';
 import '../../../colors.dart';
+
+// First Render Causes Jank due to shader compilation,
+// so we delay it by 500ms to allow smooth loading of other components.
+// This is a temporary fix and should be optimized in the future.
+bool render = false;
 
 class InvoiceScreen extends StatefulWidget {
   final Order order;
@@ -53,6 +53,21 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
     // TODO: implement initState
     super.initState();
     _scrollToBottom();
+    if(!render && !widget.order.editable) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          render = true;
+        });
+      }
+    });
+    }else{
+      if (mounted) {
+        setState(() {
+          render = true;
+        });
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -70,7 +85,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return render ? Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 0, left: 5, right: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -107,7 +122,9 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                           setState(() {
                             isLoading = false;
                           });
-                          UiHelper.showToast(context, 'Order Updated Successfully');
+                          if(mounted) {
+                            UiHelper.showToast(context, 'Order Updated Successfully');
+                          }
                           return;
                         }
                         else{
@@ -211,7 +228,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
           )
         ],
       ),
-    );
+    ) : const SizedBox(    );
   }
 
   updateStockDialog(Map<int, int> idMap) async {

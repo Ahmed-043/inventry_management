@@ -50,41 +50,40 @@ class _TransactionsCardsState extends State<TransactionsCards> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: SingleChildScrollView(
+                child: ListView.builder(
                   physics: BouncingScrollPhysics(),
-                  child: Column(
-                    children: List.generate(widget.transactions.length, (i) {
-                      final t = widget.transactions[i];
-                      return Column(
-                        children: [
-                          transactionCard(
-                            transaction: t,
-                            onViewDetails: () async {
-                              final Person? person = await getPersonById(
-                                currentDB!,
-                                t.personId,
-                              );
-                              UiHelper.pushPage(
-                                context: context,
-                                opaque: false,
-                                barrierColor: Colors.black54,
-                                page: _TransactionDialog(
-                                  action: NewTransactionDialog(
-                                    transaction: t,
-                                    person: person,
-                                    onSave: widget.onSave,
-                                  ),
-                                  tag: 'transaction${t.id}',
+                  itemCount: widget.transactions.length,
+                  itemBuilder: (context, i) {
+                    final t = widget.transactions[i];
+                    return Column(
+                      children: [
+                        transactionCard(
+                          transaction: t,
+                          onViewDetails: () async {
+                            final Person? person = await getPersonById(
+                              currentDB!,
+                              t.personId,
+                            );
+                            UiHelper.pushPage(
+                              context: context,
+                              opaque: false,
+                              barrierColor: Colors.black54,
+                              page: _TransactionDialog(
+                                action: NewTransactionDialog(
+                                  transaction: t,
+                                  person: person,
+                                  onSave: widget.onSave,
                                 ),
-                              );
-                            },
-                          ),
-                           if ((i + 1 < widget.transactions.length))
-                             Divider(height: 1)
-                        ],
-                      );
-                    }),
-                  ),
+                                tag: 'transaction${t.id}',
+                              ),
+                            );
+                          },
+                        ),
+                        if ((i + 1 < widget.transactions.length))
+                          Divider(height: 1)
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

@@ -330,10 +330,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                       borderRadius: BorderRadius.circular(8),
                                       child: SizedBox(
                                         width: i == 2 ? 170 : 150,
-                                        child: ListView(
+                                        child: ListView.builder(
                                           shrinkWrap: true,
                                           padding: EdgeInsets.zero,
-                                          children: options.map((e) {
+                                          itemCount: options.length,
+                                          itemBuilder: (context, idx) {
+                                            final e = options[idx];
                                             return ListTile(
                                               title: Text(e),
                                               contentPadding: EdgeInsets.only(
@@ -341,20 +343,20 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                               ),
                                               onTap: () async {
                                                 if (i == 0) {
-                                                  status = options.indexOf(e);
+                                                  status = idx;
                                                 }
                                                 if (i == 1) {
-                                                  type = options.indexOf(e);
+                                                  type = idx;
                                                 }
                                                 if (i == 2) {
-                                                  int i = e[0] == 'S' ? 0 : 1;
-                                                  await date(i: i);
+                                                  final sel = e[0] == 'S' ? 0 : 1;
+                                                  await date(i: sel);
                                                 }
                                                 _loadTransactions();
                                                 Navigator.of(context).pop();
                                               },
                                             );
-                                          }).toList(),
+                                          },
                                         ),
                                       ),
                                     ),

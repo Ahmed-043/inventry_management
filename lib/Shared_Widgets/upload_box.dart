@@ -1,10 +1,10 @@
 import 'package:dotted_border/dotted_border.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/colors.dart';
-import 'dart:typed_data';
 
 import '../files.dart';
 
@@ -54,14 +54,13 @@ class _UploadBoxState extends State<UploadBox> {
        });
        return;
      }
-     file = await compressImage(file);
+     file = await compute(compressImage,file);
+     //file = await compressImage(file);
    //  if (!mounted) return; // page may have closed
 
-     if (file != null) {
-       setState(() => selectedFile = file);
-       widget.onFileSelected?.call(file);
-     }
-    }catch(e){
+     setState(() => selectedFile = file);
+     widget.onFileSelected?.call(file);
+       }catch(e){
       debugPrint("Upload Box Tap error: ${e.toString()}");
       setState(() {
         isLoading = false;

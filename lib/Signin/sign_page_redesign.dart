@@ -41,10 +41,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
     setState(() {
       paths = dbs;
     });
-    bool opened = await openDatabaseFromPrefs();
-    if(!opened){
 
-    }
   }
 
   Future<bool> openDatabaseFromPrefs() async {
@@ -347,6 +344,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
                                   setState(() {
                                     _loadPaths();
                                   });
+                                  openDatabaseFromPrefs();
                                 },);
                               },
                             );
@@ -414,6 +412,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
                               setState(() {
                                 _loadPaths();
                               });
+                              openDatabaseFromPrefs();
                             });
                           },
                           icon: Icon(
@@ -460,7 +459,9 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
           repairDialog();
         }
       } catch(e){
-        UiHelper.showToast(context, e.toString());
+        if(mounted) {
+          UiHelper.showToast(context, e.toString());
+        }
       }
     } else {
       warning("File does not exist");
@@ -468,14 +469,14 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
   }
 
   void gotoHomePage(String path, DBInfo? info){
-
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => HomePage(path: path, info: info),
       ),
     );
   }
+
   void repairDialog() {
     showDialog(
       context: context,

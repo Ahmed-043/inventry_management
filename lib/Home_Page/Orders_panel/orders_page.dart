@@ -254,30 +254,28 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget viewOrders({bool sell = true}) {
     return Expanded(
       child: sell
-          ? SingleChildScrollView(
-              child: sellingOrders.isEmpty
-                  ? Center(child: Text("No Selling Orders"))
-                  : Column(
-                      children: List.generate(sellingOrders.length, (index) {
-                        return OrderCard(
-                          order: sellingOrders[index],
-                          callBack: () => _updateOrderById(sellingOrders[index].id ?? 0),
-                        );
-                      }),
-                    ),
-            )
-          : SingleChildScrollView(
-              child: buyingOrders.isEmpty
-                  ? Center(child: Text("No Buying Orders"))
-                  : Column(
-                      children: List.generate(buyingOrders.length, (index) {
-                        return OrderCard(
-                          order: buyingOrders[index],
-                          callBack: () => _updateOrderById(buyingOrders[index].id ?? 0),
-                        );
-                      }),
-                    ),
-            ),
+          ? sellingOrders.isEmpty
+              ? Center(child: Text("No Selling Orders"))
+              : ListView.builder(
+                  itemCount: sellingOrders.length,
+                  itemBuilder: (context, index) {
+                    return OrderCard(
+                      order: sellingOrders[index],
+                      callBack: () => _updateOrderById(sellingOrders[index].id ?? 0),
+                    );
+                  },
+                )
+          : buyingOrders.isEmpty
+              ? Center(child: Text("No Buying Orders"))
+              : ListView.builder(
+                  itemCount: buyingOrders.length,
+                  itemBuilder: (context, index) {
+                    return OrderCard(
+                      order: buyingOrders[index],
+                      callBack: () => _updateOrderById(buyingOrders[index].id ?? 0),
+                    );
+                  },
+                ),
     );
   }
 

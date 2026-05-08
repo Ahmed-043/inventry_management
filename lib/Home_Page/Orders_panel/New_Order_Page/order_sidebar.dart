@@ -39,6 +39,7 @@ class _OrderSidebarState extends State<OrderSidebar> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         OrderPersonCard(
+          key: ValueKey('order_person_card_${widget.order.id}'),
           sell: widget.sell,
           person: widget.selectedPerson,
           order: widget.order,
@@ -51,6 +52,7 @@ class _OrderSidebarState extends State<OrderSidebar> {
 
         if (widget.selectedPerson != null)
           OrderDetailsCard(
+            key: ValueKey('order_details_card_${widget.order.id}'),
             order: widget.order,
             selectedProducts: widget.selectedProducts,
             onOrderChanged: () {
@@ -61,6 +63,7 @@ class _OrderSidebarState extends State<OrderSidebar> {
 
         if (widget.selectedPerson != null)
           CommentBox(
+            key: ValueKey('comment_box_${widget.order.id}'),
             order: widget.order,
             onChange: widget.callback,
           ),

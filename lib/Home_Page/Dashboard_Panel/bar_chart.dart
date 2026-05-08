@@ -1,5 +1,3 @@
-import 'dart:math' as Math;
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../Database/dashboard_info.dart';
@@ -32,7 +30,7 @@ class BarChartWidget extends StatelessWidget {
     final maxY = (rawMaxY <= 0)
         ? step * 5
         : (rawMaxY / step).ceil() * step;
-    final interval = maxY / 5;
+    //final interval = maxY / 5;
     return LayoutBuilder(builder: (context, constraints){
       double barWidth = constraints.maxWidth/(data.length * 2);
       if(barWidth > 100){

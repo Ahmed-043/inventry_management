@@ -9,6 +9,11 @@ import '../../../Shared_Widgets/fonts.dart';
 import '../../../Shared_Widgets/sliding_segment_control.dart';
 import '../../../colors.dart';
 
+// First Render Causes Jank due to shader compilation,
+// so we delay it by 500ms to allow smooth loading of other components.
+// This is a temporary fix and should be optimized in the future.
+bool render = false;
+
 class OrderDetailsCard extends StatefulWidget {
   final bool sell;
   final Order order;
@@ -37,39 +42,58 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
   TextEditingController taxController = TextEditingController();
   TextEditingController discountController = TextEditingController();
 
+
   @override
   void initState() {
     super.initState();
-    super.initState();
+    initData();
+   }
 
-    // --- Load stored tax & discount ---
-    tUnit = widget.order.tax.first;
-    dUnit = widget.order.discount.first;
-    taxController.text = widget.order.tax.second.toString();
-    discountController.text = widget.order.discount.second.toString();
+   initData() async {
+     // --- Load stored tax & discount ---
+     tUnit = widget.order.tax.first;
+     dUnit = widget.order.discount.first;
+     taxController.text = widget.order.tax.second.toString();
+     discountController.text = widget.order.discount.second.toString();
 
-    date =
-        "${DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).day}-${DateFormat.MMM().format(DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp))}-${DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).year}";
-    time = DateFormat(
-      'hh:mm a',
-    ).format(DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp));
-    if(widget.order.editable){
-      widget.order.paymentTimestamp = widget.order.orderTimestamp;
-    }
-    dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueDateTimestamp);
+     date =
+     "${DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).day}-${DateFormat.MMM().format(DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp))}-${DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).year}";
+     time = DateFormat(
+       'hh:mm a',
+     ).format(DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp));
+     if(widget.order.editable){
+       widget.order.paymentTimestamp = widget.order.orderTimestamp;
+     }
+     dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueDateTimestamp);
 
-    // dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueTimestamp ?? widget.order.orderTimestamp);
-  }
+     if(!render && !widget.order.editable){
+       Future.delayed(const Duration(milliseconds: 500), () {
+         if (mounted) {
+           setState(() {
+             render = true;
+           });
+         }
+       });
+     }else{
+       if (mounted) {
+         setState(() {
+           render = true;
+         });
+       }
+     }
+     // dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueTimestamp ?? widget.order.orderTimestamp);
+
+   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(vertical: 5),
-      padding: EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: MyColors.translucent,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withAlpha(125),
@@ -79,36 +103,51 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
           ),
         ],
       ),
-      child: Column(
+      child: render ? Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
+          const SizedBox(
             width: double.infinity,
             child: Text(
               "Order Details",
               textAlign: TextAlign.start,
-              style: MyFont.semiBold(20, color: MyColors.darkBlue),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                color: MyColors.darkBlue,
+              ),
             ),
           ),
           // SizedBox(height: 20),
           SizedBox(width: double.infinity, child: paymentCard()),
-          SizedBox(width: double.infinity, child: statusCard()),
+          _OrderStatusSection(
+            key: ValueKey('order_status_section_${widget.order.id}'),
+            order: widget.order,
+            onChanged: widget.onOrderChanged,
+            selectedProducts: widget.selectedProducts,
+          ),
           SizedBox(width: double.infinity, child: dateTimeCard()),
         ],
+      )
+      : const SizedBox(
+        height: 466,
       ),
     );
   }
 
   Widget paymentCard() {
     final double total = widget.order.totalAmount;
-    applyTaxAndDiscount(total);
+    // Only call applyTaxAndDiscount if order is editable to avoid rebuilds
+    if (widget.order.editable) {
+      applyTaxAndDiscount(total);
+    }
     return Container(
-      margin: EdgeInsets.all(5),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: MyColors.lightGrey.withAlpha(60),
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,11 +260,11 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
 
   Widget dateTimeCard() {
     return Container(
-      margin: EdgeInsets.all(5),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: MyColors.lightGrey.withAlpha(60),
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Column(
         children: [
@@ -261,7 +300,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                   child: SizedBox(height: 40, child: dateTimeField(text: date)),
                 ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
               Expanded(
                 flex: 2,
                 child: InkWell(
@@ -297,13 +336,74 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
     );
   }
 
-  Widget statusCard() {
+
+
+  double applyTaxAndDiscount(double main) {
+    if(!(widget.order.editable)){
+      return main;
+    }
+    double tax = double.tryParse(taxController.text) ?? 0.0;
+    double discount = double.tryParse(discountController.text) ?? 0.0;
+    // Create new TwoValue instances instead of mutating
+    widget.order.tax = TwoValue(first: tUnit, second: tax);
+    widget.order.discount = TwoValue(first: dUnit, second: discount);
+
+    double result = main;
+
+    // Apply tax
+    if (tUnit == '%') {
+      result += (main * tax / 100);
+    } else if (tUnit == 'Rs') {
+      result += tax;
+    }
+
+    // Apply discount
+    if (dUnit == '%') {
+      result -= (main * discount / 100);
+    } else if (dUnit == 'Rs') {
+      result -= discount;
+    }
+    widget.order.adjustment = result - widget.order.totalAmount ;
+
+    return result;
+  }
+}
+
+// Separate widget to prevent excessive rebuilds of segmented controls
+class _OrderStatusSection extends StatefulWidget {
+  final Order order;
+  final VoidCallback onChanged;
+  final List<OrderItem> selectedProducts;
+
+  const _OrderStatusSection({
+    super.key,
+    required this.order,
+    required this.onChanged,
+    required this.selectedProducts,
+  });
+
+  @override
+  State<_OrderStatusSection> createState() => _OrderStatusSectionState();
+}
+
+class _OrderStatusSectionState extends State<_OrderStatusSection> {
+  late DateTime dueDate;
+
+  @override
+  void initState() {
+    super.initState();
+    dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueDateTimestamp);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+  //  return SizedBox();
     return Container(
-      margin: EdgeInsets.all(5),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: MyColors.lightGrey.withAlpha(60),
-        borderRadius: BorderRadius.all(Radius.circular(15)),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Column(
         children: [
@@ -319,7 +419,8 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
             width: double.infinity,
             child: StatusSegmentedControl(
               selected: widget.order.orderStatus,
-              options: [
+              key: const ValueKey('order_status'),
+              options: const [
                 TwoValue(first: "Canceled", second: MyColors.error),
                 TwoValue(first: "Pending", second: MyColors.primary),
                 TwoValue(first: "Completed", second: MyColors.success),
@@ -329,7 +430,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                   if(value == 'Canceled'){
                     widget.order.orderStatus = value;
                     widget.order.cancel = true;
-                    widget.onOrderChanged.call();
+                    widget.onChanged.call();
                     return;
                   }else{
                     if(widget.order.paymentStatus == 'Paid'){
@@ -341,13 +442,12 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                     }
                   }
                 }
-                // widget.order.orderStatus = value;
-                widget.onOrderChanged.call();
-
+                widget.order.orderStatus = value;
+                widget.onChanged.call();
               },
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: Text(
@@ -360,7 +460,8 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
             width: double.infinity,
             child: StatusSegmentedControl(
               selected: widget.order.paymentStatus,
-              options: [
+              key: const ValueKey('payment_status'),
+              options: const [
                 TwoValue(first: "Overdue", second: MyColors.error),
                 TwoValue(first: "Pending", second: MyColors.primary),
                 TwoValue(first: "Paid", second: MyColors.success),
@@ -377,14 +478,14 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                       if(value == 'Overdue'){
                         dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).add(const Duration(days: 7));
                         widget.order.dueDateTimestamp = dueDate.millisecondsSinceEpoch;
-                        widget.onOrderChanged.call();
+                        widget.onChanged.call();
                         pickDateTime(context,
                           dueDate,
                           firstDate: DateTime.fromMillisecondsSinceEpoch(
                           widget.order.orderTimestamp,
                         ),
                         ).then((newDate) {
-                          if (newDate != null) {
+                          if (newDate != null && mounted) {
                             setState(() {
                               dueDate = newDate;
                               widget.order.dueDateTimestamp =
@@ -395,10 +496,9 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                       }
                     }
                     widget.order.update = true;
-                    widget.onOrderChanged.call();
+                    widget.onChanged.call();
                     return;
                   }else{
-                    setState(() {});
                     return;
                   }
                 }
@@ -408,13 +508,13 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                     dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.orderTimestamp).add(const Duration(days: 7));
 
                     widget.order.dueDateTimestamp = dueDate.millisecondsSinceEpoch;
-                    widget.onOrderChanged.call();
+                    widget.onChanged.call();
                     pickDateTime(context, dueDate,
                       firstDate: DateTime.fromMillisecondsSinceEpoch(
                         widget.order.orderTimestamp,
                       ),
                     ).then((newDate) {
-                      if (newDate != null) {
+                      if (newDate != null && mounted) {
                         setState(() {
                           dueDate = newDate;
                           widget.order.dueDateTimestamp =
@@ -432,7 +532,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                   }
                   debugPrint("DueDate values NEW $dueDate");
 
-                  widget.onOrderChanged.call();
+                  widget.onChanged.call();
                 }
               },
             ),
@@ -454,7 +554,6 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                       style: MyFont.semiBold(15, color: MyColors.grey),
                     ),
                     const SizedBox(width: 10),
-
                     Expanded(
                       child: InkWell(
                         onTap: () {
@@ -470,7 +569,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                             ).then((newDate) {
                               if (newDate != null) {
                                 widget.order.paymentTimestamp = newDate.millisecondsSinceEpoch;
-                                widget.onOrderChanged.call();
+                                widget.onChanged.call();
                               }
                             });
                           }
@@ -484,7 +583,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                         ),
                       ),
                     ),
-                  ],
+                   ],
                 ),
               ),
             ),
@@ -503,38 +602,33 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
               width: double.infinity,
               child: StatusSegmentedControl(
                 selected: widget.order.paymentMethod,
-                options: [
+                key: const ValueKey('payment_method'),
+                options: const [
                   TwoValue(first: "Cash", second: MyColors.success),
                   TwoValue(first: "Digital", second: MyColors.info),
                   TwoValue(first: "Bank", second: MyColors.blue),
                   TwoValue(first: "Other", second: MyColors.grey),
-
                 ],
                 onChanged: (String value) {
                   if(!(widget.order.editable)){
                     if(widget.order.paymentStatus != 'Paid' || widget.order.update){
                       widget.order.paymentMethod = value;
                       widget.order.update = true;
-                      widget.onOrderChanged.call();
+                      widget.onChanged.call();
                       return;
                     }else{
-                      widget.onOrderChanged.call();
+                      widget.onChanged.call();
                       return;
                     }
                   }
                   widget.order.paymentMethod = value;
-                  widget.onOrderChanged.call();
-                  widget.onOrderChanged.call();
+                  widget.onChanged.call();
                 },
               ),
             ),
-
           const SizedBox(height: 5),
-
           if (widget.order.paymentStatus == 'Overdue')
-
             SizedBox(
-              // height: 50,
               width: 225,
               child: Column(
                 children: [
@@ -559,11 +653,13 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
                               widget.order.orderTimestamp,
                             ),
                           ).then((newDate) {
-                            if (newDate != null) {
-                                dueDate = newDate;
-                                widget.order.dueDateTimestamp = dueDate.millisecondsSinceEpoch;
+                            if (newDate != null && mounted) {
+                                setState(() {
+                                  dueDate = newDate;
+                                  widget.order.dueDateTimestamp = dueDate.millisecondsSinceEpoch;
+                                });
                                 if(!widget.order.editable) widget.order.update = true;
-                                widget.onOrderChanged.call();
+                                widget.onChanged.call();
                             }
                           });
                         }
@@ -582,35 +678,5 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
       ),
     );
   }
-
-  double applyTaxAndDiscount(double main) {
-    if(!(widget.order.editable)){
-      return main;
-    }
-    double tax = double.tryParse(taxController.text) ?? 0.0;
-    double discount = double.tryParse(discountController.text) ?? 0.0;
-    widget.order.tax.first = tUnit;
-    widget.order.tax.second = tax;
-    widget.order.discount.first = dUnit;
-    widget.order.discount.second = discount;
-
-    double result = main;
-
-    // Apply tax
-    if (tUnit == '%') {
-      result += (main * tax / 100);
-    } else if (tUnit == 'Rs') {
-      result += tax;
-    }
-
-    // Apply discount
-    if (dUnit == '%') {
-      result -= (main * discount / 100);
-    } else if (dUnit == 'Rs') {
-      result -= discount;
-    }
-    widget.order.adjustment = result - widget.order.totalAmount ;
-
-    return result;
-  }
 }
+

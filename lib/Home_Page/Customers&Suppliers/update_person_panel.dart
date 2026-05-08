@@ -5,7 +5,6 @@ import 'package:inventry_management/Shared_Widgets/upload_circle.dart';
 import '../../Database/database.dart';
 import '../../Database/person.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
-import '../../Shared_Widgets/upload_box.dart';
 import '../../colors.dart';
 import '../Products_Panel/delete_confirmation.dart';
 

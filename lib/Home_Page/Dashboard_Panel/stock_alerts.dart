@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Shared_Widgets/horizontal_scroll.dart';
-import 'package:path/path.dart';
 
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
@@ -9,8 +8,8 @@ import '../Products_Panel/update_product_stock.dart';
 
 class StockAlerts extends StatelessWidget {
   final List<Product> lowStockProducts;
-  VoidCallback onSave;
-  StockAlerts({super.key, required this.lowStockProducts,required this.onSave});
+  final VoidCallback onSave;
+  const StockAlerts({super.key, required this.lowStockProducts,required this.onSave});
 
   @override
   Widget build(BuildContext context) {
@@ -39,16 +38,23 @@ class StockAlerts extends StatelessWidget {
       );
     }
 
-    return  HorizontalScroll(
+    return HorizontalScroll(
       speed: 1.5,
-      child: Row(
-        children: List.generate(lowStockProducts.length, (i) {
-          return InkWell(
-              onTap: (){
-                stockUpdateDialog(lowStockProducts[i]);
-              },
-              child: box(lowStockProducts[i]));
-        }),
+      enableOuterScroll: false,
+      child: SizedBox(
+        height: 75, // box height (74) + vertical margins/padding
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          itemCount: lowStockProducts.length,
+          itemBuilder: (context, i) {
+            final p = lowStockProducts[i];
+            return InkWell(
+              onTap: () => stockUpdateDialog(p),
+              child: box(p),
+            );
+          },
+        ),
       ),
     );
   }

@@ -36,7 +36,8 @@ import 'package:flutter/foundation.dart';
     }
     else{
       debugPrint("Compressing image");
-      imageBytes = await compressImage(imageBytes);
+      imageBytes = await compute(compressImage,imageBytes);
+     // imageBytes = await compressImage(imageBytes);
     }
       return imageBytes;
     } catch (e) {
@@ -47,7 +48,7 @@ import 'package:flutter/foundation.dart';
 
 
 
-Future<Uint8List?> compressImage(Uint8List imageBytes) async {
+Future<Uint8List> compressImage(Uint8List imageBytes) async {
   try {
     // compress if > 500 KB
     if (imageBytes.lengthInBytes > 1200 * 1024) {
@@ -75,7 +76,7 @@ Future<Uint8List?> compressImage(Uint8List imageBytes) async {
     return imageBytes;
   } catch (e) {
     debugPrint("Error converting image to bytes: $e");
-    return null;
+    return imageBytes;
   }
 }
 

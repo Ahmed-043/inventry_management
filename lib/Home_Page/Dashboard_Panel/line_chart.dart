@@ -104,7 +104,7 @@ class SalesTrendChart extends StatelessWidget {
             getTooltipColor: (_) => MyColors.grey,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
-                final index = spot.x.toInt();
+                //final index = spot.x.toInt();
                 return LineTooltipItem(
                   NumberFormat.decimalPattern().format(spot.y.toInt()),
                   const TextStyle(color: MyColors.translucent),

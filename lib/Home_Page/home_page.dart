@@ -62,8 +62,6 @@ class _HomePageState extends State<HomePage> {
     // TODO: implement initState
     super.initState();
     _focusNode.requestFocus(); // ensure focus is set for keyboard events
-
-
   }
   @override
   Widget build(BuildContext context) {
@@ -123,11 +121,11 @@ class _HomePageState extends State<HomePage> {
                           info: widget.info,
                           onItemSelected: (index) {
                             if(index == pages.length-1){
-                              Navigator.pop(context);
-                              // Navigator.of(context).pushAndRemoveUntil(
-                              //   MaterialPageRoute(builder: (_) => SigninPageRedsign()),
-                              //       (route) => false,
-                              // );
+                              //Navigator.pop(context);
+                               Navigator.of(context).pushAndRemoveUntil(
+                                 MaterialPageRoute(builder: (_) => SigninPageRedsign()),
+                                     (route) => false,
+                               );
                             }else {
                               setState(() => selectedIndex = index% pages.length); // to avoid overflow
                             }

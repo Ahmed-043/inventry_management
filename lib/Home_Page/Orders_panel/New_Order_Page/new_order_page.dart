@@ -93,6 +93,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
       );
       order.paymentTimestamp = payment.isNotEmpty ? payment.first['payment_timestamp'] as int : 0;
       order.paymentMethod = payment.isNotEmpty ? payment.first['payment_method'] as String : 'Other';
+      return null;
   }
   @override
   Widget build(BuildContext context) {
@@ -115,7 +116,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
             SizedBox(
               width: 350,
               height: double.infinity,
-              child: Padding(
+                child: Padding(
                 padding: const EdgeInsets.only(
                   top: 10,
                   bottom: 10,
@@ -129,6 +130,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
                         child: OrderSidebar(
+                          key: ValueKey('order_sidebar_main_${widget.order?.id ?? "new"}'),
                           sell: widget.sell,
                           selectedProducts: selectedProducts,
                           callback: () => setState(() {}),
@@ -152,6 +154,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
           if (selectedPerson != null)
             Expanded(
               child: OrderProductsCard(
+                key: ValueKey('order_products_card_${order.id ?? "new"}'),
                 selectedProducts: selectedProducts,
                 order: order,
                 selectedPerson: selectedPerson,
@@ -174,6 +177,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
             SizedBox(
               width: (MediaQuery.of(context).size.width < 1400) ? 350 : 400,
               child: InvoiceScreen(
+                key: ValueKey('invoice_screen_${order.id ?? "new"}'),
                 order: order,
                 selectedProducts: selectedProducts,
                 sell: widget.sell,

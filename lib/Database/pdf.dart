@@ -1,16 +1,13 @@
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:cross_file/cross_file.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:typed_data';
-import '../main.dart'; // import for navigatorKey
 import 'package:process_run/shell.dart';
 
 Future<void> saveAsPdf({required pw.Widget widget, String name = 'Receipt'}) async {

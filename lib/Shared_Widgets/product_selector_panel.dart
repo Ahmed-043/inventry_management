@@ -86,19 +86,19 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
       List<Product> list;
       if(widget.select == 's'){
          stock = await getRequiredStockOnlyProducts(widget.idMap, currentDB!);
-        List<int> IDs = stock.keys.toList();
-        list = await getProductsByIds(IDs,currentDB!,withoutImage: performanceMode!);
+        List<int> ids = stock.keys.toList();
+        list = await getProductsByIds(ids,currentDB!,withoutImage: performanceMode);
       }else if(widget.select == 'S'){
         stock = await getComponentStock(widget.idMap, currentDB!);
-        List<int> IDs = stock.keys.toList();
-        list = await getProductsByIds(IDs,currentDB!,withoutImage: performanceMode!);
+        List<int> ids = stock.keys.toList();
+        list = await getProductsByIds(ids,currentDB!,withoutImage: performanceMode);
       }
       else {
         list = await getProductsPage(
           currentDB!,
           page,
           pSize,
-          performanceMode!,
+          performanceMode,
           search: searchController.text.trim().toString(),
         );
       }
@@ -308,35 +308,35 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                                     ? CircularProgressIndicator()
                                     : products.isEmpty
                                     ? emptyState()
-                                    : SingleChildScrollView(
-                                        scrollDirection: Axis.vertical,
-                                        //  physics: BouncingScrollPhysics(),
-                                        child: Wrap(
-                                          runSpacing: 10,
-                                          spacing: 10,
-                                          children: products
-                                              .where(
-                                                (p) => !inStock || p.stock >= 1,
-                                              )
-                                              .map(
-                                                (p) => InkWell(
-                                                  onTap: () {
-                                                    toggleSelection(p);
-                                                    debugPrint(
-                                                      "Selected Products: ${widget.products.map((e) => e.id).toList()}",
-                                                    );
-                                                    debugPrint(
-                                                      "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
-                                                    );
-                                                    debugPrint(
-                                                      "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
-                                                    );
-                                                  },
-                                                  child: productCard(p),
-                                                ),
-                                              )
-                                              .toList(),
+                                    : GridView.builder(
+                                        padding: EdgeInsets.zero,
+                                        physics: const BouncingScrollPhysics(),
+                                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 400,
+                                          mainAxisSpacing: 10,
+                                          crossAxisSpacing: 10,
+                                          childAspectRatio: 380 / 80,
                                         ),
+                                        itemCount: products.where((p) => !inStock || p.stock >= 1).length,
+                                        itemBuilder: (context, index) {
+                                          final visible = products.where((p) => !inStock || p.stock >= 1).toList();
+                                          final p = visible[index];
+                                          return InkWell(
+                                            onTap: () {
+                                              toggleSelection(p);
+                                              debugPrint(
+                                                "Selected Products: ${widget.products.map((e) => e.id).toList()}",
+                                              );
+                                              debugPrint(
+                                                "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
+                                              );
+                                              debugPrint(
+                                                "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
+                                              );
+                                            },
+                                            child: productCard(p),
+                                          );
+                                        },
                                       ),
                               ),
                               if (!(page==0 && products.length < pSize))
