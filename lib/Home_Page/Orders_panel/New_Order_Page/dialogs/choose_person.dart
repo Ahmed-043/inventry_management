@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/sliding_segment_control.dart';
-import '../../../Database/database.dart';
-import '../../../Database/orders.dart';
-import '../../../Database/person.dart';
-import '../../../colors.dart';
+import '../../../../Database/database.dart';
+import '../../../../Database/orders.dart';
+import '../../../../Database/person.dart';
+import '../../../../colors.dart';
 import 'package:flutter/cupertino.dart';
 
 class ChoosePerson extends StatefulWidget {
@@ -25,7 +25,8 @@ class _ChoosePersonState extends State<ChoosePerson> {
   int selected = 0;
   bool isRegistered = true;
   late int filter = widget.filter;
-  List<String> filters = ["All", "Customers", "Suppliers"];
+  final List<String> filters = const ["All", "Customers", "Suppliers"];
+
   @override
   void initState() {
     _loadPersons();
@@ -63,148 +64,150 @@ class _ChoosePersonState extends State<ChoosePerson> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
-          height: 80,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 10,
-                top: 5,
-                child: Text("Select Person", style: MyFont.semiBold(25)),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: Icon(Icons.close_rounded),
-                ),
-              ),
-              Positioned(
-                bottom: 5,
-                left: 0,
-                right: 0,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: CupertinoSlidingSegmentedControl<bool>(
-                    backgroundColor: MyColors.grey.withAlpha(12),
-                    thumbColor: isRegistered ? MyColors.info : MyColors.error,
-                    groupValue: isRegistered, // the currently selected segment
-                    children: {
-                      true: Text(
-                        'Registered',
-                        style: MyFont.normal(
-                          15,
-                          color: isRegistered
-                              ? MyColors.translucent
-                              : MyColors.black,
-                        ),
-                      ),
-                      false: Text(
-                        'Anonymous',
-                        style: MyFont.normal(
-                          15,
-                          color: isRegistered
-                              ? MyColors.black
-                              : MyColors.translucent,
-                        ),
-                      ),
-                    },
-                    onValueChanged: (bool? value) {
-                      if (value != null) {
-                        setState(() => isRegistered = value);
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        isRegistered
-            ? Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 50,
-                        child: UiHelper.myTextField(
-                          hint: "Search....",
-                          borderRadius: 20,
-                          controller: searchController,
-                          onChange: () {
-                            _loadPersons();
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 40,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Person Details", style: MyFont.normal(15)),
-                            SizedBox(
-                              width: 225,
-
-                              child: StatusSegmentedControl(
-                                key: ValueKey('person_filter_segment'),
-                                selected: filters[filter],
-                                fontSize: 12,
-                                options: const [
-                                  TwoValue(first: "All", second: MyColors.info),
-                                  TwoValue(
-                                    first: "Customers",
-                                    second: MyColors.success,
-                                  ),
-                                  TwoValue(
-                                    first: "Suppliers",
-                                    second: MyColors.primary,
-                                  ),
-                                ],
-                                onChanged: (e) {
-                                  if (e == "All") {
-                                    filter = 0;
-                                  } else if (e == "Customers") {
-                                    filter = 1;
-                                  } else {
-                                    filter = 2;
-                                  }
-                                  _loadPersons();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          scrollDirection: Axis.vertical,
-                          physics: BouncingScrollPhysics(),
-                          itemCount: persons.length,
-                          itemBuilder: (context, index) {
-                            return InkWell(
-                              onTap: () {
-                                Navigator.pop(
-                                  context,
-                                  persons[index],
-                                ); // return selected person
-                              },
-                              child: personCard(persons[index]),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : anonymousPerson(),
-        Container(height: 20),
+        _buildHeader(context),
+        if (isRegistered) _buildRegisteredSection() else _buildAnonymousSection(),
+        const SizedBox(height: 20),
       ],
     );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return SizedBox(
+      height: 80,
+      child: Stack(
+        children: [
+          const Positioned(
+            left: 10,
+            top: 5,
+            child: Text("Select Person", style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600)),
+          ),
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ),
+          Positioned(
+            bottom: 5,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: CupertinoSlidingSegmentedControl<bool>(
+                backgroundColor: MyColors.grey.withAlpha(12),
+                thumbColor: isRegistered ? MyColors.info : MyColors.error,
+                groupValue: isRegistered,
+                children: {
+                  true: Text(
+                    'Registered',
+                    style: MyFont.normal(
+                      15,
+                      color: isRegistered ? MyColors.translucent : MyColors.black,
+                    ),
+                  ),
+                  false: Text(
+                    'Anonymous',
+                    style: MyFont.normal(
+                      15,
+                      color: isRegistered ? MyColors.black : MyColors.translucent,
+                    ),
+                  ),
+                },
+                onValueChanged: (bool? value) {
+                  if (value != null) {
+                    setState(() => isRegistered = value);
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisteredSection() {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 50,
+              child: UiHelper.myTextField(
+                hint: "Search....",
+                borderRadius: 20,
+                controller: searchController,
+                onChange: () {
+                  _loadPersons();
+                },
+              ),
+            ),
+            _buildFilterRow(),
+            Expanded(child: _buildPersonList()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterRow() {
+    return SizedBox(
+      width: double.infinity,
+      height: 40,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text("Person Details", style: MyFont.normal(15)),
+          SizedBox(
+            width: 225,
+            child: StatusSegmentedControl(
+              key: const ValueKey('person_filter_segment'),
+              selected: filters[filter],
+              fontSize: 12,
+              options: const [
+                TwoValue(first: "All", second: MyColors.info),
+                TwoValue(first: "Customers", second: MyColors.success),
+                TwoValue(first: "Suppliers", second: MyColors.primary),
+              ],
+              onChanged: (e) {
+                if (e == "All") {
+                  filter = 0;
+                } else if (e == "Customers") {
+                  filter = 1;
+                } else {
+                  filter = 2;
+                }
+                _loadPersons();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonList() {
+    return ListView.builder(
+      scrollDirection: Axis.vertical,
+      physics: const BouncingScrollPhysics(),
+      itemCount: persons.length,
+      itemBuilder: (context, index) {
+        return InkWell(
+          onTap: () {
+            Navigator.pop(context, persons[index]);
+          },
+          child: personCard(persons[index]),
+        );
+      },
+    );
+  }
+
+  Widget _buildAnonymousSection() {
+    return anonymousPerson();
   }
 
   Widget personCard(Person person) {

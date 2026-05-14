@@ -4,20 +4,22 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/reciept_card.dart';
+import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/invoice/reciept_card.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 
-import '../../../Database/db_info.dart';
-import '../../../Database/order_items.dart';
-import '../../../Database/orders.dart';
-import '../../../Database/person.dart';
-import '../../../Shared_Widgets/adder_remover_value.dart';
-import '../../../Shared_Widgets/blinker.dart';
-import '../../../Shared_Widgets/fonts.dart';
-import '../../../Shared_Widgets/product_selector_panel.dart';
-import '../../../colors.dart';
+import '../../../../Database/db_info.dart';
+import '../../../../Database/order_items.dart';
+import '../../../../Database/orders.dart';
+import '../../../../Database/person.dart';
+import '../../../../Shared_Widgets/adder_remover_value.dart';
+import '../../../../Shared_Widgets/blinker.dart';
+import '../../../../Shared_Widgets/fonts.dart';
+import '../../../../Shared_Widgets/product_selector_panel.dart';
+import '../../../../colors.dart';
 
-import 'order_sidebar.dart';
+import '../sections/order_back_card.dart';
+import '../sections/order_sidebar.dart';
+import 'order_table_header.dart';
 
 class OrderProductsCard extends StatefulWidget {
   final VoidCallback callback;
@@ -111,25 +113,27 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
         ),
         child: Column(
           children: [
-            SizedBox(height: 50, child: searchBar()),
-            if (widget.selectedProducts.isNotEmpty) orderTableHeader(),
-            Expanded(
-              child: ListView.separated(
-                controller: _scrollController,
-                itemCount: widget.selectedProducts.length,
-                itemBuilder: (context, index) =>
-                    orderItemTile(widget.selectedProducts[index], index),
-                separatorBuilder: (context, index) => Divider(
-                  thickness: 0.5,
-                  height: 1,
-                  indent: 20,
-                  endIndent: 20,
-                  color: MyColors.darkBlue.withAlpha(100),
-                ),
-              ),
-            ),
+            SizedBox(height: 50, child: _buildSearchBar(MediaQuery.of(context).size.width)),
+            if (widget.selectedProducts.isNotEmpty) const OrderTableHeader(),
+            Expanded(child: _buildOrderList(compress)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOrderList(bool isCompact) {
+    return ListView.separated(
+      controller: _scrollController,
+      itemCount: widget.selectedProducts.length,
+      itemBuilder: (context, index) =>
+          orderItemTile(widget.selectedProducts[index], index),
+      separatorBuilder: (context, index) => Divider(
+        thickness: 0.5,
+        height: 1,
+        indent: 20,
+        endIndent: 20,
+        color: MyColors.darkBlue.withAlpha(100),
       ),
     );
   }
@@ -410,10 +414,10 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
     );
   }
 
-  Widget searchBar() {
+  Widget _buildSearchBar(double screenWidth) {
     return Row(
       children: [
-        if (MediaQuery.of(context).size.width < 800)
+        if (screenWidth < 800)
           Row(
             children: [
               SizedBox(
@@ -457,7 +461,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
           ),
         const SizedBox(width: 5),
 
-        if (MediaQuery.of(context).size.width > 800)
+        if (screenWidth > 800)
           Expanded(
             flex: 2,
             child: SizedBox(
@@ -496,8 +500,8 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
             ),
           ),
         ),
-        if (MediaQuery.of(context).size.width < 1300) const SizedBox(width: 5),
-        if (MediaQuery.of(context).size.width < 1300)
+        if (screenWidth < 1300) const SizedBox(width: 5),
+        if (screenWidth < 1300)
           SizedBox(
             width: 70,
             child: Padding(
@@ -632,7 +636,17 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                         ),
                         child: Column(
                           children: [
-                            backCard(),
+                            OrderBackCard(
+                              heroTag: widget.sell ? 'sellOrderHero' : 'buyOrderHero',
+                              title: "${widget.sell ? "Selling Order" : "Receive Order"}${widget.order.editable ? "" : " (Confirmed)"}",
+                              sell: widget.sell,
+                              editable: widget.order.editable,
+                              showDeleteIcon: false,
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                await Future.delayed(const Duration(milliseconds: 500));
+                              },
+                            ),
                             Expanded(
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
@@ -674,110 +688,5 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
       transitionDuration: const Duration(milliseconds: 300),
     );
   }
-
-  Widget backCard() {
-    return Hero(
-      tag: widget.sell ? 'sellOrderHero' : 'buyOrderHero',
-      child: Container(
-        height: 50,
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-        decoration: BoxDecoration(
-          color: widget.sell ? MyColors.primary : MyColors.darkBlue,
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withAlpha(125),
-              spreadRadius: 0.5,
-              blurRadius: 3,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Tooltip(
-              message: widget.order.editable
-                  ? "Back"
-                  : "Order is Confirmed\nYou can safely go Back",
-              child: IconButton(
-                hoverColor: Colors.white.withAlpha(50),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  await Future.delayed(Duration(milliseconds: 500));
-                },
-                icon: Icon(Icons.arrow_back, color: MyColors.translucent),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FittedBox(
-                alignment: Alignment.centerLeft,
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  "${widget.sell ? "Selling Order" : "Receive Order"}${widget.order.editable ? "" : " (Confirmed)"}",
-                  overflow: TextOverflow.ellipsis,
-                  style: MyFont.semiBold(22, color: MyColors.translucent),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-Widget orderTableHeader() {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    margin: const EdgeInsets.symmetric(vertical: 5),
-    decoration: BoxDecoration(
-      color: Colors.grey.shade200,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      children: [
-        const SizedBox(
-          width: 30,
-          child: Center(
-            child: Text('#', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ),
-        const SizedBox(width: 60),
-        const Expanded(
-          flex: 4,
-          child: Text(
-            'Product Name/SKU',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        const Expanded(
-          flex: 1,
-          child: Text(
-            'Quantity',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        const Expanded(
-          flex: 2,
-          child: Center(
-            child: Text(
-              'Unit Price',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(
-          width: 70,
-          child: Text(
-            "Delete",
-            style: TextStyle(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
-    ),
-  );
-}

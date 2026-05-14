@@ -11,7 +11,7 @@ import '../../Database/person.dart';
 import '../../Shared_Widgets/date_time.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
-import '../Orders_panel/New_Order_Page/choose_person.dart';
+import '../Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 
 class NewTransactionDialog extends StatefulWidget {
   final VoidCallback onSave;

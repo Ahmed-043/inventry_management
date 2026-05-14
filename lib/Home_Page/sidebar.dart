@@ -85,6 +85,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
           ),
           ?widget.vCollaps ? null :
           widget.info != null ?
+
             InkWell(
               onTap: () {
                 showDialog(
@@ -126,7 +127,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
                     ),
                     ?widget.collaps? null:  const SizedBox(width: 10),
                     ?widget.collaps? null: Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: double.infinity,
                         child: Center(
                           child: Text(
@@ -161,33 +162,39 @@ class _SidebarPanelState extends State<SidebarPanel> {
     required VoidCallback callBack,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: callBack,
-        child: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? MyColors.primary
-                : MyColors.grey.withAlpha(0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      child: ElevatedButton(
+        onPressed: callBack,
+        style: ElevatedButton.styleFrom(
+          elevation: isSelected ? 3 : 0,
+          overlayColor:  MyColors.primary,
+          backgroundColor: isSelected
+              ? MyColors.primary
+              : MyColors.light,
+          //shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          minimumSize: const Size(0, 40),
+        ),
+        child: SizedBox(
+          height: 40,
           child: Row(
+
             children: [
-              const SizedBox(width: 10),
-              Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue),
-              const SizedBox(width: 10),
-              ?title != null
-                  ? Text(
-                      title,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : MyColors.darkBlue,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : null,
+              Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue,size: 20,),
+              if (title != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : MyColors.darkBlue,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

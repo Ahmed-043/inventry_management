@@ -272,7 +272,7 @@ class _DashboardState extends State<Dashboard> {
                 if (!isLoading)
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
+                      padding: EdgeInsets.only(left: 10, right: 6,),
                       child: Listener(
                         onPointerSignal: (pointerSignal) {
                           if (pointerSignal is PointerScrollEvent) {
@@ -338,7 +338,7 @@ class _DashboardState extends State<Dashboard> {
                                     },
                                   ),
                                 ),
-                                SizedBox(height: 16),
+                                SizedBox(height: 8),
                                 if (lowStockProducts.isNotEmpty)
                                   StockAlerts(
                                       lowStockProducts: lowStockProducts,
@@ -347,7 +347,7 @@ class _DashboardState extends State<Dashboard> {
                                       },
                                   ),
                                 if (lowStockProducts.isNotEmpty)
-                                  SizedBox(height: 20),
+                                  SizedBox(height: 10),
                                 if (!compress) Expanded(child: _graphWidget()),
                                 if (compress)
                                   Expanded(
@@ -443,227 +443,183 @@ class _DashboardState extends State<Dashboard> {
 
   Widget _welcome() {
     return Padding(
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.all(8.0),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide =
-              constraints.maxWidth > 800; // adjust breakpoint as needed
+          final isWide = constraints.maxWidth >= 1100;
+          final buttonWidth = constraints.maxWidth < 520
+              ? constraints.maxWidth - 20
+              : 200.0;
+
+          final heading = Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isWide
+                      ? constraints.maxWidth * 0.45
+                      : constraints.maxWidth - 20,
+                ),
+                child: Text(
+                  "Welcome back, ${widget.info?.dbName}!",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: MyFont.bold(24, color: MyColors.blue),
+                ),
+              ),
+              if (pendingPayment != 0)
+                Tooltip(
+                  waitDuration: const Duration(milliseconds: 500),
+                  message: pendingPayment > 0
+                      ? 'Pending Receivable'
+                      : 'Pending Payable',
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Rs. ${NumberFormat.decimalPattern().format(pendingPayment)}",
+                          textAlign: TextAlign.center,
+                          style: MyFont.bold(
+                            20,
+                            color: pendingPayment > 0
+                                ? MyColors.success
+                                : MyColors.error,
+                          ),
+                        ),
+                        Icon(
+                          pendingPayment > 0
+                              ? Icons.keyboard_double_arrow_up_rounded
+                              : Icons.keyboard_double_arrow_down_rounded,
+                          size: 20,
+                          color: pendingPayment > 0
+                              ? MyColors.success
+                              : MyColors.error,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+
+          final actionButtons = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.end,
+            children: [
+              SizedBox(
+                width: buttonWidth,
+                height: 40,
+                child: UiHelper.myButton(
+                  callback: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NewOrderPage(sell: true, callback: () {}),
+                      ),
+                    );
+                  },
+                  rightClick: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NewOrderPage(sell: false, callback: () {}),
+                      ),
+                    );
+                  },
+                  child: Icon(Icons.add, color: MyColors.translucent),
+                  title: "Create new order",
+                  textSize: 17,
+                  filled: true,
+                  borderRadius: 10,
+                  padding: const EdgeInsets.all(10),
+                ),
+              ),
+              SizedBox(
+                width: buttonWidth,
+                height: 40,
+                child: Hero(
+                  tag: 'newTransaction',
+                  child: UiHelper.myButton(
+                    callback: () {
+                      UiHelper.pushPage(
+                        context: context,
+                        opaque: false,
+                        barrierColor: Colors.black54,
+                        page: AddNewTransactionDialog(
+                          action: NewTransactionDialog(
+                            onSave: () {
+                              loadDashboard();
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.attach_money_rounded,
+                      color: MyColors.primary,
+                    ),
+                    title: "Record Transaction",
+                    textSize: 17,
+                    filled: false,
+                    borderRadius: 10,
+                    padding: const EdgeInsets.all(10),
+                  ),
+                ),
+              ),
+            ],
+          );
 
           if (isWide) {
-            // Wide: Row layout
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  "Welcome back, ${widget.info?.dbName}!",
-                  style: MyFont.bold(24, color: MyColors.blue),
-                ),
-                if(pendingPayment != 0)
-                Tooltip(
-                  waitDuration: const Duration(milliseconds: 500),
-                  message: pendingPayment > 0 ? 'Pending Receivable' : 'Pending Payable',
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 20),
-                      Text( "Rs. ${NumberFormat.decimalPattern().format(pendingPayment)}",
-                        textAlign: TextAlign.center,
-                        style: MyFont.bold(
-                          20,
-                          color: pendingPayment > 0 ? MyColors.success :  MyColors.error,
-                        ),
-                      ),
-                      Icon(
-                        pendingPayment > 0 ? Icons.keyboard_double_arrow_up_rounded : Icons.keyboard_double_arrow_down_rounded,
-                        size: 20,
-                        color: pendingPayment > 0 ? MyColors.success : MyColors.error,
-                      ),
-                    ],
+                Expanded(child: heading),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: actionButtons,
                   ),
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 200,
-                      height: 40,
-                      child: UiHelper.myButton(
-                        callback: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  NewOrderPage(sell: true, callback: () {}),
-                            ),
-                          );
-                        },
-                        rightClick: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  NewOrderPage(sell: false, callback: () {}),
-                            ),
-                          );
-                        },
-                        child: Icon(Icons.add, color: MyColors.translucent),
-                        title: "Create new order",
-                        textSize: 17,
-                        filled: true,
-                        borderRadius: 10,
-                        padding: const EdgeInsets.all(10),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 200,
-                      height: 40,
-                      child: Hero(
-                        tag: 'newTransaction',
-                        child: UiHelper.myButton(
-                          callback: () {
-                            UiHelper.pushPage(
-                              context: context,
-                              opaque: false,
-                              barrierColor: Colors.black54,
-                              page: AddNewTransactionDialog(
-                                action: NewTransactionDialog(
-                                  onSave: () {
-                                    loadDashboard();
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          child: Icon(
-                            Icons.attach_money_rounded,
-                            color: MyColors.primary,
-                          ),
-                          title: "Record Transaction",
-                          textSize: 17,
-                          filled: false,
-                          borderRadius: 10,
-                          padding: const EdgeInsets.all(10),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          } else {
-            // Narrow: Column layout
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: .center,
-                  children: [
-                    Text(
-                      "Welcome back, ${widget.info?.dbName}!",
-                      style: MyFont.bold(24, color: MyColors.blue),
-                    ),
-                    if(pendingPayment != 0)
-                      Tooltip(
-                        waitDuration: const Duration(milliseconds: 500),
-                        message: pendingPayment > 0 ? 'Pending Receivable' : 'Pending Payable',
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            Text( "Rs. ${NumberFormat.decimalPattern().format(pendingPayment)}",
-                              textAlign: TextAlign.center,
-                              style: MyFont.bold(
-                                20,
-                                color: pendingPayment > 0 ? MyColors.success :  MyColors.error,
-                              ),
-                            ),
-                            Icon(
-                              pendingPayment > 0 ? Icons.keyboard_double_arrow_up_rounded : Icons.keyboard_double_arrow_down_rounded,
-                              size: 20,
-                              color: pendingPayment > 0 ? MyColors.success : MyColors.error,
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 200,
-                      height: 40,
-                      child: UiHelper.myButton(
-                        callback: () {},
-                        child: Icon(Icons.add, color: MyColors.translucent),
-                        title: "Create new order",
-                        textSize: 17,
-                        filled: true,
-                        borderRadius: 10,
-                        padding: const EdgeInsets.all(10),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 200,
-                      height: 40,
-                      child: Hero(
-                        tag: 'newTransaction',
-                        child: UiHelper.myButton(
-                          callback: () {
-                            UiHelper.pushPage(
-                              context: context,
-                              opaque: false,
-                              barrierColor: Colors.black54,
-                              page: AddNewTransactionDialog(
-                                action: NewTransactionDialog(
-                                  onSave: () {
-                                    loadDashboard();
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          child: Icon(
-                            Icons.attach_money_rounded,
-                            color: MyColors.primary,
-                          ),
-                          title: "Record Transaction",
-                          textSize: 17,
-                          filled: false,
-                          borderRadius: 10,
-                          padding: const EdgeInsets.all(10),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             );
           }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              heading,
+              const SizedBox(height: 10),
+              actionButtons,
+            ],
+          );
         },
       ),
     );
   }
 
   Widget _graphWidget() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Listener(
-        onPointerSignal: (pointerSignal) {
-          if (pointerSignal is PointerScrollEvent) {
-            pageController.position.moveTo(
-              pageController.position.pixels +
-                  pointerSignal.scrollDelta.dy * 10,
-            );
-          }
-        },
-        child: PageView(
-          controller: pageController,
-          scrollDirection: Axis.horizontal,
-          children: [lineChart(), pieBarCharts()],
-        ),
+    return Listener(
+      onPointerSignal: (pointerSignal) {
+        if (pointerSignal is PointerScrollEvent) {
+          pageController.position.moveTo(
+            pageController.position.pixels +
+                pointerSignal.scrollDelta.dy * 10,
+          );
+        }
+      },
+      child: PageView(
+        controller: pageController,
+        scrollDirection: Axis.horizontal,
+        children: [lineChart(), pieBarCharts()],
       ),
     );
   }
@@ -797,7 +753,7 @@ class _DashboardState extends State<Dashboard> {
                   mainAxisAlignment: .start,
                   children: [
                     Text(
-                      "${current[1] ? "Selling" : "Buying"} Orders",
+                      "${current[1] ? "Buying" : "Selling"} Orders",
                       style: MyFont.bold(16, color: MyColors.blue),
                     ),
                   ],

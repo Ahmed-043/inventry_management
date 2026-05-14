@@ -9,8 +9,8 @@ import '../Products_Panel/update_product_stock.dart';
 class StockAlerts extends StatelessWidget {
   final List<Product> lowStockProducts;
   final VoidCallback onSave;
-  const StockAlerts({super.key, required this.lowStockProducts,required this.onSave});
-
+  StockAlerts({super.key, required this.lowStockProducts,required this.onSave});
+  final ScrollController controller = ScrollController();
   @override
   Widget build(BuildContext context) {
     stockUpdateDialog(Product product) {
@@ -41,9 +41,11 @@ class StockAlerts extends StatelessWidget {
     return HorizontalScroll(
       speed: 1.5,
       enableOuterScroll: false,
+      controller: controller ,
       child: SizedBox(
         height: 75, // box height (74) + vertical margins/padding
         child: ListView.builder(
+          controller: controller,
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.zero,
           itemCount: lowStockProducts.length,
