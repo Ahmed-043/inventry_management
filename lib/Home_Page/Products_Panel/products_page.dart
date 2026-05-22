@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/sort_menu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/product_card.dart';
-import 'package:inventry_management/Home_Page/Products_Panel/update_product_stock.dart';
-import 'package:inventry_management/Home_Page/Products_Panel/update_product_panel.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_stock.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_panel.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
 import 'package:inventry_management/Shared_Widgets/topbar.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
@@ -16,6 +16,7 @@ import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_but
 import '../../Database/category.dart';
 import '../../Database/database.dart';
 import '../../Database/retrieve_products.dart';
+import '../../Shared_Widgets/main_ui_helper.dart';
 import 'add_new_product_panel.dart';
 
 class StockDashboard extends StatefulWidget {
@@ -160,11 +161,29 @@ class _StockDashboardState extends State<StockDashboard> {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final product = items[index];
+                    bool isHovered = false;
                     return SizedBox(
                       width: tileWidth,
                       height: tileHeight,
                       child: InkWell(
-                        child: ProductCard(product: product),
+                        child: Hero(
+                            tag: 'product_${product.id}',
+                            child: Material(
+                              color: Colors.transparent,
+                                child: MouseRegion(
+                                    onEnter: (_) => setState(() => isHovered = true),
+                                    onExit: (_) => setState(() => isHovered = false),
+                                    child: AnimatedContainer(
+
+                                        duration: const Duration(milliseconds: 200),
+                                        curve: Curves.easeOutCubic,
+                                        // The "Enlarge" effect
+                                        transform: Matrix4.identity()..scale(isHovered ? 1.03 : 1.0),
+                                        transformAlignment: Alignment.center,
+                                        child: ProductCard(product: product))
+                                )
+                            )
+                        ),
                         onTap: () => stockUpdateDialog(product),
                         onSecondaryTap: () => updateDialog(product),
                         onDoubleTap: () => updateDialog(product),
@@ -207,10 +226,12 @@ class _StockDashboardState extends State<StockDashboard> {
         return KeyEventResult.ignored;
       },
       child: Stack(
+        clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the page Stack
         children: [
           CustomScrollView(
             controller: scrollController,
             physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the Viewport
             slivers: [
               SliverAppBar(
                 floating: true,
@@ -229,7 +250,7 @@ class _StockDashboardState extends State<StockDashboard> {
                 ),
               SliverToBoxAdapter(
                 child: Container(
-                  padding: const EdgeInsets.only(top: 5, bottom: 10,left: 5,right: 5),
+                  clipBehavior: Clip.none, // 🔑 Allows internal GridView contents to overflow
                   width: double.infinity,
                   child: Center(
                     child: sortCategory == 1 || sortCategory == 2
@@ -244,6 +265,7 @@ class _StockDashboardState extends State<StockDashboard> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: EdgeInsets.zero,
+                        clipBehavior: Clip.none, // 🔑 Allows cards to overflow
                         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: tileWidth,
                           mainAxisSpacing: cSize / 17,
@@ -257,7 +279,11 @@ class _StockDashboardState extends State<StockDashboard> {
                             width: tileWidth,
                             height: tileHeight,
                             child: InkWell(
-                              child: ProductCard(product: product),
+                              child: Hero(
+                                  tag: 'product_${product.id}',
+                                  child: Material(
+                                      color: Colors.transparent,
+                                      child: ProductCard(product: product))),
                               onTap: () => stockUpdateDialog(product),
                               onSecondaryTap: () => updateDialog(product),
                               onDoubleTap: () => updateDialog(product),
@@ -283,53 +309,111 @@ class _StockDashboardState extends State<StockDashboard> {
                 child: Icon(Icons.sort, color: MyColors.light),
                 onPressed: () async {
                   await _loadCategoryNames();
-                  showDialog(
-                    context: context,
-                    barrierColor: Colors.transparent,
-                    barrierDismissible: true,
-                    builder: (_) {
-                      return Align(
-                        alignment: .bottomRight,
-                        child:
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4,right: 4),
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              child: SortMenu(
-                                categories: categories,
-                                currentSortCategory: sortCategory,
-                                currentSort: sort,
-                                cSize: cSize,
-                                onChange: ()=>setState(() {}),
-                                onSizeChange: (){
-                                  setState(() {
-                                    cSize += 50;
-                                    if (cSize > 400) cSize = 150;
-                                    cardSize = cSize;
-                                    SharedPreferences.getInstance()
-                                        .then((prefs) => prefs.setDouble('cardSize', cSize));
-                                  });
-                                },
-                                onApply: (newCategory, newSort,updatedCategories) async {
-                                  categories = updatedCategories;
-                                  await updateAllSequences(currentDB!,categories);
+                  if (mounted) {
+                    showGeneralDialog(
+                      context: context,
+                      barrierColor: Colors.transparent,
+                      barrierDismissible: true,
+                      barrierLabel: 'SortMenu',
+                      transitionDuration: const Duration(milliseconds: 300),
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        double dragX = 0;
+                        double dragY = 0;
+                        bool isDragging = false;
+                        return StatefulBuilder(
+                          builder: (context, setStateDialog) {
+                            return Stack(
+                              children: [
+                                AnimatedPositioned(
+                                  duration: isDragging
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                  right: 4 - dragX,
+                                  bottom: 4 - dragY,
+                                  child: GestureDetector(
+                                    onPanStart: (_) =>
+                                        setStateDialog(() => isDragging = true),
+                                    onPanUpdate: (details) {
+                                      setStateDialog(() {
+                                        dragX += details.delta.dx;
+                                        dragY += details.delta.dy;
+                                        if (dragX < 0) dragX = 0;
+                                        if (dragY < 0) dragY = 0;
+                                      });
+                                    },
+                                    onPanEnd: (details) {
+                                      setStateDialog(() => isDragging = false);
+                                      if (dragX > 120 ||
+                                          dragY > 120 ||
+                                          details.velocity.pixelsPerSecond.dx > 500 ||
+                                          details.velocity.pixelsPerSecond.dy > 500) {
+                                        Navigator.of(context).pop();
+                                      } else {
+                                        setStateDialog(() {
+                                          dragX = 0;
+                                          dragY = 0;
+                                        });
+                                      }
+                                    },
+                                    child: SingleChildScrollView(
+                                      physics: const BouncingScrollPhysics(),
+                                      child: SortMenu(
+                                        categories: categories,
+                                        currentSortCategory: sortCategory,
+                                        currentSort: sort,
+                                        cSize: cSize,
+                                        onChange: () => setState(() {}),
+                                        onSizeChange: () {
+                                          setState(() {
+                                            cSize += 50;
+                                            if (cSize > 400) cSize = 150;
+                                            cardSize = cSize;
+                                            SharedPreferences.getInstance().then(
+                                              (prefs) => prefs.setDouble('cardSize', cSize),
+                                            );
+                                          });
+                                        },
+                                        onApply: (newCategory, newSort, updatedCategories) async {
+                                          categories = updatedCategories;
+                                          await updateAllSequences(currentDB!, categories);
 
-                                  setState(()  {
-                                    sortCategory = newCategory;
-                                    sort = newSort;
-                                    SharedPreferences.getInstance().then((prefs) {
-                                      prefs.setInt('sortCategory', sortCategory);
-                                      prefs.setInt('sort', sort);
-                                    });
-                                    _loadProducts();
-                                  });
-                                },
-                              ),
-                            ),
+                                          setState(() {
+                                            sortCategory = newCategory;
+                                            sort = newSort;
+                                            SharedPreferences.getInstance().then((prefs) {
+                                              prefs.setInt('sortCategory', sortCategory);
+                                              prefs.setInt('sort', sort);
+                                            });
+                                            _loadProducts();
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      transitionBuilder: (context, animation, secondaryAnimation, child) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(1, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOut,
+                          )),
+                          child: ScaleTransition(
+                            scale: animation,
+                            child: child,
                           ),
-                      );
-                    },
-                  );
+                        );
+                      },
+                    );
+                  }
                 },
               ),
             ),
@@ -443,54 +527,34 @@ class _StockDashboardState extends State<StockDashboard> {
 
 
   updateDialog(Product product) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Dialog(
-          constraints: const BoxConstraints(
-            maxWidth: 850,
-            maxHeight: 800,
-            minWidth: 400,
-          ),
-          insetPadding: EdgeInsets.zero,
-          backgroundColor: MyColors.translucent.withAlpha(230),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: UpdateProduct(
-            product: product,
-            callBack: () {
-              _loadProducts();
-              _loadCategoryNames();
-              setState(() {});
-            },
-          ),
-        );
-      },
-    );
+    UiHelper.pushPage(
+        context: context,
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: true,
+
+        page: UpdateProductDialog(product: product, callBack: () {
+          _loadProducts();
+          _loadCategoryNames();
+        },));
   }
 
   stockUpdateDialog(Product product) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Dialog(
-          constraints: const BoxConstraints(
-            maxWidth: 500,
-            maxHeight: 500,
-            minWidth: 400,
-            minHeight: 400,
-          ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: UpdateProductStock(
-            id: product.id,
-            productStock: product.stock,
-            name: product.name,
-            onSave: () {
-              _loadProducts();
-              setState(() {});
-            },
-          ),
-        );
-      },
+    UiHelper.pushPage(
+        context: context,
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: true,
+        page:  UpdateProductStock(
+          id: product.id,
+          productStock: product.stock,
+          name: product.name,
+          onSave: () {
+            _loadProducts();
+            setState(() {});
+          },
+        ),
     );
   }
 }
+

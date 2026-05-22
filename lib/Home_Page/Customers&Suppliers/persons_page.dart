@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Home_Page/Customers&Suppliers/person_card.dart';
 import 'package:inventry_management/Home_Page/Customers&Suppliers/update_person_panel.dart';
+import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
@@ -30,10 +31,12 @@ class _PersonsPageState extends State<PersonsPage> {
   final int pSize = personsPerPage ?? 20;
   List<Person> persons = [];
   final FocusNode _focusNode = FocusNode();
-  final TextEditingController searchController =  TextEditingController();
+  final TextEditingController searchController = TextEditingController();
   Map<String, int> type = {};
   Timer? _searchTimer;
   int selectType = 0;
+  ScrollController scrollController = ScrollController();
+
   @override
   void initState() {
     // TODO: implement initState
@@ -79,14 +82,18 @@ class _PersonsPageState extends State<PersonsPage> {
   void didUpdateWidget(covariant PersonsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isCustomer != widget.isCustomer) {
-      _loadPersons();   // reload when switching between customer/supplier
+      _loadPersons(); // reload when switching between customer/supplier
     }
     searchController.dispose();
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    // clean up resources
+    _searchTimer?.cancel();
+    _focusNode.dispose();
+    searchController.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -115,137 +122,148 @@ class _PersonsPageState extends State<PersonsPage> {
         }
         return KeyEventResult.ignored;
       },
-      child: Column(
+      child: Stack(
         children: [
-          topBar(),
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child:
-                      persons.isEmpty
-                        ? emptyState()
-                        : SingleChildScrollView(
-                    physics: BouncingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.only(top: 5, bottom: 10),
-                          width: double.infinity,
-                          child: Center(
-                            child: Wrap(
-                              spacing: 15,
-                              runSpacing: 20,
-                              children: List.generate(persons.length, (index) {
-                                return InkWell(
-                                  onDoubleTap: (){
-                                    updateDialog(persons[index]);
-                                  },
-                                  onSecondaryTap: (){
-                                    updateDialog(persons[index]);
-                                  },
-                                  child: SizedBox(
-                                    width: cSize * 2.5,
-                                    height: cSize,
-                                    child: PersonCard(person: persons[index],num: index),
-                                  ),
-                                );
-                              }),
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            controller: scrollController,
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                pinned: false,
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                forceMaterialTransparency: true,
+                toolbarHeight: 50,
+                flexibleSpace: topBar(),
+              ),
+              if (persons.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: emptyState(),
+                ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5, bottom: 10, left: 5, right: 5),
+                  child: Center(
+                    child: Wrap(
+                      spacing: cSize / 12,
+                      runSpacing: cSize / 12,
+                      children: List.generate(
+                        persons.length,
+                        (index) => Hero(
+                          tag: "person_${persons[index].id}",
+                          child: SizedBox(
+                            width: cSize * 2.5,
+                            height: cSize,
+                            child: PersonCard(
+                              person: persons[index],
+                              num: index,
+                              onDoubleTap: () => updateDialog(persons[index]),
+                              onSecondaryTap: () => updateDialog(persons[index]),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 45),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 10,
-                  right: 10,
-                  child: FloatingActionButton(
-                    elevation: 0,
-                    onPressed: () {
-                      setState(() {
-                        cSize += 25;
-                        if (cSize > 250) {
-                          cSize = 125;
-                        }
-                        debugPrint(cSize.toString());
-                        personCardSize = cSize;
-                        SharedPreferences.getInstance().then((prefs) {
-                          prefs.setDouble('personCardSize', cSize);
-                        });
-                      });
-                    },
-                    splashColor: Colors.white.withAlpha(50),
-                    backgroundColor: cSize > 225 ? MyColors.blue : MyColors.primary,
-                    child: Icon(
-                      Icons.photo_size_select_large_rounded,
-                      color: MyColors.light,
-                    ),
-                  ),
-                ),
-                PaginationBar(
-                  page: page,
-                  pageSize: pSize,
-                  itemCount: persons.length,
-                  onPrevious: () {
-                    setState(() {
-                      page--;
-                      _loadPersons();
-                    });
-                  },
-                  onNext: () {
-                    setState(() {
-                      page++;
-                      _loadPersons();
-                    });
-                  },
-                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 45)),
 
-              ],
+            ],
+          ),
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: FloatingActionButton(
+              elevation: 0,
+              onPressed: () {
+                setState(() {
+                  cSize += 25;
+                  if (cSize > 250) {
+                    cSize = 125;
+                  }
+                  debugPrint(cSize.toString());
+                  personCardSize = cSize;
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.setDouble('personCardSize', cSize);
+                  });
+                });
+              },
+              splashColor: Colors.white.withAlpha(50),
+              backgroundColor: cSize > 225 ? MyColors.blue : MyColors.primary,
+              child: Icon(
+                Icons.photo_size_select_large_rounded,
+                color: MyColors.light,
+              ),
             ),
+          ),
+          PaginationBar(
+            page: page,
+            pageSize: pSize,
+            itemCount: persons.length,
+            onPrevious: () {
+              setState(() {
+                page--;
+                _loadPersons();
+              });
+            },
+            onNext: () {
+              setState(() {
+                page++;
+                _loadPersons();
+              });
+            },
           ),
         ],
       ),
     );
   }
-  updateDialog(Person person){
-    showDialog(context: context, builder: (_){
-      return  Dialog(
-        constraints: BoxConstraints(maxWidth: 500,maxHeight: 680,minWidth: 400, minHeight: 400),
-        backgroundColor: MyColors.translucent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: SizedBox(
-          //  width: MediaQuery.of(context).size.width * 0.6,
-          //  height: MediaQuery.of(context).size.height * 0.8,
-            child: UpdatePersonPanel(person: person, callback: (){
-              setState(() {
-                _loadPersons();
-              });
-            })
-        ),
-      );
-    });
+
+  updateDialog(Person person) {
+    UiHelper.pushPage(
+        context: context,
+        opaque: false,
+        barrierColor: Colors.black54,
+        barrierDismissible: true,
+
+        page: UpdatePersonPanel(
+      person: person,
+      callback: () {
+        setState(() {
+          _loadPersons();
+        });
+      },
+    )
+    );
+
   }
 
   Widget topBar() {
     return ReusableTopBar(
-      title: MediaQuery.of(context).size.width < 850 ? "" : widget.isCustomer ? "Customers" : "Suppliers",
+      title: MediaQuery.of(context).size.width < 850
+          ? ""
+          : widget.isCustomer
+          ? "Customers"
+          : "Suppliers",
       searchHint: 'Search (Name, Phone, Address)',
-      applyBlur: false,
+      applyBlur: true,
       actionButton: Align(
         alignment: .topLeft,
         child: AddNewPerson.addNew(
-            context: context,
-            isCustomer: widget.isCustomer ,
-            action: AddNewPersonPanel(isCustomer: widget.isCustomer ,callback: (){
+          context: context,
+          isCustomer: widget.isCustomer,
+          action: AddNewPersonPanel(
+            isCustomer: widget.isCustomer,
+            callback: () {
               setState(() {
                 _loadPersons();
               });
-            },),),
+            },
+          ),
+        ),
       ),
       searchController: searchController,
       onSearch: () {
@@ -287,9 +305,9 @@ class _PersonsPageState extends State<PersonsPage> {
         });
         _loadPersons();
       },
-
     );
   }
+
   Widget emptyState() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 200.0),
@@ -297,7 +315,13 @@ class _PersonsPageState extends State<PersonsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(widget.isCustomer ? Icons.people_alt_outlined : Icons.local_shipping_outlined, size: 100, color: MyColors.grey),
+            Icon(
+              widget.isCustomer
+                  ? Icons.people_alt_outlined
+                  : Icons.local_shipping_outlined,
+              size: 100,
+              color: MyColors.grey,
+            ),
             SizedBox(height: 10),
             Text(
               "No ${widget.isCustomer ? 'Customers' : 'Suppliers'} Found",

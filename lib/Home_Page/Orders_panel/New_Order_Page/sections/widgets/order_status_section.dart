@@ -79,7 +79,7 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
                     }
                   }
                 }
-                widget.order.orderStatus = value;
+               // widget.order.orderStatus = value;
                 widget.onChanged.call();
               },
             ),

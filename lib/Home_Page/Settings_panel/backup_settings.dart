@@ -68,7 +68,7 @@ class _DataBackupState extends State<DataBackup> {
             height: 45,
             child: UiHelper.myButton(
               callback: () {
-                UiHelper.showToast(context, "This option is not yet available!");
+                UiHelper.showToast(context, "This option is not yet available!",type:2);
               }, // Add cloud backup logic
               filled: true,
               borderRadius: 10,

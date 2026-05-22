@@ -153,7 +153,9 @@ class _AdderRemoverValueState extends State<AdderRemoverValue> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Qty: ${currentValue.toString()}",style: MyFont.semiBold(18)),
+              Text("Qty: ${NumberFormat.decimalPattern().format(currentValue)}",
+                  style: MyFont.semiBold(18)
+              ),
               IconButton(
                 icon: const Icon(Icons.undo_sharp),
                 onPressed: () {

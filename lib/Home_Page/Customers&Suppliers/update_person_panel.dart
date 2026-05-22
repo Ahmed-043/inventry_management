@@ -59,266 +59,283 @@ class _UpdatePersonPanelState extends State<UpdatePersonPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true, // listens right away
+    return Center(
+      child: Hero(
+        tag: "person_${widget.person.id}",
+        child: Material(
+          color: Colors.transparent,
+          child: KeyboardListener(
+            focusNode: _focusNode,
+            autofocus: true, // listens right away
 
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.enter) {
-          insertPerson();
-          widget.callback();
-        }
-        
+            onKeyEvent: (event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.enter) {
+                insertPerson();
+                widget.callback();
+              }
 
-      },
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-        child: Center(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 40,
-                        child: Text(
-                          "Update Personal Information",
-                          style: MyFont.normal(20),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 200,
-                        //width: 350,
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: UploadCircle(
-                            image: image,
-                            onFileSelected: (file) {
-                              image = file;
-                              // 🔹 do something with the selected file
-                              debugPrint("User selected: ${image?.length}");
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      UiHelper.myTextField(
-                        label: "Name",
-                        hint: 'Alex',
-                        borderRadius: 15,
-                        controller: nameController,
-                        fontSize: 20,
-                      ),
-                      const SizedBox(height: 20),
 
-                      UiHelper.myTextField(
-                        label: "Phone",
-                        hint: '+92 000 000 0000',
-                        borderRadius: 15,
-                        controller: phoneController,
-                        fontSize: 20,
-                        textType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*')),
-                          LengthLimitingTextInputFormatter(15),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+            },
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: 500,
+                maxHeight: 680,
+                minWidth: 400,
+                minHeight: 400,
+              ),
+              decoration: BoxDecoration(
+                color: MyColors.translucent,
+                  borderRadius: BorderRadius.circular(10),
+              ),
 
-                      UiHelper.myTextField(
-                        label: "Email",
-                        hint: 'example@email.com',
-                        borderRadius: 15,
-                        controller: emailController,
-                        fontSize: 20,
-                        textType: TextInputType.emailAddress,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z0-9@._\-+]'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                        height: 100,
-                        child: UiHelper.myTextArea(
-                          label: "Address",
-                          hint: 'Town,City,Country',
-                          fontSize: 20,
-                          controller: addressController,
-                          maxLines: 3,
-                        ),
-                      ),
-
-                      //const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            alignment: WrapAlignment.center,
-                            spacing: 50,
-                            children: [
-                              Text("Business Type", style: MyFont.semiBold(17)),
-
-                              //  Expanded(child:SizedBox()),
-                              SizedBox(
-                                width: 250,
-                                child: Center(
-                                  child: Row(
-                                    //crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          margin: EdgeInsets.symmetric(
-                                            vertical: 5,
-                                          ),
-
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                isMajor = !(isMajor);
-                                              });
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadiusGeometry.only(
-                                                      topLeft: Radius.circular(
-                                                        10,
-                                                      ),
-                                                      bottomLeft: Radius.circular(
-                                                        10,
-                                                      ),
-                                                    ),
-                                              ),
-                                              backgroundColor: isMajor
-                                                  ? MyColors.primary
-                                                  : MyColors.info,
-                                            ),
-                                            child: Text(
-                                              isMajor ? "Major" : "Local",
-                                              style: MyFont.normal(
-                                                15,
-                                                color: MyColors.translucent,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Container(
-                                          margin: EdgeInsets.symmetric(
-                                            vertical: 5,
-                                          ),
-                                          child: ElevatedButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                isCustomer = !(isCustomer);
-                                              });
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadiusGeometry.only(
-                                                      topRight: Radius.circular(
-                                                        10,
-                                                      ),
-                                                      bottomRight:
-                                                          Radius.circular(10),
-                                                    ),
-                                              ),
-
-                                              backgroundColor: isCustomer
-                                                  ? MyColors.success
-                                                  : MyColors.blue,
-                                            ),
-                                            child: Text(
-                                              isCustomer
-                                                  ? "Customer"
-                                                  : "Supplier",
-                                              style: MyFont.normal(
-                                                15,
-                                                color: MyColors.translucent,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+              child: Center(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 40,
+                              child: Text(
+                                "Update Personal Information",
+                                style: MyFont.normal(20),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 200,
+                              //width: 350,
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: UploadCircle(
+                                  image: image,
+                                  onFileSelected: (file) {
+                                    image = file;
+                                    // 🔹 do something with the selected file
+                                    debugPrint("User selected: ${image?.length}");
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
+                            ),
+                            const SizedBox(height: 20),
+                            UiHelper.myTextField(
+                              label: "Name",
+                              hint: 'Alex',
+                              borderRadius: 15,
+                              controller: nameController,
+                              fontSize: 20,
+                            ),
+                            const SizedBox(height: 20),
 
-                      // const SizedBox(height: 10),
-                    ],
-                  ),
+                            UiHelper.myTextField(
+                              label: "Phone",
+                              hint: '+92 000 000 0000',
+                              borderRadius: 15,
+                              controller: phoneController,
+                              fontSize: 20,
+                              textType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*')),
+                                LengthLimitingTextInputFormatter(15),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            UiHelper.myTextField(
+                              label: "Email",
+                              hint: 'example@email.com',
+                              borderRadius: 15,
+                              controller: emailController,
+                              fontSize: 20,
+                              textType: TextInputType.emailAddress,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9@._\-+]'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            SizedBox(
+                              height: 100,
+                              child: UiHelper.myTextArea(
+                                label: "Address",
+                                hint: 'Town,City,Country',
+                                fontSize: 20,
+                                controller: addressController,
+                                maxLines: 3,
+                              ),
+                            ),
+
+                            //const SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  alignment: WrapAlignment.center,
+                                  spacing: 50,
+                                  children: [
+                                    Text("Business Type", style: MyFont.semiBold(17)),
+
+                                    //  Expanded(child:SizedBox()),
+                                    SizedBox(
+                                      width: 250,
+                                      child: Center(
+                                        child: Row(
+                                          //crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Expanded(
+                                              child: Container(
+                                                margin: EdgeInsets.symmetric(
+                                                  vertical: 5,
+                                                ),
+
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      isMajor = !(isMajor);
+                                                    });
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadiusGeometry.only(
+                                                            topLeft: Radius.circular(
+                                                              10,
+                                                            ),
+                                                            bottomLeft: Radius.circular(
+                                                              10,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                    backgroundColor: isMajor
+                                                        ? MyColors.primary
+                                                        : MyColors.info,
+                                                  ),
+                                                  child: Text(
+                                                    isMajor ? "Major" : "Local",
+                                                    style: MyFont.normal(
+                                                      15,
+                                                      color: MyColors.translucent,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Container(
+                                                margin: EdgeInsets.symmetric(
+                                                  vertical: 5,
+                                                ),
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      isCustomer = !(isCustomer);
+                                                    });
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadiusGeometry.only(
+                                                            topRight: Radius.circular(
+                                                              10,
+                                                            ),
+                                                            bottomRight:
+                                                                Radius.circular(10),
+                                                          ),
+                                                    ),
+
+                                                    backgroundColor: isCustomer
+                                                        ? MyColors.success
+                                                        : MyColors.blue,
+                                                  ),
+                                                  child: Text(
+                                                    isCustomer
+                                                        ? "Customer"
+                                                        : "Supplier",
+                                                    style: MyFont.normal(
+                                                      15,
+                                                      color: MyColors.translucent,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      //  color: Colors.red,
+                      width: double.infinity,
+                      child: Center(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          alignment: WrapAlignment.center,
+                          verticalDirection: VerticalDirection.up,
+                          spacing: 20,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 2.5),
+                              height: 40,
+                              width: 140,
+                              child: UiHelper.myButton(
+                                title: 'Delete',
+                                filled: true,
+                                color: MyColors.error,
+                                callback: () {
+                                  delete();
+                                },
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 2.5),
+                              height: 40,
+                              width: 140,
+                              child: UiHelper.myButton(
+                                title: 'Close',
+                                callback: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 2.5),
+                              height: 40,
+                              width: 140,
+                              child: UiHelper.myButton(
+                                title: 'Save',
+                                filled: true,
+                                callback: () async {
+                                  insertPerson();
+                                  widget.callback();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(
-                //  color: Colors.red,
-                width: double.infinity,
-                child: Center(
-                  child: Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    alignment: WrapAlignment.center,
-                    verticalDirection: VerticalDirection.up,
-                    spacing: 20,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 2.5),
-                        height: 40,
-                        width: 140,
-                        child: UiHelper.myButton(
-                          title: 'Delete',
-                          filled: true,
-                          color: MyColors.error,
-                          callback: () {
-                            delete();
-                          },
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 2.5),
-                        height: 40,
-                        width: 140,
-                        child: UiHelper.myButton(
-                          title: 'Close',
-                          callback: () {
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 2.5),
-                        height: 40,
-                        width: 140,
-                        child: UiHelper.myButton(
-                          title: 'Save',
-                          filled: true,
-                          callback: () async {
-                            insertPerson();
-                            widget.callback();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

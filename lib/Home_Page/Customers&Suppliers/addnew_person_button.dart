@@ -24,6 +24,7 @@ class AddNewPerson {
               context: context,
               opaque: false,
               barrierColor: Colors.black54,
+              barrierDismissible: true,
               page: _AddNewPersonDialog(
                 action: action,
                 heroTag: heroTag,

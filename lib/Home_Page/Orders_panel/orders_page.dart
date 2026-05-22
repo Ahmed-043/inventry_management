@@ -133,93 +133,95 @@ class _OrdersPageState extends State<OrdersPage> {
             children: [
               topBar(),
               Expanded(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 5, bottom: 10),
-                    width: 1200,
-                    // color: MyColors.black,
-                    child: compress
-                        ? Column(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: SizedBox(
-                                    width: 250,
-                                    child: StatefulBuilder(
-                                      builder: (context, state) {
-                                        return InkWell(
-                                          onTap: () {
-                                            if (selected == 0) {
-                                              selected = 1;
-                                            } else {
-                                              selected = 0;
-                                            }
-                                            setState(() {
-                                              _loadOrders();
-                                            });
-                                            debugPrint(selected.toString());
-                                          },
-                                          hoverColor: MyColors.blue.withAlpha(20),
-                                          child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10),
-                                              child: Row(
-                                              children: [
-                                                Text(
-                                                  (compress && (selected == 1))
-                                                      ? "Buying Orders"
-                                                      : "Selling Orders",
-                                                  style: MyFont.bold(
-                                                    30,
+                child: ClipRRect(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.only(top: 5, bottom: 10),
+                      width: 1200,
+                      // color: MyColors.black,
+                      child: compress
+                          ? Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: SizedBox(
+                                      width: 250,
+                                      child: StatefulBuilder(
+                                        builder: (context, state) {
+                                          return InkWell(
+                                            onTap: () {
+                                              if (selected == 0) {
+                                                selected = 1;
+                                              } else {
+                                                selected = 0;
+                                              }
+                                              setState(() {
+                                                _loadOrders();
+                                              });
+                                              debugPrint(selected.toString());
+                                            },
+                                            hoverColor: MyColors.blue.withAlpha(20),
+                                            child: Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                                child: Row(
+                                                children: [
+                                                  Text(
+                                                    (compress && (selected == 1))
+                                                        ? "Buying Orders"
+                                                        : "Selling Orders",
+                                                    style: MyFont.bold(
+                                                      30,
+                                                      color: MyColors.blue,
+                                                    ),
+                                                  ),
+                                                  Icon(
+                                                    Icons.arrow_drop_down,
                                                     color: MyColors.blue,
                                                   ),
-                                                ),
-                                                Icon(
-                                                  Icons.arrow_drop_down,
-                                                  color: MyColors.blue,
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        );
-                                      },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              viewOrders(sell: selected==0),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Selling Orders",
-                                      style: MyFont.bold(30, color: MyColors.blue),
-                                    ),
-                                    viewOrders(sell: true),
-                                  ],
+                                viewOrders(sell: selected==0),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Selling Orders",
+                                        style: MyFont.bold(30, color: MyColors.blue),
+                                      ),
+                                      viewOrders(sell: true),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-          
-                                  children: [
-                                    Text(
-                                      "Buying Orders",
-                                      style: MyFont.bold(30, color: MyColors.blue),
-                                    ),
-                                    viewOrders(sell: false),
-                                  ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                                    children: [
+                                      Text(
+                                        "Buying Orders",
+                                        style: MyFont.bold(30, color: MyColors.blue),
+                                      ),
+                                      viewOrders(sell: false),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
               ),
@@ -258,6 +260,7 @@ class _OrdersPageState extends State<OrdersPage> {
               ? Center(child: Text("No Selling Orders"))
               : ListView.builder(
                   itemCount: sellingOrders.length,
+                  clipBehavior: .none,
                   itemBuilder: (context, index) {
                     return OrderCard(
                       order: sellingOrders[index],
@@ -269,6 +272,7 @@ class _OrdersPageState extends State<OrdersPage> {
               ? Center(child: Text("No Buying Orders"))
               : ListView.builder(
                   itemCount: buyingOrders.length,
+                  clipBehavior: .none,
                   itemBuilder: (context, index) {
                     return OrderCard(
                       order: buyingOrders[index],

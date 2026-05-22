@@ -1,10 +1,165 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import '../Database/database.dart';
 import '../colors.dart';
 import 'package:pdf/widgets.dart' as pw;
+
+class _ToastRequest {
+  const _ToastRequest(this.message, this.type);
+
+  final String message;
+  final int type;
+}
+
+class _ToastVisuals {
+  const _ToastVisuals({
+    required this.message,
+    required this.backgroundColorValue,
+    required this.textColorValue,
+  });
+
+  final String message;
+  final int backgroundColorValue;
+  final int textColorValue;
+}
+
+_ToastVisuals _resolveToastVisuals(_ToastRequest request) {
+  switch (request.type) {
+    case 1: // success
+      return _ToastVisuals(
+        message: request.message,
+        backgroundColorValue: MyColors.success.toARGB32(),
+        textColorValue: MyColors.translucent.toARGB32(),
+      );
+    case 2: // warning
+      return _ToastVisuals(
+        message: request.message,
+        backgroundColorValue: MyColors.warning.toARGB32(),
+        textColorValue: MyColors.dark.toARGB32(),
+      );
+    case 3: // error
+      return _ToastVisuals(
+        message: request.message,
+        backgroundColorValue: MyColors.error.toARGB32(),
+        textColorValue: MyColors.translucent.toARGB32(),
+      );
+    case 0:
+    default:
+      return _ToastVisuals(
+        message: request.message,
+        backgroundColorValue: MyColors.grey.toARGB32(),
+        textColorValue: MyColors.translucent.toARGB32(),
+      );
+  }
+}
+
+class _AnimatedToast extends StatefulWidget {
+  const _AnimatedToast({
+    required this.message,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.onDismissed,
+  });
+
+  final String message;
+  final Color backgroundColor;
+  final Color textColor;
+  final VoidCallback onDismissed;
+
+  @override
+  State<_AnimatedToast> createState() => _AnimatedToastState();
+}
+
+class _AnimatedToastState extends State<_AnimatedToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _offsetAnimation;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.35),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+
+    _controller.forward();
+    Future.delayed(const Duration(seconds: 4), _dismiss);
+  }
+
+  Future<void> _dismiss() async {
+    if (!mounted) return;
+    await _controller.reverse();
+    if (mounted) {
+      widget.onDismissed();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 20,
+      child: SafeArea(
+        minimum: const EdgeInsets.symmetric(horizontal: 16),
+        child: IgnorePointer(
+          ignoring: true,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _offsetAnimation,
+              child: Material(
+                color: Colors.transparent,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.backgroundColor,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Text(
+                      widget.message,
+                      style: TextStyle(color: widget.textColor),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class UiHelper {
   static Widget myTextField({
@@ -125,59 +280,61 @@ class UiHelper {
   }) {
     return Material(
       color: Colors.transparent,
-      child: GestureDetector(
-        onSecondaryTap: rightClick,
-        behavior: HitTestBehavior.opaque,
-
-        child: ElevatedButton(
-          onPressed: callback,
-          style: ElevatedButton.styleFrom(
-            padding: padding, // removes internal padding
-
-            backgroundColor: filled
-                ? color ?? MyColors.primary
-                : MyColors.translucent,
-            overlayColor: filled
-                ? MyColors.translucent.withAlpha(30)
-                : color ?? MyColors.primary.withAlpha(20), // splash color
-            elevation: elevation,
-            enableFeedback: true,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
-              side: BorderSide(color: color ?? MyColors.primary,width: 0.5),
+      child: ScaledContainer(
+        child: GestureDetector(
+          onSecondaryTap: rightClick,
+          behavior: HitTestBehavior.opaque,
+        
+          child: ElevatedButton(
+            onPressed: callback,
+            style: ElevatedButton.styleFrom(
+              padding: padding, // removes internal padding
+        
+              backgroundColor: filled
+                  ? color ?? MyColors.primary
+                  : MyColors.translucent,
+              overlayColor: filled
+                  ? MyColors.translucent.withAlpha(30)
+                  : color ?? MyColors.primary.withAlpha(20), // splash color
+              elevation: elevation,
+              enableFeedback: true,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(borderRadius),
+                side: BorderSide(color: color ?? MyColors.primary,width: 0.5),
+              ),
             ),
-          ),
-          child: Center(
-            child: (child == null)
-                ? Text(
-                    title ?? '',
-                    overflow: TextOverflow.ellipsis,
-                    style: MyFont.semiBold(
-                      textSize,
-                      color: filled
-                          ? MyColors.translucent
-                          : color ?? MyColors.primary,
-                    ),
-                  )
-                : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    child,
-                    if (title != null )SizedBox(width: 10),
-                    if (title != null)
-                      Text(
-                        title,
-                        overflow: TextOverflow.ellipsis,
-                        style: MyFont.semiBold(
-                          textSize,
-                          color: filled
-                              ? MyColors.translucent
-                              : color ?? MyColors.primary,
-                        ),
+            child: Center(
+              child: (child == null)
+                  ? Text(
+                      title ?? '',
+                      overflow: TextOverflow.ellipsis,
+                      style: MyFont.semiBold(
+                        textSize,
+                        color: filled
+                            ? MyColors.translucent
+                            : color ?? MyColors.primary,
                       ),
-                  ],
-                ),
+                    )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      child,
+                      if (title != null )SizedBox(width: 10),
+                      if (title != null)
+                        Text(
+                          title,
+                          overflow: TextOverflow.ellipsis,
+                          style: MyFont.semiBold(
+                            textSize,
+                            color: filled
+                                ? MyColors.translucent
+                                : color ?? MyColors.primary,
+                          ),
+                        ),
+                    ],
+                  ),
+            ),
           ),
         ),
       ),
@@ -489,41 +646,35 @@ class UiHelper {
       },
     );
   }
-  static void showToast(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    //if (overlay == null) return;
+  
+  static void showToast(BuildContext context, String message, {int type=0}) {
+    _showToast(context, message, type);
+  }
 
-    final overlayEntry = OverlayEntry(
-      builder: (_) => IgnorePointer(
-        ignoring: true,
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color:  MyColors.grey,
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Text(
-                  message,
-                  style: const TextStyle(color: MyColors.translucent),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
+  static Future<void> _showToast(BuildContext context, String message, int type) async {
+    final overlay = Overlay.of(context);
+    final visuals = await compute(_resolveToastVisuals, _ToastRequest(message, type));
+
+    if (!context.mounted) return;
+
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (_) => _AnimatedToast(
+        message: visuals.message,
+        backgroundColor: Color(visuals.backgroundColorValue),
+        textColor: Color(visuals.textColorValue),
+        onDismissed: () {
+          if (overlayEntry.mounted) {
+            overlayEntry.remove();
+          }
+        },
       ),
     );
 
     overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 5), () => overlayEntry.remove());
   }
+  
+  
   static BoxBorder myBorder(){
     return BoxBorder.all(color: plainUi ? MyColors.lightGrey : Colors.transparent, width: plainUi ? 1.5 : 0);
   }
@@ -538,19 +689,27 @@ class UiHelper {
     ),
     ];
   }
-  static BoxDecoration myDecoration(){
-    return  BoxDecoration(
+  static BoxDecoration myDecoration({bool isHovered = false}) {
+    return BoxDecoration(
       border: myBorder(),
-      boxShadow: myBoxShadow(),
+      boxShadow: [
+        if (!plainUi)
+          BoxShadow(
+            color: Colors.grey.withAlpha(isHovered ? 150 : 100),
+            spreadRadius: isHovered ? 1.0 : 0.5,
+            blurRadius: isHovered ? 6 : 4,
+            offset: const Offset(-1, 1),
+          ),
+      ],
       borderRadius: BorderRadius.circular(16),
       color: MyColors.translucent,
     );
   }
-  static pushPage({required BuildContext context,required Widget page, bool opaque = true, Color? barrierColor}){
+  static Future<T?> pushPage<T>({required BuildContext context, required Widget page, bool opaque = true, Color barrierColor = Colors.black54, bool barrierDismissible = false}){
     if(performanceMode){
-      print("Performance");
-      Navigator.of(context).push(
+      return Navigator.of(context).push<T>(
         PageRouteBuilder(
+          barrierDismissible: barrierDismissible,
           opaque: opaque,
           barrierColor: barrierColor,
           transitionDuration: Duration.zero,
@@ -560,21 +719,22 @@ class UiHelper {
         ),
       );
     }else {
-      Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: opaque,
-        barrierColor: barrierColor,
-        transitionDuration: const Duration(milliseconds: 500), // slower transition
-        reverseTransitionDuration: const Duration(milliseconds: 500), // pop
-        pageBuilder: (context, animation, secondaryAnimation) =>page,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
-    );
+      return Navigator.of(context).push<T>(
+        PageRouteBuilder(
+          opaque: opaque,
+          barrierColor: barrierColor,
+          barrierDismissible: barrierDismissible,
+          transitionDuration: const Duration(milliseconds: 500), // slower transition
+          reverseTransitionDuration: const Duration(milliseconds: 500), // pop
+          pageBuilder: (context, animation, secondaryAnimation) =>page,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ),
+      );
     }
   }
 
@@ -589,12 +749,21 @@ class UiHelper {
         return null;
       }
       if(context.mounted){
-        UiHelper.showToast(context, 'Backup Folder Changed');
+        UiHelper.showToast(context, 'Backup Folder Changed',type:1);
       }
       return selectedDir;
     } catch (e) {
       // Handle errors
-      return showDirectoryPicker(context, null);
+      if(context.mounted) {
+        return showDirectoryPicker(context, null);
+      }
+      return null;
     }
+  }
+  static Widget appLogo({String path = 'assets/images/app_logo.png'}){
+    return  Image.asset(
+      path,
+      opacity: const AlwaysStoppedAnimation<double>(0.35),
+    );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/profile.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import '../Database/db_info.dart';
 
@@ -163,39 +165,41 @@ class _SidebarPanelState extends State<SidebarPanel> {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      child: ElevatedButton(
-        onPressed: callBack,
-        style: ElevatedButton.styleFrom(
-          elevation: isSelected ? 3 : 0,
-          overlayColor:  MyColors.primary,
-          backgroundColor: isSelected
-              ? MyColors.primary
-              : MyColors.light,
-          //shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      child: ScaledContainer(
+        child: ElevatedButton(
+          onPressed: callBack,
+          style: ElevatedButton.styleFrom(
+            elevation: isSelected ? 3 : 0,
+            overlayColor:  MyColors.primary,
+            backgroundColor: isSelected
+                ? MyColors.primary
+                : plainUi ? MyColors.lightestGrey :MyColors.light,
+            //shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            minimumSize: const Size(0, 40),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          minimumSize: const Size(0, 40),
-        ),
-        child: SizedBox(
-          height: 40,
-          child: Row(
-
-            children: [
-              Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue,size: 20,),
-              if (title != null) ...[
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : MyColors.darkBlue,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+          child: SizedBox(
+            height: 40,
+            child: Row(
+        
+              children: [
+                Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue,size: 20,),
+                if (title != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : MyColors.darkBlue,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

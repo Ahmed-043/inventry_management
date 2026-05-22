@@ -51,7 +51,7 @@ class ReusableTopBar extends StatelessWidget {
   final Function(int index) onButtonSelect;
   final applyBlur;
 
-   ReusableTopBar({
+   const ReusableTopBar({
     super.key,
     required this.title,
     this.searchHint = "Search",
@@ -72,7 +72,7 @@ class ReusableTopBar extends StatelessWidget {
     bool compress = MediaQuery.of(context).size.width < 600;
     return Container(
       height: compress ? 100 : 60,
-      padding: EdgeInsets.symmetric(horizontal: 10),
+     // padding: EdgeInsets.symmetric(horizontal: 10),
       color: (plainUi && !applyBlur) ? MyColors.lightestGrey : Colors.transparent ,
       child: Stack(
         fit: StackFit.expand,

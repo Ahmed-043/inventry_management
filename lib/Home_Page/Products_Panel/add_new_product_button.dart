@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import '../../colors.dart';
+
 class AddNewProduct {
-  static Widget addNew({required BuildContext context, required Widget action}) {
+  static Widget addNew({
+    required BuildContext context,
+    required Widget action,
+  }) {
     return Container(
       height: double.infinity,
       width: 200,
@@ -13,10 +17,11 @@ class AddNewProduct {
           callback: () {
             // Use a PageRouteBuilder for Hero animation instead of showDialog
             UiHelper.pushPage(
-                context: context,
-                opaque: false,
-                barrierColor: Colors.black54,
-                page: _AddNewProductDialog(action: action));
+              context: context,
+              opaque: false,
+              barrierColor: Colors.black54,
+              page: _AddNewProductDialog(action: action),
+            );
             // Navigator.of(context).push(
             //   PageRouteBuilder(
             //     opaque: false, // background remains visible
@@ -37,7 +42,7 @@ class AddNewProduct {
 
 class _AddNewProductDialog extends StatefulWidget {
   final Widget action;
-  const _AddNewProductDialog({Key? key, required this.action}) : super(key: key);
+  const _AddNewProductDialog({required this.action});
 
   @override
   State<_AddNewProductDialog> createState() => _AddNewProductDialogState();
@@ -75,12 +80,23 @@ class _AddNewProductDialogState extends State<_AddNewProductDialog> {
               color: MyColors.translucent,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: showContent ? widget.action : const SizedBox(width: 850,height: 680),
+            child: showContent
+                ? widget.action
+                : SizedBox(
+                    width: 850,
+                    height: 680,
+                    child: SizedBox(
+                      width: 850,
+                      height: 680,
+                      child: Padding(
+                        padding: const EdgeInsets.all(100.0),
+                        child: UiHelper.appLogo(),
+                      ),
+                    ),
+                  ),
           ),
         ),
       ),
     );
   }
 }
-
-

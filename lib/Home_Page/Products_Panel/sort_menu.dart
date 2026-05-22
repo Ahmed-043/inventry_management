@@ -225,6 +225,7 @@ class _SortMenuState extends State<SortMenu> {
                                     UiHelper.showToast(
                                       context,
                                       'Cannot delete "${deletedCat.name}" — it is assigned to a product.',
+                                        type:3
                                     );
                                     return;
                                   }
@@ -260,7 +261,7 @@ class _SortMenuState extends State<SortMenu> {
                                       );
                                       UiHelper.showToast(
                                         context,
-                                        'Category "${deletedCat.name}" deleted.',
+                                        'Category "${deletedCat.name}" deleted.', type:3
                                       );
                                     },
                                   );

@@ -338,16 +338,16 @@ class _DashboardState extends State<Dashboard> {
                                     },
                                   ),
                                 ),
-                                SizedBox(height: 8),
                                 if (lowStockProducts.isNotEmpty)
-                                  StockAlerts(
-                                      lowStockProducts: lowStockProducts,
-                                      onSave: (){
-                                        loadAllDashboardData();
-                                      },
+                                  SizedBox(
+                                    height: 80,
+                                    child: StockAlerts(
+                                        lowStockProducts: lowStockProducts,
+                                        onSave: (){
+                                          loadAllDashboardData();
+                                        },
+                                    ),
                                   ),
-                                if (lowStockProducts.isNotEmpty)
-                                  SizedBox(height: 10),
                                 if (!compress) Expanded(child: _graphWidget()),
                                 if (compress)
                                   Expanded(

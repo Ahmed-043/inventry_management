@@ -730,7 +730,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                   filled: true,
                   callback: () async {
                     if (transaction.amount <= 0) {
-                      UiHelper.showToast(context, "Invalid Payment Amount");
+                      UiHelper.showToast(context, "Invalid Payment Amount",type:3);
                       return;
                     } else if ((transaction.timestamp >
                                 transaction.paymentTimestamp &&
@@ -741,6 +741,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                       UiHelper.showToast(
                         context,
                         "Payment cannot happen earlier than the transaction entry.",
+                        type:2
                       );
                       return;
                     } else if (!transaction.editable) {
@@ -754,13 +755,14 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                         remark: transaction.remark,
                       );
                       if (success) {
-                        UiHelper.showToast(context, "Transaction Updated");
+                        UiHelper.showToast(context, "Transaction Updated",type: 1);
                         Navigator.pop(context);
                         widget.onSave();
                       } else {
                         UiHelper.showToast(
                           context,
                           "Cannot Update Paid Transaction!",
+                          type:2
                         );
                       }
                       return;
@@ -786,7 +788,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                       );
                       int id = await insertTransaction(currentDB!, newPayment);
                       if (id > 0) {
-                        UiHelper.showToast(context, "Transaction Successful");
+                        UiHelper.showToast(context, "Transaction Successful",type:1);
                       }
                       Navigator.pop(context);
                       widget.onSave();

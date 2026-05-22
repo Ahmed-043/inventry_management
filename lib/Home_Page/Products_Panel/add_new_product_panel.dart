@@ -352,7 +352,7 @@ class _InputNewProductState extends State<InputNewProduct>
                           categoryName,
                         );
                         if (result != null && mounted) {
-                          UiHelper.showToast(context, result);
+                          UiHelper.showToast(context, result,type: 1);
                           setState(() {});
                         }
                       }
@@ -687,6 +687,7 @@ class _InputNewProductState extends State<InputNewProduct>
     await showDialog(
       context: context,
       builder: (context) => Dialog(
+        insetPadding: EdgeInsets.all(10),
         child: SizedBox(
           width: 1200,
           height: 800,
@@ -707,7 +708,7 @@ class _InputNewProductState extends State<InputNewProduct>
     if (!mounted) return;
 
     if (error != null) {
-      UiHelper.showToast(context, error);
+      UiHelper.showToast(context, error,type:3);
     } else {
       widget.onSave?.call();
       Navigator.pop(context);

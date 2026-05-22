@@ -77,6 +77,7 @@ class _HomePageState extends State<HomePage> {
         viewInsets: EdgeInsets.zero,
       ),
       child: Scaffold(
+        backgroundColor: plainUi ? MyColors.lightestGrey : MyColors.light,
        body: KeyboardListener(
           focusNode: _focusNode,
           autofocus: true,
@@ -97,47 +98,54 @@ class _HomePageState extends State<HomePage> {
               }
             }
           },
-          child: Container(
+          child: SizedBox(
             width: double.infinity,
             height: double.infinity,
-            color: plainUi ? MyColors.lightestGrey : MyColors.light,
+            //color: plainUi ? MyColors.lightestGrey : MyColors.light,
             child: Column(
               children: [
                 Expanded(
-                  child: Row(
+                  child: Stack(
                     children: [
                       if(!collapsed)
-                      Container(
-                        width: collapse ? 60 : 180,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border(
-                           // right: BorderSide(color: MyColors.lightGrey,width: 2)
-                          )
+                      Align(
+                        alignment: .topLeft,
+                        child: Container(
+                          width: collapse ? 60 : 180,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border(
+                             // right: BorderSide(color: MyColors.lightGrey,width: 2)
+                            )
+                          ),
+                          child: SidebarPanel(
+                            collaps: collapse,
+                            selectedIndex: selectedIndex,
+                            info: widget.info,
+                            onItemSelected: (index) {
+                              if(index == pages.length-1){
+                                //Navigator.pop(context);
+                                 Navigator.of(context).pushAndRemoveUntil(
+                                   MaterialPageRoute(builder: (_) => SigninPageRedsign()),
+                                       (route) => false,
+                                 );
+                              }else {
+                                setState(() => selectedIndex = index% pages.length); // to avoid overflow
+                              }
+                            },
+                            vCollaps: vCollapse,
+                          ),
                         ),
-                        child: SidebarPanel(
-                          collaps: collapse,
-                          selectedIndex: selectedIndex,
-                          info: widget.info,
-                          onItemSelected: (index) {
-                            if(index == pages.length-1){
-                              //Navigator.pop(context);
-                               Navigator.of(context).pushAndRemoveUntil(
-                                 MaterialPageRoute(builder: (_) => SigninPageRedsign()),
-                                     (route) => false,
-                               );
-                            }else {
-                              setState(() => selectedIndex = index% pages.length); // to avoid overflow
-                            }
-                          },
-                          vCollaps: vCollapse,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 7,
-                        child: pages[selectedIndex],
                       ),
 
+                      Positioned(
+                        left: collapsed ? 0 : (collapse ? 60 : 180),
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: pages[selectedIndex],
+                      ),
                     ],
                   ),
                 ),

@@ -5,9 +5,9 @@ import 'Database/database.dart';
 import 'package:window_manager/window_manager.dart';
 import 'Database/database_factory.dart';
 import 'Signin/welcome_page.dart';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
+import 'Shared_Widgets/app_cursor_overlay.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -59,6 +59,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  bool get _supportsCustomCursor {
+    if (kIsWeb) return true;
+    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  }
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -67,6 +72,16 @@ class MyApp extends StatelessWidget {
       title: 'ODVENTORY',
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
+      builder: (context, child) {
+        if (!_supportsCustomCursor || child == null) {
+          return child ?? const SizedBox.shrink();
+        }
+        return AppCursorOverlay(
+          assetPath: 'assets/images/app_cursor.png',
+          size: 35.0,
+          child: child,
+        );
+      },
     );
   }
 }

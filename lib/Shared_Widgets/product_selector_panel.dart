@@ -11,7 +11,7 @@ import "../Database/database.dart";
 import "../Database/order_items.dart";
 import "../Database/product_stock.dart";
 import "../Database/retrieve_products.dart";
-import "../Home_Page/Products_Panel/update_product_stock.dart";
+import "../Home_Page/Products_Panel/update_product/update_product_stock.dart";
 import "../colors.dart";
 import "fonts.dart";
 
@@ -232,21 +232,21 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                                 color: MyColors.darkBlue,
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide(
                                   width: 2,
                                   color: Colors.grey,
                                 ),
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(20),
                                 borderSide: BorderSide(
                                   width: 2,
                                   color: MyColors.darkBlue,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(30),
                                 borderSide: BorderSide(
                                   width: 2,
                                   color: MyColors.darkBlue,

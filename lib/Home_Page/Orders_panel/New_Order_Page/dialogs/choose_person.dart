@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/Shared_Widgets/sliding_segment_control.dart';
 import '../../../../Database/database.dart';
 import '../../../../Database/orders.dart';
@@ -62,12 +63,15 @@ class _ChoosePersonState extends State<ChoosePerson> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(context),
-        if (isRegistered) _buildRegisteredSection() else _buildAnonymousSection(),
-        const SizedBox(height: 20),
-      ],
+    return Material(
+      color: Colors.transparent,
+      child: Column(
+              children: [
+                _buildHeader(context),
+                if (isRegistered) _buildRegisteredSection() else _buildAnonymousSection(),
+                //const SizedBox(height: 20),
+              ],
+            ),
     );
   }
 
@@ -200,6 +204,10 @@ class _ChoosePersonState extends State<ChoosePerson> {
           onTap: () {
             Navigator.pop(context, persons[index]);
           },
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           child: personCard(persons[index]),
         );
       },
@@ -211,94 +219,96 @@ class _ChoosePersonState extends State<ChoosePerson> {
   }
 
   Widget personCard(Person person) {
-    return Container(
-      height: 70,
-      width: double.infinity,
-      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      decoration: BoxDecoration(
-        color:  MyColors.translucent,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: MyColors.grey.withAlpha(50),
-            blurRadius: 3,
-            offset: Offset(0, 2),
-            spreadRadius: 0.5,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          if(person.id == selected)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-
-                  color: MyColors.success.withAlpha(100)),
+    return ScaledContainer(
+      child: Container(
+        height: 70,
+        width: double.infinity,
+        margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        decoration: BoxDecoration(
+          color:  MyColors.translucent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: MyColors.grey.withAlpha(50),
+              blurRadius: 3,
+              offset: Offset(0, 2),
+              spreadRadius: 0.5,
             ),
-          Padding(
-            padding: const EdgeInsets.all(5),
-            child: SizedBox(
-              height: 60,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: ClipOval(
-                      child: person.image != null
-                          ? Image.memory(person.image!, fit: BoxFit.cover)
-                          : Icon(Icons.person_rounded),
+          ],
+        ),
+        child: Stack(
+          children: [
+            if(person.id == selected)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+      
+                    color: MyColors.success.withAlpha(100)),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(5),
+              child: SizedBox(
+                height: 60,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipOval(
+                        child: person.image != null
+                            ? Image.memory(person.image!, fit: BoxFit.cover)
+                            : Icon(Icons.person_rounded),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            person.name,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.start,
-                            style: MyFont.semiBold(20, color: MyColors.darkBlue),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              person.name,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.start,
+                              style: MyFont.semiBold(20, color: MyColors.darkBlue),
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            person.phone ?? "",
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.start,
-                            style: MyFont.semiBold(10, color: MyColors.darkBlue),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              person.phone ?? "",
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.start,
+                              style: MyFont.semiBold(10, color: MyColors.darkBlue),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    //color: Colors.grey,
-                    width: 80,
-                    child: Center(
-                      child: Text(
-                        person.personType,
-                        style: MyFont.semiBold(
-                          17,
-                          color: person.personType == 'customer'
-                              ? MyColors.success
-                              : MyColors.primary,
+                    SizedBox(
+                      //color: Colors.grey,
+                      width: 80,
+                      child: Center(
+                        child: Text(
+                          person.personType,
+                          style: MyFont.semiBold(
+                            17,
+                            color: person.personType == 'customer'
+                                ? MyColors.success
+                                : MyColors.primary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

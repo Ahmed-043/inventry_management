@@ -460,7 +460,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
         }
       } catch(e){
         if(mounted) {
-          UiHelper.showToast(context, e.toString());
+          UiHelper.showToast(context, e.toString(),type: 3);
         }
       }
     } else {
@@ -511,10 +511,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
     );
   }
   void warning(String message){
-    UiHelper.showToast(context, message);
-    // ScaffoldMessenger.of(
-    //   context,
-    // ).showSnackBar(SnackBar(content: Text(message)));
+    UiHelper.showToast(context, message,type:3);
   }
 
 

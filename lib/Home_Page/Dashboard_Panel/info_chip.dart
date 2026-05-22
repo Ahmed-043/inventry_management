@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Database/database.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../../Shared_Widgets/fonts.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
@@ -110,33 +112,37 @@ class _DashboardChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = _active;
 
-    return Container(
-      height: 120,
-      width: 270,
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: UiHelper.myDecoration(),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Text(data.title,
-                    style: MyFont.semiBold(18, color: MyColors.grey)),
-                Text(
-                  '${data.prefix}${_format(data.value)}',
-                  style: MyFont.bold(22, color: MyColors.dark),
-                ),
-                Text(
-                  data.trendText,
-                  style: MyFont.semiBold(12, color: MyColors.success),
-                ),
-              ],
+    return ScaledContainer(
+      child: Container(
+        height: 120,
+        width: 270,
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: UiHelper.myDecoration(),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onToggle,
+            highlightColor: Colors.transparent,
+            splashColor: plainUi ? MyColors.lightGrey.withAlpha(150)  : MyColors.primary.withAlpha(50),
+            borderRadius: BorderRadius.circular(15),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(data.title,
+                      style: MyFont.semiBold(18, color: MyColors.grey)),
+                  Text(
+                    '${data.prefix}${_format(data.value)}',
+                    style: MyFont.bold(22, color: MyColors.dark),
+                  ),
+                  Text(
+                    data.trendText,
+                    style: MyFont.semiBold(12, color: MyColors.success),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

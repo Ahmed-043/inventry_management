@@ -26,28 +26,34 @@ class OrderPersonCard extends StatefulWidget {
 class _OrderPersonCardState extends State<OrderPersonCard> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 10, right: 5),
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        color: MyColors.translucent,
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha(125),
-            spreadRadius: 0.5,
-            blurRadius: 3,
-            offset: const Offset(0, 3),
+    return Hero(
+      tag: "person_card",
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.only(left: 10, right: 5),
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: MyColors.translucent,
+            borderRadius: const BorderRadius.all(Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withAlpha(125),
+                spreadRadius: 0.5,
+                blurRadius: 3,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildHeader(),
-          _buildPersonBody(),
-        ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildHeader(),
+              _buildPersonBody(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -151,33 +157,38 @@ class _OrderPersonCardState extends State<OrderPersonCard> {
     return Image.memory(person.image!, fit: BoxFit.cover);
   }
 
-  void choosePerson() async {
+  Future<void> choosePerson() async {
     if (!(widget.order.editable)) {
       return;
     }
-    final result = await showDialog<Person>(
+    final selectedPerson = await UiHelper.pushPage<Person?>(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: EdgeInsets.zero,
-          child: Container(
-            width: 400,
-            height: 600,
-            decoration: BoxDecoration(
-              color: MyColors.translucent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: ChoosePerson(
-              filter: widget.sell ? 1 : 2,
-              person: widget.person,
+        opaque: false,
+        barrierDismissible: true,
+        page: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Hero(
+              tag: "person_card",
+              child: Container(
+                width: 400,
+                height: 600,
+                decoration: UiHelper.myDecoration(),
+                child: ChoosePerson(
+                  filter: widget.sell ? 1 : 2,
+                  person: widget.person,
+                ),
+              ),
             ),
           ),
-        );
-      },
+        ),
     );
 
-    if (result != null) {
-      setState(() => widget.onPersonSelected(result));
+    if (!mounted || selectedPerson == null) {
+      return;
     }
+
+    widget.onPersonSelected(selectedPerson);
+
   }
 }

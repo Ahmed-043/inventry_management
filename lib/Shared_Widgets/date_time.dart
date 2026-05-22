@@ -1,35 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../colors.dart';
 import 'fonts.dart';
 
 Widget dateTimeField({bool isTime = false, String text = "",double borderRadius = 10}) {
-  return Container(
-    padding: EdgeInsets.symmetric(horizontal: 5),
-    decoration: BoxDecoration(
-      color: MyColors.translucent,
-      borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(width: 1.25, color: MyColors.lightGrey),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(
-          isTime ? Icons.access_time_rounded : Icons.calendar_month_rounded,
-          color: Colors.grey,
-        ),
-        Expanded(
-          child: Center(
-            child: Text(
-              text.isEmpty ? "Select Date" : text,
-              overflow: TextOverflow.ellipsis,
-              style: MyFont.semiBold(15, color: Colors.grey.shade600),
+  return ScaledContainer(
+    child: Container(
+      padding: EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: MyColors.translucent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(width: 1.25, color: MyColors.lightGrey),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            isTime ? Icons.access_time_rounded : Icons.calendar_month_rounded,
+            color: Colors.grey,
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                text.isEmpty ? "Select Date" : text,
+                overflow: TextOverflow.ellipsis,
+                style: MyFont.semiBold(15, color: Colors.grey.shade600),
+              ),
             ),
           ),
-        ),
-
-      ],
+    
+        ],
+      ),
     ),
   );
 }

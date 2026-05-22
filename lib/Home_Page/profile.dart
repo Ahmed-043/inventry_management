@@ -206,7 +206,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
 
   save() async {
     if(nameController.text.trim().isEmpty){
-      UiHelper.showToast(context, "Name can't be empty!");
+      UiHelper.showToast(context, "Name can't be empty!",type:2);
       FocusScope.of(context).requestFocus(nameFocus);
       return;
     }
@@ -217,10 +217,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     widget.info.image = selectedImage;
     bool success = await updateDBInfo(currentDB!, widget.info);
     if(success && mounted){
-      UiHelper.showToast(context, 'Updated Successfully');
+      UiHelper.showToast(context, 'Updated Successfully',type:1);
       widget.onSave();
     }else{
-      UiHelper.showToast(context, 'Failed to Update !');
+      UiHelper.showToast(context, 'Failed to Update !',type:3);
     }
   }
 

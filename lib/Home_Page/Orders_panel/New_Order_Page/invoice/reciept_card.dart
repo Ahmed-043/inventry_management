@@ -161,7 +161,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
         isLoading = false;
       });
       if (mounted) {
-        UiHelper.showToast(context, 'Order Updated Successfully');
+        UiHelper.showToast(context, 'Order Updated Successfully',type: 1);
       }
       return;
     }
@@ -189,7 +189,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       await captureAndShareReceipt(receiptKey, 'file');
       if (mounted) {
-        UiHelper.showToast(context, 'Image copied to clipboard!');
+        UiHelper.showToast(context, 'Image copied to clipboard!',type: 1);
       }
     } else {
       await captureAndShareReceipt(receiptKey, 'file');
@@ -222,6 +222,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
+          insetPadding: EdgeInsets.all(10),
           child: SizedBox(
             width: 800,
             height: 800,
@@ -252,7 +253,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
           isLoading = false;
         });
       } else {
-        UiHelper.showToast(context, 'Please select at least one product.');
+        UiHelper.showToast(context, 'Please select at least one product.',type: 2);
         setState(() {
           isLoading = false;
         });

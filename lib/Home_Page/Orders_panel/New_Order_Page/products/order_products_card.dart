@@ -528,6 +528,8 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
     await showDialog(
     context: context,
     builder: (context) => Dialog(
+      insetPadding: EdgeInsets.all(10),
+
       child: SizedBox(
         width: 1200,
         height: 800,

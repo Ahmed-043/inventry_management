@@ -1,29 +1,26 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:inventry_management/Home_Page/Products_Panel/update_product_ctrl.dart';
+import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_ctrl.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 
-import '../../Database/retrieve_products.dart';
-import '../../Shared_Widgets/fonts.dart';
-import '../../Shared_Widgets/upload_box.dart';
-import 'delete_confirmation.dart';
+import '../../../Database/retrieve_products.dart';
+import '../../../Shared_Widgets/fonts.dart';
+import '../../../Shared_Widgets/upload_box.dart';
+import '../delete_confirmation.dart';
 
-class UpdateProduct extends StatefulWidget {
+class UpdateProductDialog extends StatefulWidget {
   final Product product;
   final VoidCallback callBack;
-  const UpdateProduct({
-    super.key,
-    required this.product,
-    required this.callBack,
-  });
+  const UpdateProductDialog({super.key,required this.product, required this.callBack});
 
   @override
-  State<UpdateProduct> createState() => _UpdateProductState();
+  State<UpdateProductDialog> createState() => UpdateProductDialogState();
 }
 
-class _UpdateProductState extends State<UpdateProduct> {
+class UpdateProductDialogState extends State<UpdateProductDialog> {
+  bool showContent = false;
   final FocusNode _focusNode = FocusNode();
   late UpdateProductController controller;
 
@@ -34,12 +31,13 @@ class _UpdateProductState extends State<UpdateProduct> {
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(milliseconds: 0), () {showContent = true;});
     controller = UpdateProductController(
       widget.product,
     );
-
     // listen to controller async updates (categories/components)
     controller.addListener(_onControllerChanged);
+
   }
 
   @override
@@ -51,58 +49,83 @@ class _UpdateProductState extends State<UpdateProduct> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-          _handleUpdate();
-        }
-      },
-      child: Container(
-        width: 1100,
-        height: 700,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            SizedBox(height: 8),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildMainSection(),
-                      SizedBox(height: 10),
-                      Center(
-                        child: Wrap(
-                          crossAxisAlignment: .start,
-                          alignment: .center,
-                          spacing: 20,
-                          runSpacing: 20,
-                          children: [
-                            SizedBox(width: 280, child: _buildCategorySection()),
-                            SizedBox(
-                              width: 500,
-                              child: controller.compProducts.isNotEmpty
-                                  ? _buildComponentsSection()
-                                  : _buildNoComponentsPlaceholder(),
-                            ),
-                          ],
+    return Center(
+      child: Hero(
+        tag: 'product_${widget.product.id}',
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 850,
+              maxHeight: 680,
+              minWidth: 400,
+            ),
+            decoration: BoxDecoration(
+              color: MyColors.translucent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: showContent ? KeyboardListener(
+              focusNode: _focusNode,
+              autofocus: true,
+              onKeyEvent: (event) {
+                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+                  _handleUpdate();
+                }
+              },
+              child: Container(
+                width: 1100,
+                height: 700,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildMainSection(),
+                              SizedBox(height: 10),
+                              Center(
+                                child: Wrap(
+                                  crossAxisAlignment: .start,
+                                  alignment: .center,
+                                  spacing: 20,
+                                  runSpacing: 20,
+                                  children: [
+                                    SizedBox(width: 280, child: _buildCategorySection()),
+                                    SizedBox(
+                                      width: 500,
+                                      child: controller.compProducts.isNotEmpty
+                                          ? _buildComponentsSection()
+                                          : _buildNoComponentsPlaceholder(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    _buildFooter(),
+                  ],
                 ),
               ),
+            ) : SizedBox(
+                width: 850,height: 680,
+              child: Padding(
+                padding: const EdgeInsets.all(100.0),
+                child: UiHelper.appLogo(),
+              ),
             ),
-            _buildFooter(),
-          ],
+          ),
         ),
       ),
     );
@@ -269,13 +292,13 @@ class _UpdateProductState extends State<UpdateProduct> {
               child: DropdownMenuTheme(
                 data: DropdownMenuThemeData(
                   menuStyle: MenuStyle(
-                    padding: MaterialStateProperty.all(EdgeInsets.zero),
+                    padding: WidgetStateProperty.all(EdgeInsets.zero),
 
-                    backgroundColor: MaterialStateProperty.all(Colors.white), // white menu background
-                    shape: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
+                    shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ), // rounded corners
-                    elevation: MaterialStateProperty.all(6), // optional shadow
+                    elevation: WidgetStateProperty.all(6), // optional shadow
                   ),
                 ),
                 child: DropdownMenu<int>(
@@ -315,7 +338,7 @@ class _UpdateProductState extends State<UpdateProduct> {
               Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Material(
-                  color: MyColors.success.withOpacity(0.1),
+                  color: MyColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
@@ -324,7 +347,7 @@ class _UpdateProductState extends State<UpdateProduct> {
                       if (categoryName.isNotEmpty) {
                         final result = await controller.addNewCategory(categoryName);
                         if (result != null && mounted) {
-                          UiHelper.showToast(context, result);
+                          UiHelper.showToast(context, result,type: 1);
                           setState(() {});
                         }
                       }
@@ -614,10 +637,13 @@ class _UpdateProductState extends State<UpdateProduct> {
     if (!mounted) return;
 
     if (error != null) {
-      UiHelper.showToast(context, error);
+      UiHelper.showToast(context, error,type: 3);
     } else {
-      widget.callBack();
       Navigator.pop(context);
+      await Future.delayed(const Duration(milliseconds: 500));
+      widget.callBack();
+      UiHelper.showToast(context, "Product Updated",type: 1);
+
     }
   }
 
@@ -640,6 +666,7 @@ class _UpdateProductState extends State<UpdateProduct> {
       UiHelper.showToast(
         context,
         "Product cannot be deleted\nComponent of: $parents",
+        type: 2,
       );
     }
   }

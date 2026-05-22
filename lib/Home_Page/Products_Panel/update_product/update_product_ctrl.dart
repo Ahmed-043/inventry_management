@@ -5,7 +5,7 @@ import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Database/update_product.dart';
 import 'package:inventry_management/Database/delete.dart';
 
-import '../../Database/category.dart';
+import '../../../Database/category.dart';
 
 class UpdateProductController extends ChangeNotifier {
   final Product product;
