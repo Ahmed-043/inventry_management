@@ -8,6 +8,7 @@ import 'Signin/welcome_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'Shared_Widgets/app_cursor_overlay.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -52,7 +53,11 @@ void main() async {
   await initDatabaseFactory();
   await syncDatabases();
   loadPreferences();
-  runApp(MyApp());
+  Widget app = const ProviderScope(child: MyApp());
+  if (Platform.isWindows) {
+    app = ExcludeSemantics(child: app);
+  }
+  runApp(app);
 }
 
 
@@ -78,6 +83,8 @@ class MyApp extends StatelessWidget {
         }
         return AppCursorOverlay(
           assetPath: 'assets/images/app_cursor.png',
+          clickCursorAssetPath: 'assets/images/hand_cursor.png',
+          textCursorAssetPath: 'assets/images/text_cursor.png',
           size: 35.0,
           child: child,
         );
