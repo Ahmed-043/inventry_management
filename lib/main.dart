@@ -83,8 +83,6 @@ class MyApp extends StatelessWidget {
         }
         return AppCursorOverlay(
           assetPath: 'assets/images/app_cursor.png',
-          clickCursorAssetPath: 'assets/images/hand_cursor.png',
-          textCursorAssetPath: 'assets/images/text_cursor.png',
           size: 35.0,
           child: child,
         );
