@@ -26,14 +26,54 @@ class AppCursorOverlay extends StatefulWidget {
 class _AppCursorOverlayState extends State<AppCursorOverlay> {
   Offset? _position;
   String? _activeAssetPath;
+  bool _isMouseInside = false;
+  final GlobalKey _stackKey = GlobalKey();
   final GlobalKey _trackingRegionKey = GlobalKey();
   final GlobalKey _hideCursorRegionKey = GlobalKey();
 
-  void _updatePosition(PointerEvent event) {
+  void _updatePosition(Offset globalPosition) {
+    final renderObject = _stackKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox) return;
+
     setState(() {
-      _position = event.position;
-      _activeAssetPath = _resolveCursorAsset(event.position);
+      _position = renderObject.globalToLocal(globalPosition);
+      _activeAssetPath = _resolveCursorAsset(globalPosition);
     });
+  }
+
+  void _onMouseExit(PointerExitEvent event) {
+    setState(() {
+      _isMouseInside = false;
+      _position = null;
+    });
+  }
+
+  void _onMouseEnter(PointerEnterEvent event) {
+    setState(() {
+      _isMouseInside = true;
+      _updatePosition(event.position);
+    });
+  }
+
+  void _onMouseHover(PointerHoverEvent event) {
+    if (!_isMouseInside) {
+      setState(() {
+        _isMouseInside = true;
+      });
+    }
+    _updatePosition(event.position);
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    _updatePosition(event.position);
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _updatePosition(event.position);
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    _updatePosition(event.position);
   }
 
   String _resolveCursorAsset(Offset position) {
@@ -105,37 +145,42 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> {
   @override
   Widget build(BuildContext context) {
     final cursorAsset = _activeAssetPath ?? widget.assetPath;
-    return MouseRegion(
-      key: _trackingRegionKey,
-      opaque: false,
-      cursor: SystemMouseCursors.none,
-      onHover: _updatePosition,
-      onEnter: _updatePosition,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          widget.child,
-          Positioned.fill(
-            child: MouseRegion(
-              key: _hideCursorRegionKey,
-              opaque: false,
-              cursor: SystemMouseCursors.none,
-              child: const SizedBox.expand(),
-            ),
-          ),
-          if (_position != null)
-            Positioned(
-              left: (_position!.dx - (widget.size / 2) + 10), // correction for better alignment
-              top: (_position!.dy - (widget.size / 2) + 15), // correction for better alignment
-              child: IgnorePointer(
-                child: Image.asset(
-                  cursorAsset,
-                  width: widget.size,
-                  height: widget.size,
-                ),
+    return Listener(
+      onPointerDown: _handlePointerDown,
+      onPointerMove: _handlePointerMove,
+      onPointerUp: _handlePointerUp,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.none,
+        onEnter: _onMouseEnter,
+        onHover: _onMouseHover,
+        onExit: _onMouseExit,
+        child: Stack(
+          key: _stackKey,
+          fit: StackFit.expand,
+          children: [
+            widget.child,
+            Positioned.fill(
+              child: MouseRegion(
+                key: _hideCursorRegionKey,
+                opaque: false,
+                cursor: SystemMouseCursors.none,
+                child: const SizedBox.expand(),
               ),
             ),
-        ],
+            if (_position != null && _isMouseInside)
+              Positioned(
+                left: (_position!.dx - (widget.size / 2)+15),
+                top: (_position!.dy - (widget.size / 2)+17),
+                child: IgnorePointer(
+                  child: Image.asset(
+                    cursorAsset,
+                    width: widget.size,
+                    height: widget.size,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

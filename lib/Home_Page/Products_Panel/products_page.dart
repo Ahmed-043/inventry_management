@@ -186,7 +186,7 @@ class _StockDashboardState extends State<StockDashboard> {
                         ),
                         onTap: () => stockUpdateDialog(product),
                         onSecondaryTap: () => updateDialog(product),
-                        onDoubleTap: () => updateDialog(product),
+                        //onDoubleTap: () => updateDialog(product),
                       ),
                     );
                   },
@@ -286,7 +286,7 @@ class _StockDashboardState extends State<StockDashboard> {
                                       child: ProductCard(product: product))),
                               onTap: () => stockUpdateDialog(product),
                               onSecondaryTap: () => updateDialog(product),
-                              onDoubleTap: () => updateDialog(product),
+                              //onDoubleTap: () => updateDialog(product),
                             ),
                           );
                         },
@@ -545,6 +545,7 @@ class _StockDashboardState extends State<StockDashboard> {
         opaque: false,
         barrierColor: Colors.black54,
         barrierDismissible: true,
+
         page:  UpdateProductStock(
           id: product.id,
           productStock: product.stock,

@@ -168,6 +168,7 @@ class UiHelper {
     String? hint,
     String? prefixText = '',
     bool readOnly = false,
+    bool autofocus = false,
     VoidCallback? onTap,
     double fontSize = 17,
     double borderRadius = 10,
@@ -180,6 +181,7 @@ class UiHelper {
     EdgeInsets? padding,
   }) {
     return TextField(
+      autofocus: autofocus,
       onTap: onTap,
       readOnly: readOnly,
       controller: controller,
@@ -284,12 +286,12 @@ class UiHelper {
         child: GestureDetector(
           onSecondaryTap: rightClick,
           behavior: HitTestBehavior.opaque,
-        
+
           child: ElevatedButton(
             onPressed: callback,
             style: ElevatedButton.styleFrom(
               padding: padding, // removes internal padding
-        
+
               backgroundColor: filled
                   ? color ?? MyColors.primary
                   : MyColors.translucent,

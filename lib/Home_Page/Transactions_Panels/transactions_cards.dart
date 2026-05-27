@@ -68,6 +68,7 @@ class _TransactionsCardsState extends State<TransactionsCards> {
                               context: context,
                               opaque: false,
                               barrierColor: Colors.black54,
+                              barrierDismissible: true,
                               page: _TransactionDialog(
                                 action: NewTransactionDialog(
                                   transaction: t,

@@ -86,7 +86,7 @@ class _UpdatePersonPanelState extends State<UpdatePersonPanel> {
               ),
               decoration: BoxDecoration(
                 color: MyColors.translucent,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(20),
               ),
 
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),

@@ -50,29 +50,36 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
   late int selectedValue = 0;
   late int stock = widget.productStock;
   late TextEditingController stockController = TextEditingController();
+  late FocusNode stockFocusNode = FocusNode();
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    Future.delayed(const Duration(milliseconds: 0), () {
-      setState(() {
-        showContent = true;
-      });
-    });
-
-
     selectedValue = 0;
     stockController.text = stock.toString();
 
+    // Show the content first, then focus the text field on the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        showContent = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        stockFocusNode.requestFocus();
+      });
+    });
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
     stockController.dispose();
+    stockFocusNode.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,20 +141,20 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
                         ),
                         Expanded(
                           flex: 1,
-                          child: Container(
-                            child: UiHelper.myTextField(
-                              //  label: "Stock",
-                              prefixText: "Stock. ",
-                              fontSize: 25,
-                              textType: TextInputType.number,
-                              onChange: () {
-                                stock = stockController.text == ""
-                                    ? 0
-                                    : int.parse(stockController.text);
-                              },
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              controller: stockController,
-                            ),
+                          child: UiHelper.myTextField(
+                            //  label: "Stock",
+                            prefixText: "Stock. ",
+                            fontSize: 25,
+                            textType: TextInputType.number,
+                            autofocus: true,
+                            onChange: () {
+                              stock = stockController.text == ""
+                                  ? 0
+                                  : int.parse(stockController.text);
+                            },
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            controller: stockController,
+                            focusNode: stockFocusNode,
                           ),
                         ),
                         Expanded(

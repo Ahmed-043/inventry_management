@@ -114,7 +114,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
         child: Column(
           children: [
             SizedBox(height: 50, child: _buildSearchBar(MediaQuery.of(context).size.width)),
-            if (widget.selectedProducts.isNotEmpty) const OrderTableHeader(),
+            if (widget.selectedProducts.isNotEmpty) OrderTableHeader(showDelete: widget.order.editable,),
             Expanded(child: _buildOrderList(compress)),
           ],
         ),
@@ -203,7 +203,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                           () => blinkMap[index] = true,
                         ); // start blinking before dialog
                         const dialogWidth = 400.0;
-                        const dialogHeight = 220.0;
+                        const dialogHeight = 200.0;
 
                         double left = tapPosition.dx - (dialogWidth / 2);
                         double top = tapPosition.dy + 20;
@@ -368,6 +368,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
               ),
             ),
           ),
+          if (widget.order.editable)
           Container(
             padding: EdgeInsets.all(5),
             width: 70,

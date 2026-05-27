@@ -203,7 +203,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
   Widget _buildBackCard() {
     return OrderBackCard(
       heroTag: widget.sell ? 'sellOrderHero' : 'buyOrderHero',
-      title: "${widget.sell ? "Selling Order" : "Buying Order"}${order.editable ? "" : " (New)"}",
+      title: "${widget.sell ? "Selling Order" : "Buying Order"}${!order.editable ? "" : " (New)"}",
       sell: widget.sell,
       editable: order.editable,
       showDeleteIcon: order.editable && selectedPerson != null,
