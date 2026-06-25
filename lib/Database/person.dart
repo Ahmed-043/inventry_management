@@ -12,6 +12,9 @@ class Person {
   final String personType;
   final Uint8List? image;
   final double payment;
+  final double incoming;
+  final double outgoing;
+
 
 
   Person({
@@ -21,6 +24,8 @@ class Person {
     this.address,
     this.email,
     this.payment = 0.0,
+    this.incoming = 0.0,
+    this.outgoing = 0.0,
     this.image,
     this.type = 'local',
     this.personType = 'customer',
@@ -43,17 +48,19 @@ class Person {
 
   factory Person.fromMap(Map<String, dynamic> map, {required String table}) {
     return Person(
-      id: map['id'] as int,
+      id: map['id'] as int?,
       name: map['name'] as String,
-      phone: map['phone'] as String,
-      address: map['address'] as String,
-      email:  map['email'] as String,
-      payment: map['payment'] as double,
-        image: (map['image'] != null && map['image'] is Uint8List)
-            ? map['image'] as Uint8List
-            : null,
-        type: map['type'] as String,
-      personType: map['personType'] as String
+      phone: map['phone'] as String?,
+      address: map['address'] as String?,
+      email:  map['email'] as String?,
+      payment: (map['payment'] as num?)?.toDouble() ?? 0.0,
+      incoming: (map['incoming'] as num?)?.toDouble() ?? 0.0,
+      outgoing: (map['outgoing'] as num?)?.toDouble() ?? 0.0,
+      image: (map['image'] != null && map['image'] is Uint8List)
+          ? map['image'] as Uint8List
+          : null,
+      type: map['type'] as String? ?? 'local',
+      personType: map['personType'] as String? ?? 'customer'
     );
   }
 
@@ -123,10 +130,24 @@ Future<List<Person>> getPersons(
       IFNULL(SUM(
         CASE 
           WHEN t.payment_status IN ('Pending','Overdue')
-          THEN t.amount
+          THEN (t.amount - t.paid_amount)
           ELSE 0
         END
-      ), 0) AS total_payment
+      ), 0) AS total_payment,
+      IFNULL(SUM(
+        CASE 
+          WHEN t.payment_status IN ('Pending','Overdue') AND t.amount > 0 
+          THEN (t.amount - t.paid_amount) 
+          ELSE 0 
+        END
+      ), 0) AS incoming,
+      IFNULL(SUM(
+        CASE 
+          WHEN t.payment_status IN ('Pending','Overdue') AND t.amount < 0
+          THEN ABS(t.amount - t.paid_amount) 
+          ELSE 0 
+        END
+      ), 0) AS outgoing
     FROM persons p
     LEFT JOIN payment_transactions t
       ON t.person_id = p.id
@@ -144,6 +165,8 @@ Future<List<Person>> getPersons(
       address: map['address'] as String?,
       email: map['email'] as String?,
       payment: (map['total_payment'] as num).toDouble(),
+      incoming: (map['incoming'] as num).toDouble(),
+      outgoing: (map['outgoing'] as num).toDouble(),
       image: map['image'] as Uint8List?,
       type: map['type'] as String,
       personType: map['personType'] as String,
@@ -307,3 +330,5 @@ Future<Map<String, int>> getPersonsCountByType(
     'local': (row['local_count'] as int?) ?? 0,
   };
 }
+
+

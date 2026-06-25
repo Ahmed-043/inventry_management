@@ -18,6 +18,7 @@ class Order {
    String name;
    String orderType; // buy / sell
    double totalAmount;
+   double paidAmount;
    double totalWeight;
    String orderStatus; // pending / completed / canceled
    String paymentStatus; // pending / paid / overdue
@@ -39,6 +40,7 @@ class Order {
     required this.name,
     required this.orderType,
     this.totalAmount = 0.0,
+    this.paidAmount = 0.0,
     this.totalWeight = 0.0,
     this.orderStatus = 'Pending',
     this.paymentStatus = 'Paid',
@@ -59,13 +61,13 @@ class Order {
     name: map['name'] ?? '',
     orderType: map['order_type'],
     totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0.0,
+    paidAmount: (map['paid_amount'] as num?)?.toDouble() ?? 0.0,
     totalWeight: (map['total_weight'] as num?)?.toDouble() ?? 0.0,
     orderStatus: map['order_status'] ?? 'pending',
     paymentStatus: map['payment_status'] ?? 'pending',
     orderTimestamp: map['order_timestamp'],
     dueDateTimestamp: map['due_date'],
     remark: map['remark'] ?? '',
-
   );
 
   Map<String, dynamic> toMap() => {
@@ -74,6 +76,7 @@ class Order {
     'name': name,
     'order_type': orderType,
     'total_amount': totalAmount,
+    'paid_amount': paidAmount,
     'total_weight': totalWeight,
     'order_status': orderStatus,
     'payment_status': paymentStatus,
@@ -95,6 +98,7 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
       'name': order.name,
       'order_type': order.orderType,
       'total_amount': order.totalAmount * sign,
+      'paid_amount': order.paidAmount * sign,
       'total_weight': order.totalWeight,
       'tax': '${order.tax.first},${order.tax.second}',
       'discount': '${order.discount.first},${order.discount.second}',
@@ -135,7 +139,8 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
       'person_id': order.personId,
       'name': order.name,
       'order_id': orderId,
-      'amount': order.totalAmount * sign,
+      'amount': (order.totalAmount + order.adjustment) * sign,
+      'paid_amount': order.paidAmount * sign,
       'payment_status': order.paymentStatus,
       'due_date': order.dueDateTimestamp,
       'payment_method': order.paymentMethod,
@@ -281,6 +286,7 @@ Future<List<Order>> fetchFilteredOrders(
       name: row['name'] as String? ?? '',
       orderType: row['order_type'] as String? ?? 'sell',
       totalAmount: (row['total_amount'] as num?)?.toDouble() ?? 0.0,
+      paidAmount: (row['paid_amount'] as num?)?.toDouble() ?? 0.0,
       totalWeight: (row['total_weight'] as num?)?.toDouble() ?? 0.0,
       orderStatus: row['order_status'] as String? ?? 'Pending',
       paymentStatus: row['payment_status'] as String? ?? 'Pending',
@@ -321,38 +327,50 @@ Future<List<Order>> fetchFilteredOrders(
 Future<Map<String, List<Map<String, int>>>> getOrderCounts(Database db) async {
   final result = await db.rawQuery('''
     SELECT
-      SUM(CASE WHEN order_type = 'sell' THEN 1 ELSE 0 END) AS allSell,
-      SUM(CASE WHEN order_type = 'buy' THEN 1 ELSE 0 END) AS allBuy,
-      SUM(CASE WHEN order_status = 'Completed' AND order_type = 'sell' THEN 1 ELSE 0 END) AS completedSell,
-      SUM(CASE WHEN order_status = 'Completed' AND order_type = 'buy' THEN 1 ELSE 0 END) AS completedBuy,
-      SUM(CASE WHEN order_status = 'Pending' AND order_type = 'sell' THEN 1 ELSE 0 END) AS pendingSell,
-      SUM(CASE WHEN order_status = 'Pending' AND order_type = 'buy' THEN 1 ELSE 0 END) AS pendingBuy,
-      SUM(CASE WHEN order_status = 'Canceled' AND order_type = 'sell' THEN 1 ELSE 0 END) AS canceledSell,
-      SUM(CASE WHEN order_status = 'Canceled' AND order_type = 'buy' THEN 1 ELSE 0 END) AS canceledBuy
+      COUNT(CASE WHEN order_type = 'sell' THEN 1 END) AS allSell,
+      COUNT(CASE WHEN order_type = 'buy' THEN 1 END) AS allBuy,
+      COUNT(CASE WHEN order_status = 'Completed' AND order_type = 'sell' THEN 1 END) AS completedSell,
+      COUNT(CASE WHEN order_status = 'Completed' AND order_type = 'buy' THEN 1 END) AS completedBuy,
+      COUNT(CASE WHEN order_status = 'Pending' AND order_type = 'sell' THEN 1 END) AS pendingSell,
+      COUNT(CASE WHEN order_status = 'Pending' AND order_type = 'buy' THEN 1 END) AS pendingBuy,
+      COUNT(CASE WHEN order_status = 'Canceled' AND order_type = 'sell' THEN 1 END) AS canceledSell,
+      COUNT(CASE WHEN order_status = 'Canceled' AND order_type = 'buy' THEN 1 END) AS canceledBuy
     FROM orders
   ''');
 
   final r = result.first;
+
+  int getVal(String key) => (r[key] as num?)?.toInt() ?? 0;
+
+  final allSell = getVal('allSell');
+  final allBuy = getVal('allBuy');
+  final completedSell = getVal('completedSell');
+  final completedBuy = getVal('completedBuy');
+  final pendingSell = getVal('pendingSell');
+  final pendingBuy = getVal('pendingBuy');
+  final canceledSell = getVal('canceledSell');
+  final canceledBuy = getVal('canceledBuy');
+
   return {
     'All': [
-      {'Total': (r['allSell'] as int) + (r['allBuy'] as int)},
-      {'Sell': r['allSell'] as int},
-      {'Buy': r['allBuy'] as int},
+      {'Total': allSell + allBuy},
+      {'Sell': allSell},
+      {'Buy': allBuy},
     ],
     'Completed': [
-      {'Total': (r['completedSell'] as int) + (r['completedBuy'] as int)},
-      {'Sell': r['completedSell'] as int},
-      {'Buy': r['completedBuy'] as int},
+      {'Total': completedSell + completedBuy},
+      {'Sell': completedSell},
+      {'Buy': completedBuy},
     ],
     'Pending': [
-      {'Total': (r['pendingSell'] as int) + (r['pendingBuy'] as int)},
-      {'Sell': r['pendingSell'] as int},
-      {'Buy': r['pendingBuy'] as int},
+      {'Total': pendingSell + pendingBuy},
+      {'Sell': pendingSell},
+      {'Buy': pendingBuy},
     ],
     'Canceled': [
-      {'Total': (r['canceledSell'] as int) + (r['canceledBuy'] as int)},
-      {'Sell': r['canceledSell'] as int},
-      {'Buy': r['canceledBuy'] as int},
+      {'Total': canceledSell + canceledBuy},
+      {'Sell': canceledSell},
+      {'Buy': canceledBuy},
     ],
   };
 }
@@ -384,6 +402,18 @@ Future<Order?> getOrderById(Database db, int orderId) async {
   final order = Order.fromMap(row);
   order.discount = discount;
   order.tax = tax;
+  // double payment =
+  //     order.totalAmount +
+  //         (order.tax.first == '%'
+  //             ? order.totalAmount.abs() * order.tax.second / 100
+  //             : order.tax.second) -
+  //         (order.discount.first == '%'
+  //             ? order.totalAmount.abs() * order.discount.second / 100
+  //             : order.discount.second);
+  // order.adjustment = payment.abs() - order.totalAmount.abs();
+  // if(order.totalAmount < 0){
+  //   order.adjustment *= -1;
+  // }
   return order;
 }
 
@@ -396,10 +426,13 @@ Future<bool> updatePendingOrderFromObject(
   if (order.id == null) return false;
 
   return await db.transaction((txn) async {
-    // 1️⃣ Check current order status
+    if(order.paidAmount >= (order.totalAmount + order.adjustment)){
+      order.paidAmount = (order.totalAmount + order.adjustment);
+    }
+    // 1️⃣ Fetch current order details
     final result = await txn.query(
       'orders',
-      columns: ['order_status'],
+      columns: ['order_status', 'total_amount'],
       where: 'id = ?',
       whereArgs: [order.id],
       limit: 1,
@@ -407,33 +440,25 @@ Future<bool> updatePendingOrderFromObject(
 
     if (result.isEmpty) return false;
 
-    //final currentStatus = result.first['order_status'] as String;
+    final totalAmount = (result.first['total_amount'] as num).toDouble();
 
-    // 2️⃣ Always update REMARKS (both tables)
-    await txn.update(
-      'orders',
-      {'remark': order.remark},
-      where: 'id = ?',
-      whereArgs: [order.id],
-    );
+    // 2️⃣ Determine final statuses based on paidAmount
+    String finalPaymentStatus = order.paymentStatus;
+    String finalOrderStatus = order.orderStatus;
 
-    await txn.update(
-      'payment_transactions',
-      {'remark': order.remark},
-      where: 'order_id = ?',
-      whereArgs: [order.id],
-    );
-    // ❌ Only pending orders can be updated
-    // if (currentStatus.toLowerCase() != 'pending') {
-    //   return false;
-    // }
-
-    // 2️⃣ Update ORDER (only allowed fields)
+    // Auto-complete if paid in full (using .abs() for buy/sell consistency)
+    if (order.paidAmount.abs() >= totalAmount.abs() && totalAmount != 0) {
+      finalPaymentStatus = 'Paid';
+      finalOrderStatus = 'Completed';
+    }
+    final sign = order.orderType == 'buy' ? -1 : 1;
+    // 3️⃣ Update ORDER
     await txn.update(
       'orders',
       {
-        'order_status': order.orderStatus,
-        'payment_status': order.paymentStatus,
+        'order_status': finalOrderStatus,
+        'payment_status': finalPaymentStatus,
+        'paid_amount': order.paidAmount * sign,
         'due_date': order.dueDateTimestamp,
         'remark': order.remark,
       },
@@ -441,11 +466,12 @@ Future<bool> updatePendingOrderFromObject(
       whereArgs: [order.id],
     );
 
-    // 3️⃣ Update TRANSACTIONS linked to this order
+    // 4️⃣ Update TRANSACTIONS linked to this order
     await txn.update(
       'payment_transactions',
       {
-        'payment_status': order.paymentStatus,
+        'payment_status': finalPaymentStatus,
+        'paid_amount': order.paidAmount * sign,
         'due_date': order.dueDateTimestamp,
         'payment_method': order.paymentMethod,
         'remark': order.remark,

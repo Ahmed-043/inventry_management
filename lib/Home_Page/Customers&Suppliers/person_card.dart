@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Database/database.dart';
+import 'package:inventry_management/Database/payment_transactions.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
@@ -13,6 +16,7 @@ class PersonCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDoubleTap;
   final VoidCallback? onSecondaryTap;
+  final VoidCallback? onPaymentSaved;
   final Color? splashColor;
   final Color? hoverColor;
 
@@ -23,6 +27,7 @@ class PersonCard extends StatefulWidget {
     this.onTap,
     this.onDoubleTap,
     this.onSecondaryTap,
+    this.onPaymentSaved,
     this.splashColor,
     this.hoverColor,
   });
@@ -32,6 +37,16 @@ class PersonCard extends StatefulWidget {
 }
 
 class _PersonCardState extends State<PersonCard> {
+  final TextEditingController payController = TextEditingController();
+  final TextEditingController receiveController = TextEditingController();
+
+  @override
+  void dispose() {
+    payController.dispose();
+    receiveController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaledContainer(
@@ -40,8 +55,31 @@ class _PersonCardState extends State<PersonCard> {
         //color: Colors.transparent,
         child: InkWell(
           onTap: widget.onTap,
-          onDoubleTap: widget.onDoubleTap,
+          //onDoubleTap: widget.onDoubleTap,
           onSecondaryTap: widget.onSecondaryTap,
+          onTapDown: (TapDownDetails details) async {
+            final tapPosition = details.globalPosition;
+            showDialog(
+              context: context,
+              barrierColor: Colors.transparent,
+              builder: (_) => Stack(
+                children: [
+                  Positioned(
+                    left:
+                    tapPosition.dx -
+                        100, // exact x position of tap
+                    top: tapPosition.dy + 20, // adjust y
+                    child: Material(
+                      elevation: 6,
+                      borderRadius: BorderRadius.circular(25),
+                      child: paymentOptions(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+
           splashColor: widget.splashColor ?? MyColors.primary.withOpacity(0.1),
           hoverColor: widget.hoverColor ?? MyColors.primary.withOpacity(0.05),
           borderRadius: BorderRadius.circular(15),
@@ -162,29 +200,51 @@ class _PersonCardState extends State<PersonCard> {
                           SizedBox(height: width * 0.05),
                           Expanded(
                             child: Row(
+                              mainAxisAlignment: .spaceEvenly,
                               children: [
                                 Tooltip(
                                   waitDuration: const Duration(seconds: 1),
-                                  message: widget.person.payment > 0 ? 'Receivable' : widget.person.payment == 0 ? '' : 'Payable',
+                                  message:'Receivable',
                                   child: Row(
                                     children: [
                                       Text(
-                                        "Rs. ${NumberFormat.decimalPattern().format(widget.person.payment)}",
+                                        "Rs. ${NumberFormat.decimalPattern().format(widget.person.incoming)}",
                                         textAlign: TextAlign.center,
                                         style: MyFont.bold(
                                           width * 0.15,
-                                          color: widget.person.payment > 0 ? MyColors.success : widget.person.payment == 0 ? MyColors.grey : MyColors.error,
+                                          color: MyColors.success,
                                         ),
                                       ),
-                                      Icon(
-                                        widget.person.payment > 0 ? Icons.keyboard_double_arrow_up_rounded : widget.person.payment == 0 ? Icons.arrow_drop_up_rounded : Icons.keyboard_double_arrow_down_rounded,
+                                      Icon(Icons.keyboard_double_arrow_up_rounded,
                                         size: width * 0.15,
-                                        color: widget.person.payment > 0 ? MyColors.success : widget.person.payment == 0 ? MyColors.grey : MyColors.error,
+                                        color: MyColors.success ,
                                       ),
                                     ],
                                   ),
                                 ),
-                                Expanded(child: SizedBox()),
+
+                                Tooltip(
+                                  waitDuration: const Duration(seconds: 1),
+                                  message: 'Payable',
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "Rs. ${NumberFormat.decimalPattern().format(widget.person.outgoing)}",
+                                        textAlign: TextAlign.center,
+                                        style: MyFont.bold(
+                                          width * 0.15,
+                                          color: MyColors.error,
+                                        ),
+                                      ),
+
+                                      Icon(Icons.keyboard_double_arrow_down_rounded,
+                                        size: width * 0.15,
+                                        color: MyColors.error,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
                               ],
                             ),
                           ),
@@ -198,6 +258,104 @@ class _PersonCardState extends State<PersonCard> {
             },
           ),
         ),
+      ),
+    );
+  }
+  Widget paymentOptions() {
+    return Container(
+      width: 350,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: UiHelper.myTextField(
+                    label: "Receive",
+                    controller: receiveController,
+                    onChange: (){
+                      final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
+                      if(receiveAmount > widget.person.incoming){
+                        receiveController.text = widget.person.incoming.toString();
+                      }
+                    },
+                    textType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                    ],
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: UiHelper.myTextField(
+                    label: "Pay",
+                    controller: payController,
+                    onChange: (){
+                      final double payAmount = double.tryParse(payController.text) ?? 0.0;
+                      if(payAmount > widget.person.outgoing){
+                        payController.text = widget.person.outgoing.toString();
+                      }
+                    },
+                    textType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                    ],
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+
+
+            ],
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: UiHelper.myButton(
+              title: "Save",
+              filled: true,
+              textSize: 16,
+              color: MyColors.primary,
+              callback: () async {
+                final double payAmount = double.tryParse(payController.text) ?? 0.0;
+                final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
+
+                if (payAmount > 0 || receiveAmount > 0) {
+                  await distributePayments(
+                    currentDB!,
+                    personId: widget.person.id!,
+                    pay: payAmount,
+                    receive: receiveAmount,
+                  );
+
+                  if (mounted) {
+                    UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                    payController.clear();
+                    receiveController.clear();
+                    widget.onPaymentSaved?.call();
+                    Navigator.pop(context);
+                  }
+                } else {
+                  if (mounted) {
+                    UiHelper.showToast(context, "Please enter an amount", type: 2);
+                  }
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:inventry_management/Database/order_items.dart';
 import '../../../../../Database/orders.dart';
 import '../../../../../Shared_Widgets/date_time.dart';
 import '../../../../../Shared_Widgets/fonts.dart';
+import '../../../../../Shared_Widgets/main_ui_helper.dart';
 import '../../../../../Shared_Widgets/sliding_segment_control.dart';
 import '../../../../../colors.dart';
 
@@ -26,10 +27,11 @@ class OrderStatusSection extends StatefulWidget {
 
 class _OrderStatusSectionState extends State<OrderStatusSection> {
   late DateTime dueDate;
-
+  final TextEditingController paidAmountCtrl = TextEditingController(text: "0.00");
   @override
   void initState() {
     super.initState();
+    paidAmountCtrl.text = widget.order.paidAmount.toString();
     dueDate = DateTime.fromMillisecondsSinceEpoch(widget.order.dueDateTimestamp);
   }
 
@@ -179,12 +181,70 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
               },
             ),
           ),
-          const SizedBox(height: 5),
+          if (widget.order.paymentStatus == "Pending")
+            ...[
+              const SizedBox(height: 5),
+
+              Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 5,
+              ),
+              child: SizedBox(
+                height: 40,
+                child: Row(
+                  children: [
+                    Text(
+                      "Paid Amount",
+                      textAlign: TextAlign.start,
+                      style: MyFont.semiBold(15, color: MyColors.grey),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: UiHelper.myTextField(
+                        controller: paidAmountCtrl,
+                        borderRadius: 15,
+                        hint: '0.00',
+                        prefix: Padding(
+                          padding: const EdgeInsets.only(top:8.0,left:5),
+                          child: Text(
+                              "Rs. ",
+                              style: MyFont.semiBold(17, color: MyColors.grey),
+                            textAlign: .center,
+
+                            ),
+                        ),
+                        onTap: (){
+                          if(double.tryParse(paidAmountCtrl.text) == 0){
+                            setState(() {
+                              paidAmountCtrl.text = '';
+                            });
+                          }
+                        },
+                        onChange: () {
+
+                          if(widget.order.paidAmount.toString() != double.tryParse(paidAmountCtrl.text).toString()){
+                            widget.order.paidAmount = double.tryParse(paidAmountCtrl.text) ?? 0;
+                            if(!widget.order.editable)  widget.order.update = true;
+
+                            widget.onChanged.call();
+                          }
+                          if(widget.order.paidAmount > (widget.order.totalAmount + widget.order.adjustment)){
+                            widget.order.paidAmount = (widget.order.totalAmount + widget.order.adjustment);
+                            paidAmountCtrl.text = (widget.order.totalAmount + widget.order.adjustment).toString();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )],
           if (widget.order.paymentStatus == "Paid")
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 10,
-                vertical: 5,
+                vertical: 10,
               ),
               child: SizedBox(
                 height: 30,
@@ -229,16 +289,17 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
                 ),
               ),
             ),
-          const SizedBox(height: 5),
           if (widget.order.paymentStatus == 'Paid')
-            SizedBox(
+            ...[
+              const SizedBox(height: 5),
+              SizedBox(
               width: double.infinity,
               child: Text(
                 "Payment Method",
                 textAlign: TextAlign.start,
                 style: MyFont.semiBold(15, color: MyColors.darkBlue),
               ),
-            ),
+            ),],
           if (widget.order.paymentStatus == 'Paid')
             SizedBox(
               width: double.infinity,
@@ -268,9 +329,10 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
                 },
               ),
             ),
-          const SizedBox(height: 5),
           if (widget.order.paymentStatus == 'Overdue')
-            SizedBox(
+           ...[
+             const SizedBox(height: 5),
+             SizedBox(
               width: 225,
               child: Column(
                 children: [
@@ -320,7 +382,7 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
                   ),
                 ],
               ),
-            ),
+            )],
         ],
       ),
     );

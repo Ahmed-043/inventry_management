@@ -9,6 +9,7 @@ class PaymentTransaction {
   String name;
   final int orderId;
   final double amount;
+  final double paidAmount;
   final String paymentStatus;      // Pending, Paid, Overdue
   final int dueDate;               // store as int (timestamp)
   final String paymentMethod;      // Digital, Cash, Bank, Other
@@ -22,6 +23,7 @@ class PaymentTransaction {
     required this.name,
     required this.orderId,
     required this.amount,
+    required this.paidAmount,
     required this.paymentStatus,
     required this.dueDate,
     required this.paymentMethod,
@@ -37,6 +39,7 @@ class PaymentTransaction {
       name: map['name'] ?? '',
       orderId: map['order_id'] ?? 0,
       amount: map['amount']?.toDouble() ?? 0.0,
+      paidAmount: map['paid_amount']?.toDouble() ?? 0.0,
       paymentStatus: map['payment_status'] ?? 'Paid',
       dueDate: map['due_date'] ?? 0,
       paymentMethod: map['payment_method'] ?? 'Cash',
@@ -53,6 +56,7 @@ class PaymentTransaction {
       'name': name,
       'order_id': orderId,
       'amount': amount,
+      'paid_amount': paidAmount,
       'payment_status': paymentStatus,
       'due_date': dueDate,
       'payment_method': paymentMethod,
@@ -64,28 +68,30 @@ class PaymentTransaction {
 }
 /// Insert New Transaction
 Future<int> insertTransaction(Database db, PaymentTransaction p) async {
-  final data = p.toMap();       // keep your map as it is
-  data.remove('id');            // <-- remove id safely
+  final data = p.toMap(); // keep your map as it is
+  if (p.paidAmount.abs() >= p.amount.abs() && p.amount != 0) {
+    data['payment_status'] = 'Paid';
+  }
+  data.remove('id'); // <-- remove id safely
   return await db.insert('payment_transactions', data);
 }
 
 /// Update Transaction (only allowed rows if Payment Status is not 'Paid'
 
 Future<bool> updatePaymentIfNotPaid(
-    Database db, {
-      required int id,
-      required String paymentStatus,
-      required int dueDate,
-      required String paymentMethod,
-      required int paymentTimestamp,
-      required String remark,
-    }) async
-{
-
+  Database db, {
+  required int id,
+  required String paymentStatus,
+  required int dueDate,
+  required String paymentMethod,
+  required int paymentTimestamp,
+  required String remark,
+  double? paidAmount,
+}) async {
   // Fetch current status
   final check = await db.query(
     'payment_transactions',
-    columns: ['payment_status', 'order_id'],
+    columns: ['payment_status', 'order_id', 'amount'],
     where: 'id = ?',
     whereArgs: [id],
     limit: 1,
@@ -95,21 +101,33 @@ Future<bool> updatePaymentIfNotPaid(
 
   final currentStatus = check.first['payment_status'] as String;
   final currentOrderId = check.first['order_id'] as int;
+  final amount = (check.first['amount'] as num).toDouble();
 
   if (currentStatus == 'Paid') {
     return false; // Cannot overwrite paid transaction
   }
 
+  String finalStatus = paymentStatus;
+  if (paidAmount != null && paidAmount.abs() >= amount.abs() && amount != 0) {
+    finalStatus = 'Paid';
+  }
+
   // Update transaction only
+  final updateData = {
+    'payment_status': finalStatus,
+    'due_date': dueDate,
+    'payment_method': paymentMethod,
+    'payment_timestamp': paymentTimestamp,
+    'remark': remark,
+  };
+
+  if (paidAmount != null) {
+    updateData['paid_amount'] = paidAmount;
+  }
+
   final rows = await db.update(
     'payment_transactions',
-    {
-      'payment_status': paymentStatus,
-      'due_date': dueDate,
-      'payment_method': paymentMethod,
-      'payment_timestamp': paymentTimestamp,
-      'remark': remark,
-    },
+    updateData,
     where: 'id = ?',
     whereArgs: [id],
   );
@@ -121,7 +139,15 @@ Future<bool> updatePaymentIfNotPaid(
   final targetOrderId = currentOrderId;
   if (targetOrderId > 0) {
     // If transaction is Paid => Complete the order
-    if (paymentStatus == 'Paid') {
+    await db.update(
+      'orders',
+      {
+        'paid_amount': paidAmount,
+      },
+      where: 'id = ?',
+      whereArgs: [targetOrderId],
+    );
+    if (finalStatus == 'Paid') {
       await db.update(
         'orders',
         {
@@ -137,7 +163,7 @@ Future<bool> updatePaymentIfNotPaid(
       await db.update(
         'orders',
         {
-          'payment_status': paymentStatus,
+          'payment_status': finalStatus,
           'due_date': dueDate,
         },
         where: 'id = ?',
@@ -147,6 +173,138 @@ Future<bool> updatePaymentIfNotPaid(
   }
 
   return true;
+}
+
+/// Distribute payments across pending transactions for a person
+Future<void> distributePayments(
+    Database db, {
+      required int personId,
+      double pay = 0, // for negative amounts (outgoing)
+      double receive = 0, // for positive amounts (incoming)
+    }) async {
+  if (pay <= 0 && receive <= 0) return;
+
+  await db.transaction((txn) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // 1️⃣ Handle PAY (Outgoing/Negative Transactions)
+    if (pay > 0) {
+      final outgoing = await txn.query(
+        'payment_transactions',
+        where: "person_id = ? AND amount < 0 AND payment_status != 'Paid'",
+        whereArgs: [personId],
+        orderBy: 'id ASC',
+      );
+
+      double remainingPay = pay;
+      for (var row in outgoing) {
+        if (remainingPay <= 0) break;
+
+        final id = row['id'] as int;
+        final amount = (row['amount'] as num).toDouble();
+        final currentPaid = (row['paid_amount'] as num).toDouble();
+        final orderId = row['order_id'] as int;
+
+        final needed = (amount - currentPaid).abs();
+        final toApply = remainingPay < needed ? remainingPay : needed;
+
+        final newPaid = currentPaid - toApply; // More negative
+        remainingPay -= toApply;
+
+        String newStatus = row['payment_status'] as String;
+        final Map<String, dynamic> transUpdate = {
+          'paid_amount': newPaid,
+          'payment_status': newStatus,
+        };
+
+        if (newPaid.abs() >= amount.abs() - 0.01) { // small epsilon for double precision
+          newStatus = 'Paid';
+          transUpdate['payment_status'] = 'Paid';
+          transUpdate['payment_timestamp'] = now;
+        }
+
+        await txn.update(
+          'payment_transactions',
+          transUpdate,
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+
+        if (orderId > 0) {
+          final Map<String, dynamic> orderUpdate = {
+            'paid_amount': newPaid,
+            'payment_status': newStatus,
+            'order_status': newStatus == 'Paid' ? 'Completed' : 'Pending',
+          };
+          await txn.update(
+            'orders',
+            orderUpdate,
+            where: 'id = ?',
+            whereArgs: [orderId],
+          );
+        }
+      }
+    }
+
+    // 2️⃣ Handle RECEIVE (Incoming/Positive Transactions)
+    if (receive > 0) {
+      final incoming = await txn.query(
+        'payment_transactions',
+        where: "person_id = ? AND amount > 0 AND payment_status != 'Paid'",
+        whereArgs: [personId],
+        orderBy: 'id ASC',
+      );
+
+      double remainingReceive = receive;
+      for (var row in incoming) {
+        if (remainingReceive <= 0) break;
+
+        final id = row['id'] as int;
+        final amount = (row['amount'] as num).toDouble();
+        final currentPaid = (row['paid_amount'] as num).toDouble();
+        final orderId = row['order_id'] as int;
+
+        final needed = amount - currentPaid;
+        final toApply = remainingReceive < needed ? remainingReceive : needed;
+
+        final newPaid = currentPaid + toApply;
+        remainingReceive -= toApply;
+
+        String newStatus = row['payment_status'] as String;
+        final Map<String, dynamic> transUpdate = {
+          'paid_amount': newPaid,
+          'payment_status': newStatus,
+        };
+
+        if (newPaid >= amount - 0.01) {
+          newStatus = 'Paid';
+          transUpdate['payment_status'] = 'Paid';
+          transUpdate['payment_timestamp'] = now;
+        }
+
+        await txn.update(
+          'payment_transactions',
+          transUpdate,
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+
+        if (orderId > 0) {
+          final Map<String, dynamic> orderUpdate = {
+            'paid_amount': newPaid,
+            'payment_status': newStatus,
+            'order_status': newStatus == 'Paid' ? 'Completed' : 'Pending',
+          };
+          await txn.update(
+            'orders',
+            orderUpdate,
+            where: 'id = ?',
+            whereArgs: [orderId],
+          );
+        }
+      }
+    }
+  });
 }
 
 
@@ -331,6 +489,7 @@ class newTransaction {
    String phone = "";
    int orderId = 0;
    double amount = 0.0;
+   double paidAmount = 0.0;
    String paymentStatus = "Paid";      // Pending, Paid, Overdue
    int dueDate = 0;               // store as int (timestamp)
    String paymentMethod = "Digital";      // Digital, Cash, Bank, Other

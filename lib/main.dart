@@ -9,11 +9,17 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'Shared_Widgets/app_cursor_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'utils/linux_dependencies.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Check and install Linux dependencies
+  if (Platform.isLinux) {
+    await LinuxDependencyManager.checkAndInstallDependencies();
+  }
 
   // Run only on desktop
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {

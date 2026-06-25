@@ -33,6 +33,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
   Person? person;
 
   final TextEditingController amountCtrl = TextEditingController(text: "0.00");
+  final TextEditingController paidAmountCtrl = TextEditingController(text: "0.00");
   final TextEditingController remarksCtrl = TextEditingController();
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
     if (t != null) {
       transaction.name = t.name;
       transaction.amount = t.amount.abs();
+      transaction.paidAmount = t.paidAmount.abs();
       transaction.paymentTimestamp = t.paymentTimestamp;
       transaction.paymentMethod = t.paymentMethod;
       transaction.paymentStatus = t.paymentStatus;
@@ -51,6 +53,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
       transaction.type = t.amount >= 0 ? 'Incoming' : 'Outgoing';
       transaction.remark = t.remark;
       amountCtrl.text = transaction.amount.toString();
+      paidAmountCtrl.text = transaction.paidAmount.toString();
       remarksCtrl.text = t.remark.toString();
       person = widget.person;
       if (widget.person == null) {
@@ -344,6 +347,57 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                 ),
               ],
             ),
+            if (transaction.paymentStatus == "Pending")
+              Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 5,
+              ),
+                child: SizedBox(
+                  height: 40,
+                  child: Row(
+                    children: [
+                      Text(
+                        "Paid Amount",
+                        textAlign: TextAlign.start,
+                        style: MyFont.semiBold(15, color: MyColors.grey),
+                      ),
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: UiHelper.myTextField(
+                          borderRadius: 15,
+                          controller: paidAmountCtrl,
+                          hint: '0.00',
+                          prefix: Padding(
+                            padding: const EdgeInsets.only(top:8.0,left:5),
+                            child: Text(
+                              "Rs. ",
+                              style: MyFont.semiBold(17, color: MyColors.grey),
+                              textAlign: .center,
+
+                            ),
+                          ),
+                          onTap: (){
+                            if(double.tryParse(paidAmountCtrl.text) == 0){
+                              setState(() {
+                                paidAmountCtrl.text = '';
+                              });
+                            }
+                          },
+                          onChange: () {
+                            transaction.paidAmount = double.tryParse(paidAmountCtrl.text) ?? 0;
+                            if(transaction.paidAmount > transaction.amount){
+                              transaction.paidAmount = transaction.amount;
+                              paidAmountCtrl.text = transaction.amount.toString();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ),
             if (transaction.paymentStatus == "Overdue")
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -504,8 +558,17 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                   child: SizedBox(
                     height: 40,
                     child: UiHelper.myTextField(
+                      borderRadius: 15,
                       controller: amountCtrl,
-                      prefixText: 'Rs. ',
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(top:8.0,left:8),
+                        child: Text(
+                          "Rs. ",
+                          style: MyFont.semiBold(17, color: MyColors.grey),
+                          textAlign: .center,
+
+                        ),
+                      ),
                       hint: '0.00',
                       readOnly: !transaction.editable,
                       padding: EdgeInsets.symmetric(
@@ -729,10 +792,29 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                   color: MyColors.primary,
                   filled: true,
                   callback: () async {
+                    final amount =
+                        transaction.amount *
+                            ((transaction.type == "Outgoing") ? -1 : 1);
+                    double paidAmount = transaction.paymentStatus == 'Paid'
+                        ? amount
+                        : double.tryParse(paidAmountCtrl.text) ?? 0;
+                    if(transaction.type == 'Outgoing'){
+                      paidAmount = (paidAmount.abs() * -1);
+                    }
+                    String name = person?.name ?? '';
+                    if (person?.id == 0) {
+                      name = '$name\n${person?.phone}';
+                    }
+
                     if (transaction.amount <= 0) {
                       UiHelper.showToast(context, "Invalid Payment Amount",type:3);
                       return;
-                    } else if ((transaction.timestamp >
+                    }
+                    else if (transaction.paidAmount > transaction.amount){
+                      UiHelper.showToast(context, "Paid Amount cannot be greater than Total Amount",type:3);
+                      return;
+                    }
+                    else if ((transaction.timestamp >
                                 transaction.paymentTimestamp &&
                             transaction.paymentStatus == "Paid") ||
                         (!transaction.editable &&
@@ -745,6 +827,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                       );
                       return;
                     } else if (!transaction.editable) {
+
                       bool success = await updatePaymentIfNotPaid(
                         currentDB!,
                         id: widget.transaction!.id!,
@@ -753,6 +836,7 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                         paymentMethod: transaction.paymentMethod,
                         paymentTimestamp: transaction.paymentTimestamp,
                         remark: transaction.remark,
+                        paidAmount: paidAmount,
                       );
                       if (success) {
                         UiHelper.showToast(context, "Transaction Updated",type: 1);
@@ -767,18 +851,14 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
                       }
                       return;
                     } else {
-                      final amount =
-                          transaction.amount *
-                          ((transaction.type == "Outgoing") ? -1 : 1);
-                      String name = person?.name ?? '';
-                      if (person?.id == 0) {
-                        name = '$name\n${person?.phone}';
-                      }
+
+
                       final PaymentTransaction newPayment = PaymentTransaction(
                         personId: person?.id ?? 0,
                         name: name,
                         orderId: 0,
                         amount: amount,
+                        paidAmount: paidAmount,
                         paymentStatus: transaction.paymentStatus,
                         dueDate: transaction.dueDate,
                         paymentMethod: transaction.paymentMethod,

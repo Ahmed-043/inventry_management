@@ -154,9 +154,21 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
       isLoading = true;
     });
     if (widget.order.update || widget.order.cancel) {
+
       await updatePendingOrderFromObject(currentDB!, order: widget.order);
       widget.order.update = false;
       widget.order.cancel = false;
+
+      if(widget.order.paidAmount >= (widget.order.totalAmount + widget.order.adjustment)){
+        widget.order.orderStatus = 'Completed';
+        widget.order.paymentStatus = 'Paid';
+        widget.callback.call();
+      }else{
+        widget.order.orderStatus = 'Pending';
+        widget.order.paymentStatus = 'Pending';
+        widget.callback.call();
+      }
+
       setState(() {
         isLoading = false;
       });

@@ -162,6 +162,7 @@ class _PersonsPageState extends State<PersonsPage> {
                               num: index,
                               onDoubleTap: () => updateDialog(persons[index]),
                               onSecondaryTap: () => updateDialog(persons[index]),
+                              onPaymentSaved: () => _loadPersons(),
                             ),
                           ),
                         ),

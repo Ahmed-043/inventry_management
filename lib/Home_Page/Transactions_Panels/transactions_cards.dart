@@ -136,181 +136,186 @@ class _TransactionsCardsState extends State<TransactionsCards> {
     final formattedDate = DateFormat('dd-MMM-yyyy, h:mm a').format(date);
     double textSize = compress ? 12 : 15;
     Color color = MyColors.black;
-    return SizedBox(
+    return UiHelper.percentFillBar(
+      percent: transaction.paymentStatus == 'Paid' ? 0 :1-(transaction.paidAmount / transaction.amount),
       height: 60,
-      width: double.infinity,
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Text(
-              transaction.orderId < 1 ? "N/A" : transaction.orderId.toString(),
-              style: MyFont.semiBold(textSize, color: color),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          //ORDER ID
-          Expanded(
-            flex: 2,
-            child: Text(
-              transaction.name.split('\n').first,
-              style: MyFont.semiBold(textSize, color: color),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          //Amount Rs
-          Expanded(
-            flex: 3,
-            child: Row(
-              mainAxisAlignment: .center,
-              children: [
-                Text(
-                  'Rs ${NumberFormat.decimalPattern().format(transaction.amount)}',
-                  style: MyFont.semiBold(textSize, color: color),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-                transaction.amount < 0
-                    ? Icon(
-                        Icons.keyboard_double_arrow_down_rounded,
-                        size: 25,
-                        color: MyColors.error,
-                      )
-                    : Icon(
-                        Icons.keyboard_double_arrow_up_rounded,
-                        size: 25,
-                        color: MyColors.success,
-                      ),
-              ],
-            ),
-          ),
-          //Date time
-          if (MediaQuery.of(context).size.width > 700)
+      fillColor: MyColors.warning,
+      child: SizedBox(
+        height: 60,
+        width: double.infinity,
+        child: Row(
+          children: [
             Expanded(
-              flex: 3,
+              flex: 1,
               child: Text(
-                formattedDate,
+                transaction.orderId < 1 ? "N/A" : transaction.orderId.toString(),
                 style: MyFont.semiBold(textSize, color: color),
                 textAlign: TextAlign.center,
               ),
             ),
-          // Payment Status
-          Expanded(
-            flex: 2,
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: transaction.paymentStatus == 'Paid'
-                          ? MyColors.success.withAlpha(30)
-                          : (transaction.paymentStatus == 'Pending' ||
-                                transaction.dueDate >
-                                    DateTime.now().millisecondsSinceEpoch)
-                          ? MyColors.warning.withAlpha(30)
-                          : MyColors.error.withAlpha(30),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      transaction.paymentStatus,
-                      textAlign: TextAlign.center,
-                      style: MyFont.semiBold(
-                        textSize,
-                        color: transaction.paymentStatus == 'Paid'
-                            ? MyColors.success
-                            : (transaction.paymentStatus == 'Pending' ||
-                                  transaction.dueDate >
-                                      DateTime.now().millisecondsSinceEpoch)
-                            ? MyColors.warning
-                            : MyColors.error,
-                      ),
-                    ),
-                  ),
-                ),
-                if (transaction.dueDate != 0 &&
-                    transaction.paymentStatus == 'Overdue')
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Text(
-                      DateFormat('dd-MMM-yyyy').format(
-                        DateTime.fromMillisecondsSinceEpoch(
-                          transaction.dueDate,
-                        ),
-                      ),
-                      style: MyFont.semiBold(
-                        10,
-                        color:
-                            DateTime.fromMillisecondsSinceEpoch(
-                              transaction.dueDate,
-                            ).isBefore(DateTime.now())
-                            ? MyColors.error
-                            : MyColors.warning,
-                      ),
-                    ),
-                  ),
-              ],
+            //ORDER ID
+            Expanded(
+              flex: 2,
+              child: Text(
+                transaction.name.split('\n').first,
+                style: MyFont.semiBold(textSize, color: color),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          // Payment Method
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                height: 30,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: transaction.paymentMethod == 'Cash'
-                      ? MyColors.success.withAlpha(30)
-                      : transaction.paymentMethod == 'Digital'
-                      ? MyColors.info.withAlpha(30)
-                      : transaction.paymentMethod == 'Bank'
-                      ? MyColors.blue.withAlpha(30)
-                      : MyColors.grey.withAlpha(50),
-                ),
-                child: Text(
-                  transaction.paymentMethod,
-                  style: MyFont.semiBold(
-                    textSize,
-                    color: transaction.paymentMethod == 'Cash'
-                        ? MyColors.success
-                        : transaction.paymentMethod == 'Digital'
-                        ? MyColors.info
-                        : transaction.paymentMethod == 'Bank'
-                        ? MyColors.blue
-                        : MyColors.grey,
+            //Amount Rs
+            Expanded(
+              flex: 3,
+              child: Row(
+                mainAxisAlignment: .center,
+                children: [
+                  Text(
+                    'Rs ${NumberFormat.decimalPattern().format(transaction.amount)}',
+                    style: MyFont.semiBold(textSize, color: color),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
+                  transaction.amount < 0
+                      ? Icon(
+                          Icons.keyboard_double_arrow_down_rounded,
+                          size: 25,
+                          color: MyColors.error,
+                        )
+                      : Icon(
+                          Icons.keyboard_double_arrow_up_rounded,
+                          size: 25,
+                          color: MyColors.success,
+                        ),
+                ],
+              ),
+            ),
+            //Date time
+            if (MediaQuery.of(context).size.width > 700)
+              Expanded(
+                flex: 3,
+                child: Text(
+                  formattedDate,
+                  style: MyFont.semiBold(textSize, color: color),
                   textAlign: TextAlign.center,
                 ),
               ),
+            // Payment Status
+            Expanded(
+              flex: 2,
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: transaction.paymentStatus == 'Paid'
+                            ? MyColors.success.withAlpha(30)
+                            : (transaction.paymentStatus == 'Pending' ||
+                                  transaction.dueDate >
+                                      DateTime.now().millisecondsSinceEpoch)
+                            ? MyColors.warning.withAlpha(30)
+                            : MyColors.error.withAlpha(30),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        transaction.paymentStatus,
+                        textAlign: TextAlign.center,
+                        style: MyFont.semiBold(
+                          textSize,
+                          color: transaction.paymentStatus == 'Paid'
+                              ? MyColors.success
+                              : (transaction.paymentStatus == 'Pending' ||
+                                    transaction.dueDate >
+                                        DateTime.now().millisecondsSinceEpoch)
+                              ? MyColors.warning
+                              : MyColors.error,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (transaction.dueDate != 0 &&
+                      transaction.paymentStatus == 'Overdue')
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Text(
+                        DateFormat('dd-MMM-yyyy').format(
+                          DateTime.fromMillisecondsSinceEpoch(
+                            transaction.dueDate,
+                          ),
+                        ),
+                        style: MyFont.semiBold(
+                          10,
+                          color:
+                              DateTime.fromMillisecondsSinceEpoch(
+                                transaction.dueDate,
+                              ).isBefore(DateTime.now())
+                              ? MyColors.error
+                              : MyColors.warning,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          // Action
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: SizedBox(
-                width: compress ? 80 : 100,
-                height: compress ? 35 : 40,
-                child: Hero(
-                  tag: 'transaction${transaction.id}',
-                  child: UiHelper.myButton(
-                    title: 'View Details',
-                    textSize: textSize,
-                    callback: onViewDetails,
-                    filled: true,
-                    color: MyColors.info,
-                    borderRadius: 15,
+            // Payment Method
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  height: 30,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: transaction.paymentMethod == 'Cash'
+                        ? MyColors.success.withAlpha(30)
+                        : transaction.paymentMethod == 'Digital'
+                        ? MyColors.info.withAlpha(30)
+                        : transaction.paymentMethod == 'Bank'
+                        ? MyColors.blue.withAlpha(30)
+                        : MyColors.grey.withAlpha(50),
+                  ),
+                  child: Text(
+                    transaction.paymentMethod,
+                    style: MyFont.semiBold(
+                      textSize,
+                      color: transaction.paymentMethod == 'Cash'
+                          ? MyColors.success
+                          : transaction.paymentMethod == 'Digital'
+                          ? MyColors.info
+                          : transaction.paymentMethod == 'Bank'
+                          ? MyColors.blue
+                          : MyColors.grey,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
             ),
-          ),
-          //SizedBox(width: 5),
-        ],
+            // Action
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: SizedBox(
+                  width: compress ? 80 : 100,
+                  height: compress ? 35 : 40,
+                  child: Hero(
+                    tag: 'transaction${transaction.id}',
+                    child: UiHelper.myButton(
+                      title: 'View Details',
+                      textSize: textSize,
+                      callback: onViewDetails,
+                      filled: true,
+                      color: MyColors.info,
+                      borderRadius: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            //SizedBox(width: 5),
+          ],
+        ),
       ),
     );
   }

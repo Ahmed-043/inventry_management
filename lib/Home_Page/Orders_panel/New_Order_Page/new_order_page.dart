@@ -39,6 +39,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
   @override
   void initState() {
     super.initState();
+
     Future.delayed(const Duration(milliseconds: 0), () {
       if (mounted) {
         setState(() {
@@ -48,6 +49,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
     });
     if (widget.order != null) {
       order = widget.order!;
+      //adjustment calculation here
       debugPrint("DueDate in order: ${order.dueDateTimestamp}");
       selectedPerson = Person(name: order.name, id: order.personId);
       _initAsync(); // load info and products safely

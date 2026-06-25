@@ -44,6 +44,7 @@ final Map<String, Map<String, String>> dbSchema = {
     'name': 'TEXT DEFAULT ""',
     'order_type': "TEXT CHECK(order_type IN ('buy','sell')) NOT NULL",
     'total_amount': 'REAL DEFAULT 0',
+    'paid_amount': 'REAL DEFAULT 0',
     'total_weight': 'REAL DEFAULT 0',
     'tax' : 'TEXT DEFAULT ""', //'%,0.0'
     'discount' : 'TEXT DEFAULT ""', //'Rs,0.0'
@@ -70,7 +71,8 @@ final Map<String, Map<String, String>> dbSchema = {
     'person_id': 'INTEGER DEFAULT 0',
     'name': 'TEXT DEFAULT ""',
     'order_id': 'INTEGER DEFAULT 0',
-    'amount': 'REAL NOT NULL',
+    'amount': 'REAL NOT NULL DEFAULT 0',
+    'paid_amount': 'REAL NOT NULL DEFAULT 0',
     'payment_status': "TEXT CHECK(payment_status IN ('Pending','Paid','Overdue')) NOT NULL DEFAULT 'Paid'",
     'due_date': 'INTEGER DEFAULT 0',
     'payment_method': "TEXT CHECK(payment_method IN ('Digital','Cash','Bank','Other')) NOT NULL DEFAULT 'Cash'",

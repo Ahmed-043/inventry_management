@@ -39,7 +39,7 @@ _ToastVisuals _resolveToastVisuals(_ToastRequest request) {
       return _ToastVisuals(
         message: request.message,
         backgroundColorValue: MyColors.warning.toARGB32(),
-        textColorValue: MyColors.dark.toARGB32(),
+        textColorValue: MyColors.translucent.toARGB32(),
       );
     case 3: // error
       return _ToastVisuals(
@@ -766,6 +766,45 @@ class UiHelper {
     return  Image.asset(
       path,
       opacity: const AlwaysStoppedAnimation<double>(0.35),
+    );
+  }
+
+  static Widget percentFillBar({
+    required double percent, // 0.0 to 1.0
+    Widget? child,
+    required double height,
+    Color fillColor = MyColors.warning,
+    double radius = 10,
+
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          children: [
+            FractionallySizedBox(
+              widthFactor: percent.clamp(0.0, 1.0),
+              alignment: Alignment.centerLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      fillColor.withAlpha(40),
+                      fillColor.withAlpha(25),
+                      fillColor.withAlpha(0), // fade into background
+                    ],
+                    stops: const [0.4, 0.8, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            ?child
+          ],
+        ),
+      ),
     );
   }
 }
