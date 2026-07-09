@@ -24,8 +24,6 @@ class StockAlerts extends StatelessWidget {
 
         page:  UpdateProductStock(
           id: product.id,
-          productStock: product.stock,
-          name: product.name,
           onSave: onSave,
         ),
       );

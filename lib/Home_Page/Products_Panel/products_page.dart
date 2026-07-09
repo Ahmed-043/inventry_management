@@ -16,6 +16,7 @@ import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_but
 import '../../Database/category.dart';
 import '../../Database/database.dart';
 import '../../Database/retrieve_products.dart';
+import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
 import 'add_new_product_panel.dart';
 
@@ -30,7 +31,7 @@ class _StockDashboardState extends State<StockDashboard> {
   var cSize = cardSize ?? 300.0;
   List<Product> products = [];
   int page = 0;
-  bool isLoading = false;
+  bool isLoading = false, active = true, _isTopBarHovered = false;
   final FocusNode _focusNode = FocusNode();
   final int pSize = productsPerPage ?? 20;
   TextEditingController searchController = TextEditingController();
@@ -41,6 +42,7 @@ class _StockDashboardState extends State<StockDashboard> {
   ScrollController scrollController = ScrollController();
   Map<int, String> _categoryNames = {}; // id -> name
   List<DBCategory> categories = [];
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +97,7 @@ class _StockDashboardState extends State<StockDashboard> {
         upperLimit: upperLimit,
         sortMode: sort,
         categorySortMode: sortCategory,
+        active: active,
       );
 
       setState(() => products = list);
@@ -230,18 +233,22 @@ class _StockDashboardState extends State<StockDashboard> {
         children: [
           CustomScrollView(
             controller: scrollController,
-            physics: const BouncingScrollPhysics(),
+            physics: _isTopBarHovered ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
             clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the Viewport
             slivers: [
               SliverAppBar(
                 floating: true,
                 snap: true,
-                pinned: false,
+                pinned: performanceMode,
                 automaticallyImplyLeading: false,
                 backgroundColor: Colors.transparent,
                 forceMaterialTransparency: true,
                 toolbarHeight: compress ? 100 : 50,
-                flexibleSpace: topBar(),
+                flexibleSpace: MouseRegion(
+                  onEnter: (_) => setState(() => _isTopBarHovered = true),
+                  onExit: (_) => setState(() => _isTopBarHovered = false),
+                  child: topBar(),
+                ),
               ),
               if (products.isEmpty)
                 SliverFillRemaining(
@@ -302,119 +309,127 @@ class _StockDashboardState extends State<StockDashboard> {
             bottom: 10,
             right: 10,
             child: Builder(
-              builder: (context) => FloatingActionButton(
-                heroTag: null,
-                elevation: 0,
-                backgroundColor: MyColors.primary,
-                child: Icon(Icons.sort, color: MyColors.light),
-                onPressed: () async {
-                  await _loadCategoryNames();
-                  if (mounted) {
-                    showGeneralDialog(
-                      context: context,
-                      barrierColor: Colors.transparent,
-                      barrierDismissible: true,
-                      barrierLabel: 'SortMenu',
-                      transitionDuration: const Duration(milliseconds: 300),
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        double dragX = 0;
-                        double dragY = 0;
-                        bool isDragging = false;
-                        return StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return Stack(
-                              children: [
-                                AnimatedPositioned(
-                                  duration: isDragging
-                                      ? Duration.zero
-                                      : const Duration(milliseconds: 200),
-                                  curve: Curves.easeOut,
-                                  right: 4 - dragX,
-                                  bottom: 4 - dragY,
-                                  child: GestureDetector(
-                                    onPanStart: (_) =>
-                                        setStateDialog(() => isDragging = true),
-                                    onPanUpdate: (details) {
-                                      setStateDialog(() {
-                                        dragX += details.delta.dx;
-                                        dragY += details.delta.dy;
-                                        if (dragX < 0) dragX = 0;
-                                        if (dragY < 0) dragY = 0;
-                                      });
-                                    },
-                                    onPanEnd: (details) {
-                                      setStateDialog(() => isDragging = false);
-                                      if (dragX > 120 ||
-                                          dragY > 120 ||
-                                          details.velocity.pixelsPerSecond.dx > 500 ||
-                                          details.velocity.pixelsPerSecond.dy > 500) {
-                                        Navigator.of(context).pop();
-                                      } else {
+              builder: (context) => MouseRegion(
+                onEnter: (_)  {
+                  isClickable =true;
+                },
+                onExit: (_) {
+                  isClickable = false;
+                },
+                child: FloatingActionButton(
+                  heroTag: null,
+                  elevation: 0,
+                  backgroundColor: MyColors.primary,
+                  child: Icon(Icons.sort, color: MyColors.light),
+                  onPressed: () async {
+                    await _loadCategoryNames();
+                    if (mounted) {
+                      showGeneralDialog(
+                        context: context,
+                        barrierColor: Colors.transparent,
+                        barrierDismissible: true,
+                        barrierLabel: 'SortMenu',
+                        transitionDuration: const Duration(milliseconds: 300),
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          double dragX = 0;
+                          double dragY = 0;
+                          bool isDragging = false;
+                          return StatefulBuilder(
+                            builder: (context, setStateDialog) {
+                              return Stack(
+                                children: [
+                                  AnimatedPositioned(
+                                    duration: isDragging
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 200),
+                                    curve: Curves.easeOut,
+                                    right: 4 - dragX,
+                                    bottom: 4 - dragY,
+                                    child: GestureDetector(
+                                      onPanStart: (_) =>
+                                          setStateDialog(() => isDragging = true),
+                                      onPanUpdate: (details) {
                                         setStateDialog(() {
-                                          dragX = 0;
-                                          dragY = 0;
+                                          dragX += details.delta.dx;
+                                          dragY += details.delta.dy;
+                                          if (dragX < 0) dragX = 0;
+                                          if (dragY < 0) dragY = 0;
                                         });
-                                      }
-                                    },
-                                    child: SingleChildScrollView(
-                                      physics: const BouncingScrollPhysics(),
-                                      child: SortMenu(
-                                        categories: categories,
-                                        currentSortCategory: sortCategory,
-                                        currentSort: sort,
-                                        cSize: cSize,
-                                        onChange: () => setState(() {}),
-                                        onSizeChange: () {
-                                          setState(() {
-                                            cSize += 50;
-                                            if (cSize > 400) cSize = 150;
-                                            cardSize = cSize;
-                                            SharedPreferences.getInstance().then(
-                                              (prefs) => prefs.setDouble('cardSize', cSize),
-                                            );
+                                      },
+                                      onPanEnd: (details) {
+                                        setStateDialog(() => isDragging = false);
+                                        if (dragX > 120 ||
+                                            dragY > 120 ||
+                                            details.velocity.pixelsPerSecond.dx > 500 ||
+                                            details.velocity.pixelsPerSecond.dy > 500) {
+                                          Navigator.of(context).pop();
+                                        } else {
+                                          setStateDialog(() {
+                                            dragX = 0;
+                                            dragY = 0;
                                           });
-                                        },
-                                        onApply: (newCategory, newSort, updatedCategories) async {
-                                          categories = updatedCategories;
-                                          await updateAllSequences(currentDB!, categories);
-
-                                          setState(() {
-                                            sortCategory = newCategory;
-                                            sort = newSort;
-                                            SharedPreferences.getInstance().then((prefs) {
-                                              prefs.setInt('sortCategory', sortCategory);
-                                              prefs.setInt('sort', sort);
+                                        }
+                                      },
+                                      child: SingleChildScrollView(
+                                        physics: const BouncingScrollPhysics(),
+                                        child: SortMenu(
+                                          categories: categories,
+                                          currentSortCategory: sortCategory,
+                                          currentSort: sort,
+                                          cSize: cSize,
+                                          onChange: () => setState(() {}),
+                                          onSizeChange: () {
+                                            setState(() {
+                                              cSize += 50;
+                                              if (cSize > 400) cSize = 150;
+                                              cardSize = cSize;
+                                              SharedPreferences.getInstance().then(
+                                                (prefs) => prefs.setDouble('cardSize', cSize),
+                                              );
                                             });
-                                            _loadProducts();
-                                          });
-                                        },
+                                          },
+                                          onApply: (newCategory, newSort, updatedCategories) async {
+                                            categories = updatedCategories;
+                                            await updateAllSequences(currentDB!, categories);
+
+                                            setState(() {
+                                              sortCategory = newCategory;
+                                              sort = newSort;
+                                              SharedPreferences.getInstance().then((prefs) {
+                                                prefs.setInt('sortCategory', sortCategory);
+                                                prefs.setInt('sort', sort);
+                                              });
+                                              _loadProducts();
+                                            });
+                                          },
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      transitionBuilder: (context, animation, secondaryAnimation, child) {
-                        return SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(1, 0),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOut,
-                          )),
-                          child: ScaleTransition(
-                            scale: animation,
-                            child: child,
-                          ),
-                        );
-                      },
-                    );
-                  }
-                },
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        transitionBuilder: (context, animation, secondaryAnimation, child) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1, 0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOut,
+                            )),
+                            child: ScaleTransition(
+                              scale: animation,
+                              child: child,
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
               ),
             ),
           ),
@@ -481,6 +496,7 @@ class _StockDashboardState extends State<StockDashboard> {
         {'title': 'In Stock', 'count': stocks['inStock'] ?? 0},
         {'title': 'Low Stock', 'count': stocks['lowStock'] ?? 0},
         {'title': 'Out Of Stock', 'count': stocks['outOfStock'] ?? 0},
+        {'title': 'Inactive', 'count': stocks['inactive'] ?? 0},
       ],
       selectedIndex: selectStock,
       onButtonSelect: (i) {
@@ -490,18 +506,25 @@ class _StockDashboardState extends State<StockDashboard> {
             case 1:
               upperLimit = null;
               lowerLimit = lowStockLimit;
+              active = true;
               break;
             case 2:
               upperLimit = lowStockLimit - 1;
               lowerLimit = 1;
+              active = true;
               break;
             case 3:
               upperLimit = 0;
               lowerLimit = 0;
+              active = true;
+              break;
+            case 4:
+              active = false;
               break;
             default:
               upperLimit = null;
               lowerLimit = 0;
+              active = true;
           }
         });
         _loadProducts();
@@ -548,8 +571,6 @@ class _StockDashboardState extends State<StockDashboard> {
 
         page:  UpdateProductStock(
           id: product.id,
-          productStock: product.stock,
-          name: product.name,
           onSave: () {
             _loadProducts();
             setState(() {});

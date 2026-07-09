@@ -59,16 +59,27 @@ class _PersonCardState extends State<PersonCard> {
           onSecondaryTap: widget.onSecondaryTap,
           onTapDown: (TapDownDetails details) async {
             final tapPosition = details.globalPosition;
-            showDialog(
+            final screenSize = MediaQuery.of(context).size;
+            const double dialogWidth = 350;
+            const double dialogHeight = 180; // Estimated height of paymentOptions()
+
+            double left = (tapPosition.dx - 100).clamp(10.0, screenSize.width - dialogWidth - 10.0);
+            double top = tapPosition.dy;
+
+            // If it would overflow the bottom, show it above the tap point instead
+            if (top + dialogHeight > screenSize.height) {
+              top = tapPosition.dy - dialogHeight+50;
+            }
+            top = top.clamp(10.0, screenSize.height - dialogHeight - 10.0);
+
+            await showDialog(
               context: context,
               barrierColor: Colors.transparent,
               builder: (_) => Stack(
                 children: [
                   Positioned(
-                    left:
-                    tapPosition.dx -
-                        100, // exact x position of tap
-                    top: tapPosition.dy + 20, // adjust y
+                    left: left,
+                    top: top,
                     child: Material(
                       elevation: 6,
                       borderRadius: BorderRadius.circular(25),
@@ -78,6 +89,8 @@ class _PersonCardState extends State<PersonCard> {
                 ],
               ),
             );
+            payController.clear();
+            receiveController.clear();
           },
 
           splashColor: widget.splashColor ?? MyColors.primary.withOpacity(0.1),
@@ -149,6 +162,7 @@ class _PersonCardState extends State<PersonCard> {
                               ),
                             ),
                           ),
+                          if(widget.person.phone!.isNotEmpty)
                           Row(
                             children: [
                               Icon(
@@ -172,6 +186,7 @@ class _PersonCardState extends State<PersonCard> {
                               ),
                             ],
                           ),
+                          if(widget.person.email!.isNotEmpty)
                           Row(
                             children: [
                               Icon(
@@ -315,45 +330,69 @@ class _PersonCardState extends State<PersonCard> {
                   ),
                 ),
               ),
-
-
             ],
           ),
           const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            height: 40,
-            child: UiHelper.myButton(
-              title: "Save",
-              filled: true,
-              textSize: 16,
-              color: MyColors.primary,
-              callback: () async {
-                final double payAmount = double.tryParse(payController.text) ?? 0.0;
-                final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
+          Row(
+            children: [
+              if(widget.person.incoming > 0 && widget.person.outgoing > 0)
+                ...[
+                  Expanded(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 40,
+                      child: UiHelper.myButton(
+                        title: "Auto Fill",
+                        filled: false,
+                        textSize: 16,
+                        color: MyColors.primary,
+                        callback: () {
+                          payController.text = widget.person.outgoing.clamp(0, widget.person.incoming).toString();
+                          receiveController.text = payController.text;
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              Expanded(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: UiHelper.myButton(
+                    title: "Save",
+                    filled: true,
+                    textSize: 16,
+                    color: MyColors.primary,
+                    callback: () async {
+                      final double payAmount = double.tryParse(payController.text) ?? 0.0;
+                      final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
 
-                if (payAmount > 0 || receiveAmount > 0) {
-                  await distributePayments(
-                    currentDB!,
-                    personId: widget.person.id!,
-                    pay: payAmount,
-                    receive: receiveAmount,
-                  );
+                      if (payAmount > 0 || receiveAmount > 0) {
+                        await distributePayments(
+                          currentDB!,
+                          personId: widget.person.id!,
+                          pay: payAmount,
+                          receive: receiveAmount,
+                        );
 
-                  if (mounted) {
-                    UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
-                    payController.clear();
-                    receiveController.clear();
-                    widget.onPaymentSaved?.call();
-                    Navigator.pop(context);
-                  }
-                } else {
-                  if (mounted) {
-                    UiHelper.showToast(context, "Please enter an amount", type: 2);
-                  }
-                }
-              },
-            ),
+                        if (mounted) {
+                          UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                          payController.clear();
+                          receiveController.clear();
+                          widget.onPaymentSaved?.call();
+                          Navigator.pop(context);
+                        }
+                      } else {
+                        if (mounted) {
+                          UiHelper.showToast(context, "Please enter an amount", type: 2);
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

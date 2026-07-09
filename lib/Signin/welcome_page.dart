@@ -9,6 +9,7 @@ import 'package:sqflite/sqflite.dart';
 import '../Database/backup.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
+import '../Database/product_stock.dart';
 import '../Home_Page/home_page.dart';
 import '../utils/shader_warmup.dart';
 
@@ -79,6 +80,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
       // optional: auto backup check
       await checkAndBackupDatabase(currentDB!);
+
+      int i = await pushCurrentStockAsOpeningStock(currentDB!);
+      debugPrint("Daily Opening Stock Noted: $i");
 
       gotoHomePage(path, info);
       return true;

@@ -5,6 +5,7 @@ import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import '../Database/db_info.dart';
+import '../Shared_Widgets/app_cursor_overlay.dart';
 
 
 class SidebarPanel extends StatefulWidget {
@@ -36,7 +37,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
     {'title': 'Suppliers', 'icon': Icons.local_shipping_outlined},
     {'title': 'Orders', 'icon': Icons.production_quantity_limits_rounded},
     {'title': 'Transactions', 'icon': Icons.mobile_friendly_rounded},
-   // {'title': 'Reports', 'icon': Icons.bar_chart_outlined},
+    {'title': 'Reports', 'icon': Icons.bar_chart_outlined},
     {'title': 'Settings', 'icon': Icons.settings_outlined},
     {'title': 'Logout', 'icon': Icons.logout},
   ];
@@ -107,43 +108,51 @@ class _SidebarPanelState extends State<SidebarPanel> {
                   ),
                 );
               },
-              child: Container(
-                height: 60,
-               // width: double.infinity,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: MyColors.primary,
-                  borderRadius: BorderRadius.only(topRight: Radius.circular(25)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
+              child: MouseRegion(
+                onEnter: (_)  {
+                  isClickable =true;
+                },
+                onExit: (_) {
+                  isClickable = false;
+                },
+                child: Container(
+                  height: 60,
+                 // width: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: MyColors.primary,
+                    borderRadius: BorderRadius.only(topRight: Radius.circular(25)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
 
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: ClipOval(
-                        child: widget.info!.image != null
-                            ? Image.memory(widget.info!.image!, fit: BoxFit.cover)
-                            : const Icon(Icons.person),
+                      AspectRatio(
+                        aspectRatio: 1,
+                        child: ClipOval(
+                          child: widget.info!.image != null
+                              ? Image.memory(widget.info!.image!, fit: BoxFit.cover)
+                              : const Icon(Icons.person),
+                        ),
                       ),
-                    ),
-                    ?widget.collaps? null:  const SizedBox(width: 10),
-                    ?widget.collaps? null: Expanded(
-                      child: SizedBox(
-                        height: double.infinity,
-                        child: Center(
-                          child: Text(
-                            widget.info!.dbName,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.fade,
-                            softWrap: true,
-                            maxLines: 2,
-                            style: MyFont.bold(16, color: MyColors.translucent),
+                      ?widget.collaps? null:  const SizedBox(width: 10),
+                      ?widget.collaps? null: Expanded(
+                        child: SizedBox(
+                          height: double.infinity,
+                          child: Center(
+                            child: Text(
+                              widget.info!.dbName,
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.fade,
+                              softWrap: true,
+                              maxLines: 2,
+                              style: MyFont.bold(16, color: MyColors.translucent),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             )

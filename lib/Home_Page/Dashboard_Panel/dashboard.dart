@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Home_Page/Dashboard_Panel/stock_alerts.dart';
 import 'package:inventry_management/Shared_Widgets/horizontal_scroll.dart';
@@ -38,12 +39,14 @@ class _DashboardState extends State<Dashboard> {
   List<Product> lowStockProducts = [];
   List<SalesData> salesData = [], paymentInfo = [], mostSolds = [];
   int back = 14;
+  bool dailySales = true;
+  
   PageController pageController = PageController();
   PageController dashboardController = PageController();
 
   final int _totalPages = 2;
   late double pendingPayment;
-  bool compress = false, isLoading = false, dailySales = true;
+  bool compress = false, isLoading = false ;
 
   @override
   void initState() {
@@ -52,16 +55,36 @@ class _DashboardState extends State<Dashboard> {
       isLoading = true;
     });
 
-    // Defer heavy database work until after the frame is rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      SchedulerBinding.instance.endOfFrame.then((_) {
-        if (!mounted) return;
-        Future.delayed(const Duration(milliseconds: 50), () {
+    _loadSettings().then((_) {
+      // Defer heavy database work until after the frame is rendered
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        SchedulerBinding.instance.endOfFrame.then((_) {
           if (!mounted) return;
-          loadAllDashboardData();
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (!mounted) return;
+            loadAllDashboardData();
+          });
         });
       });
     });
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('dashboard_current', current.map((e) => e.toString()).toList());
+    await prefs.setInt('dashboard_back', back);
+    await prefs.setBool('dashboard_dailySales', dailySales);
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCurrent = prefs.getStringList('dashboard_current');
+    if (savedCurrent != null && savedCurrent.length == current.length) {
+      current = savedCurrent.map((e) => e == 'true').toList();
+    }
+    back = prefs.getInt('dashboard_back') ?? 14;
+    dailySales = prefs.getBool('dashboard_dailySales') ?? true;
+    if (mounted) setState(() {});
   }
 
   Future<void> loadAllDashboardData() async {
@@ -295,6 +318,7 @@ class _DashboardState extends State<Dashboard> {
                                     chips: chipData,
                                     current: current,
                                     onChange: () {
+                                      _saveSettings();
                                       if (!compress) {
                                         final prevPage =
                                             (pageController.page ?? 0).toInt() -
@@ -327,12 +351,14 @@ class _DashboardState extends State<Dashboard> {
                                         }
                                       }
                                       loadOrderData();
+                                      _saveSettings();
                                     },
                                     onChange2: () {
-
+                                      _saveSettings();
                                       setState(() {});
                                     },
                                     onChange3: () {
+                                      _saveSettings();
                                       loadStockData();
                                       loadDashboard();
                                     },
@@ -654,6 +680,7 @@ class _DashboardState extends State<Dashboard> {
                       onPressed: (){
                     setState(() {
                       dailySales = !dailySales;
+                      _saveSettings();
                       loadDashboard();
                     });
                   }, icon: Text("${dailySales ? "Daily" : "Monthly "} ${!current[0] ? 'Income' : 'Purchase'}",
@@ -675,11 +702,13 @@ class _DashboardState extends State<Dashboard> {
                     onPressed: () {
                       if (back < 30) {
                         back++;
+                        _saveSettings();
                         loadDashboard();
                       }else{
                         if(dailySales){
                           dailySales = !dailySales;
                           back = 5;
+                          _saveSettings();
                           loadDashboard();
                         }
                       }
@@ -697,11 +726,13 @@ class _DashboardState extends State<Dashboard> {
                     onPressed: () {
                       if (back > 5) {
                         back--;
+                        _saveSettings();
                         loadDashboard();
                       }else{
                         if(!dailySales){
                           dailySales = !dailySales;
                           back = 30;
+                          _saveSettings();
                           loadDashboard();
                         }
                       }

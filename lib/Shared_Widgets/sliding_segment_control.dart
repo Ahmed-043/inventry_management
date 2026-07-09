@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../Database/orders.dart';
 import '../colors.dart';
+import 'app_cursor_overlay.dart';
 import 'fonts.dart';
 import 'package:flutter/material.dart';
 
@@ -23,19 +24,27 @@ class StatusSegmentedControl extends StatelessWidget {
     final selectedOption =
     options.firstWhere((o) => o.first == selected, orElse: () => options[0]);
 
-    return CupertinoSlidingSegmentedControl<String>(
-      backgroundColor: Colors.white,
-      thumbColor: selectedOption.second is Color
-          ? selectedOption.second
-          : Colors.grey.shade300,
-      groupValue: selected,
-      children: {
-        for (var option in options)
-          option.first: _buildSegmentChild(option, selected == option.first),
+    return MouseRegion(
+      onEnter: (_){
+        isClickable =true;
       },
-      onValueChanged: (String? value) {
-        if (value != null) onChanged(value);
+      onExit: (_) {
+        isClickable = false;
       },
+      child: CupertinoSlidingSegmentedControl<String>(
+        backgroundColor: Colors.white,
+        thumbColor: selectedOption.second is Color
+            ? selectedOption.second
+            : Colors.grey.shade300,
+        groupValue: selected,
+        children: {
+          for (var option in options)
+            option.first: _buildSegmentChild(option, selected == option.first),
+        },
+        onValueChanged: (String? value) {
+          if (value != null) onChanged(value);
+        },
+      ),
     );
   }
 

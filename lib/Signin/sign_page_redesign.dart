@@ -12,6 +12,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../Database/backup.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
+import '../Database/product_stock.dart';
 import '../Home_Page/home_page.dart';
 import 'create_new_database.dart';
 import 'import_database.dart';
@@ -68,6 +69,9 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
 
       // optional: auto backup check
       await checkAndBackupDatabase(currentDB!);
+
+      int i = await pushCurrentStockAsOpeningStock(currentDB!);
+      debugPrint("Daily Opening Stock Noted: $i");
 
       gotoHomePage(path, info);
       return true;
@@ -439,7 +443,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
       ),
     );
   }
-
+int check = 0;
   Future<void> openUserDatabase(String path) async {
     if (await File(path).exists()) {
       try{
@@ -447,16 +451,31 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
         currentDB?.close();
         currentDB = null;
         currentDB = await openDatabase(path);
-
+        check++;
         if (await validateDatabaseSchema(currentDB!)) {
           DBInfo? info = await getDBInfo(currentDB!);
           debugPrint('${info.image?.lengthInBytes}');
 
           checkAndBackupDatabase(currentDB!);
           pref.setString('dbPath', path);
+
+          int i = await pushCurrentStockAsOpeningStock(currentDB!);
+          debugPrint("Daily Opening Stock Noted: $i");
+
           gotoHomePage(path, info);
         } else {
-          repairDialog();
+          if(check>1) {
+            repairDialog();
+          }
+          else {
+            try {
+            await ensureDatabaseSchema(currentDB!);
+          } catch (e) {
+            debugPrint("Error repairing database: $e");
+            warning("Error repairing database");
+            }
+          }
+          openUserDatabase(path);
         }
       } catch(e){
         if(mounted) {

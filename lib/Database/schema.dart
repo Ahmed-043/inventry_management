@@ -16,6 +16,7 @@ final Map<String, Map<String, String>> dbSchema = {
     'stock': 'INTEGER DEFAULT 0 CHECK(stock >= 0)',
     'weight': 'REAL DEFAULT 0 CHECK(weight >= 0)',
     'sku': 'TEXT UNIQUE',
+    'active': 'BOOL DEFAULT TRUE',
     'sold': 'INTEGER DEFAULT 0 CHECK(sold >= 0)',
     'image': 'BLOB',
     'components': "TEXT NOT NULL DEFAULT ''",
@@ -78,6 +79,32 @@ final Map<String, Map<String, String>> dbSchema = {
     'payment_method': "TEXT CHECK(payment_method IN ('Digital','Cash','Bank','Other')) NOT NULL DEFAULT 'Cash'",
     'timestamp': 'INTEGER NOT NULL DEFAULT 0',
     'payment_timestamp': 'INTEGER NOT NULL DEFAULT 0',
+    'remark': 'TEXT DEFAULT ""',
+  },
+  'inventory_movements': {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'product_id': 'INTEGER NOT NULL',
+    'order_id': 'INTEGER DEFAULT 0',
+    'order_item_id': 'INTEGER DEFAULT 0',
+    'movement_type':
+    "TEXT NOT NULL CHECK(movement_type IN ("
+        "'Purchase',"
+        "'Sale',"
+        "'Purchase Return',"
+        "'Sales Return',"
+        "'Stock Adjustment',"
+        "'Opening Stock',"
+        "'Stock Transfer',"
+        "'Stock Correction'"
+        "))",
+    'quantity_change': 'INTEGER NOT NULL',
+    'stock_before': 'INTEGER NOT NULL DEFAULT 0',
+    'stock_after': 'INTEGER NOT NULL DEFAULT 0',
+    'unit_cost': 'REAL DEFAULT 0',
+    'unit_price': 'INTEGER DEFAULT 0',
+    'total_value': 'INTEGER DEFAULT 0',
+    'location': 'TEXT DEFAULT ""',
+    'timestamp': 'INTEGER NOT NULL',
     'remark': 'TEXT DEFAULT ""',
   },
 };

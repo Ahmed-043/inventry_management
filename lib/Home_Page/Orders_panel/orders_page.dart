@@ -39,10 +39,10 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   _loadOrders() async {
-    if(mounted) {
+    if (mounted) {
       setState(() {
-      isLoading = true;
-    });
+        isLoading = true;
+      });
     }
     if (currentDB == null) {
       debugPrint("Null DataBase");
@@ -69,21 +69,22 @@ class _OrdersPageState extends State<OrdersPage> {
           pageSize: pageSize,
           orderType: 2,
         );
-        if(mounted) {
+        if (mounted) {
           setState(() {
-          isLoading = false;
-        });
+            isLoading = false;
+          });
         }
       } catch (e) {
         debugPrint(e.toString());
-        if(mounted) {
+        if (mounted) {
           setState(() {
-          isLoading = false;
-        });
+            isLoading = false;
+          });
         }
       }
     }
   }
+
   _updateOrderById(int orderId) async {
     if (currentDB == null) return;
 
@@ -162,13 +163,19 @@ class _OrdersPageState extends State<OrdersPage> {
                                               });
                                               debugPrint(selected.toString());
                                             },
-                                            hoverColor: MyColors.blue.withAlpha(20),
+                                            hoverColor: MyColors.blue.withAlpha(
+                                              20,
+                                            ),
                                             child: Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                                child: Row(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                  ),
+                                              child: Row(
                                                 children: [
                                                   Text(
-                                                    (compress && (selected == 1))
+                                                    (compress &&
+                                                            (selected == 1))
                                                         ? "Buying Orders"
                                                         : "Selling Orders",
                                                     style: MyFont.bold(
@@ -189,18 +196,22 @@ class _OrdersPageState extends State<OrdersPage> {
                                     ),
                                   ),
                                 ),
-                                viewOrders(sell: selected==0),
+                                viewOrders(sell: selected == 0),
                               ],
                             )
                           : Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "Selling Orders",
-                                        style: MyFont.bold(30, color: MyColors.blue),
+                                        style: MyFont.bold(
+                                          30,
+                                          color: MyColors.blue,
+                                        ),
                                       ),
                                       viewOrders(sell: true),
                                     ],
@@ -208,12 +219,16 @@ class _OrdersPageState extends State<OrdersPage> {
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
 
                                     children: [
                                       Text(
                                         "Buying Orders",
-                                        style: MyFont.bold(30, color: MyColors.blue),
+                                        style: MyFont.bold(
+                                          30,
+                                          color: MyColors.blue,
+                                        ),
                                       ),
                                       viewOrders(sell: false),
                                     ],
@@ -232,9 +247,11 @@ class _OrdersPageState extends State<OrdersPage> {
           alignment: Alignment.bottomCenter,
 
           child: PaginationBar(
-            page: pageNo-1,
+            page: pageNo - 1,
             pageSize: pageSize,
-            itemCount: sellingOrders.length > buyingOrders.length ? sellingOrders.length : buyingOrders.length,
+            itemCount: sellingOrders.length > buyingOrders.length
+                ? sellingOrders.length
+                : buyingOrders.length,
             onPrevious: () {
               setState(() {
                 pageNo--;
@@ -257,29 +274,33 @@ class _OrdersPageState extends State<OrdersPage> {
     return Expanded(
       child: sell
           ? sellingOrders.isEmpty
-              ? Center(child: Text("No Selling Orders"))
-              : ListView.builder(
-                  itemCount: sellingOrders.length,
-                  clipBehavior: .none,
-                  itemBuilder: (context, index) {
-                    return OrderCard(
-                      order: sellingOrders[index],
-                      callBack: () => _updateOrderById(sellingOrders[index].id ?? 0),
-                    );
-                  },
-                )
+                ? Center(child: Text("No Selling Orders"))
+                : ListView.builder(
+                    itemCount: sellingOrders.length,
+                    clipBehavior: .none,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      return OrderCard(
+                        order: sellingOrders[index],
+                        callBack: () =>
+                            _updateOrderById(sellingOrders[index].id ?? 0),
+                      );
+                    },
+                  )
           : buyingOrders.isEmpty
-              ? Center(child: Text("No Buying Orders"))
-              : ListView.builder(
-                  itemCount: buyingOrders.length,
-                  clipBehavior: .none,
-                  itemBuilder: (context, index) {
-                    return OrderCard(
-                      order: buyingOrders[index],
-                      callBack: () => _updateOrderById(buyingOrders[index].id ?? 0),
-                    );
-                  },
-                ),
+          ? Center(child: Text("No Buying Orders"))
+          : ListView.builder(
+              itemCount: buyingOrders.length,
+              clipBehavior: .none,
+              physics: const BouncingScrollPhysics(),
+
+              itemBuilder: (context, index) {
+                return OrderCard(
+                  order: buyingOrders[index],
+                  callBack: () => _updateOrderById(buyingOrders[index].id ?? 0),
+                );
+              },
+            ),
     );
   }
 

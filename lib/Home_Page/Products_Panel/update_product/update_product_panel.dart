@@ -2,11 +2,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_ctrl.dart';
+import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 
 import '../../../Database/retrieve_products.dart';
 import '../../../Shared_Widgets/fonts.dart';
+import '../../../Shared_Widgets/blinker.dart';
+import '../../../Shared_Widgets/adder_remover_value.dart';
+import '../../../Shared_Widgets/product_selector_panel.dart';
 import '../../../Shared_Widgets/upload_box.dart';
 import '../delete_confirmation.dart';
 
@@ -49,6 +54,7 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
 
   @override
   Widget build(BuildContext context) {
+    bool larger = controller.compProducts.length > 2;
     return Center(
       child: Hero(
         tag: 'product_${widget.product.id}',
@@ -57,12 +63,14 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
           child: Container(
             constraints: const BoxConstraints(
               maxWidth: 850,
-              maxHeight: 680,
+              maxHeight: 780,
               minWidth: 400,
             ),
+            height: larger ? 780 : 700,
+
             decoration: BoxDecoration(
               color: MyColors.translucent,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: showContent ? KeyboardListener(
               focusNode: _focusNode,
@@ -72,51 +80,42 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                   _handleUpdate();
                 }
               },
-              child: Container(
-                width: 1100,
-                height: 700,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    SizedBox(height: 8),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildMainSection(),
-                              SizedBox(height: 10),
-                              Center(
-                                child: Wrap(
-                                  crossAxisAlignment: .start,
-                                  alignment: .center,
-                                  spacing: 20,
-                                  runSpacing: 20,
-                                  children: [
-                                    SizedBox(width: 280, child: _buildCategorySection()),
-                                    SizedBox(
-                                      width: 500,
-                                      child: controller.compProducts.isNotEmpty
-                                          ? _buildComponentsSection()
-                                          : _buildNoComponentsPlaceholder(),
-                                    ),
-                                  ],
-                                ),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  SizedBox(height: 8),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildMainSection(),
+                            SizedBox(height: 10),
+                            Center(
+                              child: Wrap(
+                                crossAxisAlignment: .start,
+                                alignment: .center,
+                                spacing: 20,
+                                runSpacing: 20,
+                                children: [
+                                  SizedBox(width: 280, child: _buildCategorySection()),
+                                  SizedBox(
+                                    width: 500,
+                                    height: larger ? 300 : 200,
+                                    child: _buildComponentsSection(),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    _buildFooter(),
-                  ],
-                ),
+                  ),
+                  _buildFooter(),
+                ],
               ),
             ) : SizedBox(
                 width: 850,height: 680,
@@ -155,7 +154,6 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
   Widget _buildMainSection() {
     return Center(
       child: Wrap(
-
         crossAxisAlignment: .start,
         alignment: .center,
         spacing: 20,
@@ -284,82 +282,137 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Category', style: MyFont.bold(16, color: MyColors.dark)),
-        SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: DropdownMenuTheme(
-                data: DropdownMenuThemeData(
-                  menuStyle: MenuStyle(
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
 
-                    backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
-                    shape: WidgetStateProperty.all(
-                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ), // rounded corners
-                    elevation: WidgetStateProperty.all(6), // optional shadow
+        Container(
+          height: 50,
+          padding: const EdgeInsets.only(left: 16,top: 6,bottom: 6,right: 3),
+          decoration: UiHelper.myDecoration(),
+          child: Row(
+            children: [
+              Text('Category', style: MyFont.bold(16, color: MyColors.dark)),
+              SizedBox(width: 12),
+
+              Expanded(
+                child: MouseRegion(
+                  onEnter: (e) => isClickable = true,
+                  onExit: (e) => isClickable = false,
+
+                  child: DropdownMenuTheme(
+                    data: DropdownMenuThemeData(
+                      menuStyle: MenuStyle(
+                        padding: WidgetStateProperty.all(EdgeInsets.zero),
+
+                        backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
+                        shape: WidgetStateProperty.all(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ), // rounded corners
+                        elevation: WidgetStateProperty.all(6), // optional shadow
+                      ),
+                    ),
+                    child: DropdownMenu<int>(
+                      controller: controller.categoryController,
+                      hintText: 'Select or type category',
+                      expandedInsets: EdgeInsets.zero,
+                      showTrailingIcon: false,
+                      inputDecorationTheme: InputDecorationTheme(
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                      ),
+                      textStyle: MyFont.semiBold(14, color: MyColors.dark),
+                      onSelected: (int? value) {
+                        setState(() => controller.selectCategory(value));
+                      },
+                      dropdownMenuEntries: controller.categories.map((category) {
+                        return DropdownMenuEntry<int>(
+                          value: category.id,
+                          label: category.name,
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-                child: DropdownMenu<int>(
-                  controller: controller.categoryController,
-                  hintText: 'Select or type category',
-                  expandedInsets: EdgeInsets.zero,
-                  inputDecorationTheme: InputDecorationTheme(
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+              ),
+              // This is the part that adds the "Add Category" icon
+              if (controller.showAddCategoryIcon)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Material(
+                    color: MyColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        final categoryName = controller.categoryController.text.trim();
+                        if (categoryName.isNotEmpty) {
+                          final result = await controller.addNewCategory(categoryName);
+                          if (result != null && mounted) {
+                            UiHelper.showToast(context, result,type: 1);
+                            setState(() {});
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(Icons.add, color: MyColors.success, size: 20),
+                      ),
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
-                  textStyle: MyFont.semiBold(14, color: MyColors.dark),
-                  onSelected: (int? value) {
-                    setState(() => controller.selectCategory(value));
-                  },
-                  dropdownMenuEntries: controller.categories.map((category) {
-                    return DropdownMenuEntry<int>(
-                      value: category.id,
-                      label: category.name,
-                    );
-                  }).toList(),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(height: 20),
+        MouseRegion(
+          onEnter: (e) => isClickable = true,
+          onExit: (e) => isClickable = false,
+          child: Container(
+            height: 50,
+            decoration: UiHelper.myDecoration(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+
+              child: Material(
+                color: Colors.transparent,
+
+                child: InkWell(
+                  onTap: () => _handleActiveToggle(!controller.isActive),
+                   hoverColor: Colors.transparent,
+                   splashColor: MyColors.primary.withAlpha(50),
+                   highlightColor: Colors.transparent,
+                  focusColor: Colors.transparent,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Text('Active', style: MyFont.bold(16, color: MyColors.dark)),
+                        Spacer(),
+                        Transform.scale(
+                          scale: 0.85,
+                          child: Switch(
+                            value: controller.isActive,
+                            activeTrackColor: MyColors.primary,
+                            activeColor: MyColors.translucent,
+                            onChanged: _handleActiveToggle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-            // This is the part that adds the "Add Category" icon
-            if (controller.showAddCategoryIcon)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Material(
-                  color: MyColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () async {
-                      final categoryName = controller.categoryController.text.trim();
-                      if (categoryName.isNotEmpty) {
-                        final result = await controller.addNewCategory(categoryName);
-                        if (result != null && mounted) {
-                          UiHelper.showToast(context, result,type: 1);
-                          setState(() {});
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(10),
-                      child: Icon(Icons.add, color: MyColors.success, size: 20),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ],
     );
@@ -370,60 +423,111 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Components', style: MyFont.bold(16, color: MyColors.dark)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Components', style: MyFont.bold(16, color: MyColors.dark)),
+            _buildAddComponentButton(),
+          ],
+        ),
         SizedBox(height: 12),
-        Container(
-          constraints: BoxConstraints(maxHeight: 260),
-          decoration: BoxDecoration(
-            border: Border.all(color: MyColors.lightGrey, width: 2),
-            borderRadius: BorderRadius.circular(12),
-            color: MyColors.lightGrey.withAlpha(20),
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: MyColors.lightGrey, width: 2)),
-                  color: MyColors.translucent.withAlpha(50),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(width: 30),
-                    SizedBox(width: 40),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text('Name', style: MyFont.semiBold(13, color: MyColors.dark)),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: MyColors.lightGrey, width: 2),
+              borderRadius: BorderRadius.circular(12),
+              color: MyColors.lightGrey.withAlpha(20),
+            ),
+            child: controller.compProducts.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('No Components', style: MyFont.semiBold(15, color: MyColors.grey)),
+                        SizedBox(height: 4),
+                        Text('This product has no sub-components', style: MyFont.normal(13, color: MyColors.grey.withAlpha(180))),
+                      ],
                     ),
-                    SizedBox(width: 60, child: Center(child: Text('Qty', style: MyFont.semiBold(13, color: MyColors.dark)))),
-                    SizedBox(width: 12),
-                    SizedBox(width: 100, child: Text('Price', style: MyFont.semiBold(13, color: MyColors.dark), textAlign: TextAlign.end)),
-                    SizedBox(width: 12),
-                  ],
-                ),
-              ),
-
-              // List
-              Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: controller.compProducts.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: MyColors.lightGrey),
-                  itemBuilder: (_, i) => _buildComponentTile(controller.compProducts[i], i),
-                ),
-              ),
-            ],
+                  )
+                : Column(
+                    children: [
+                      // List
+                      Expanded(
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: controller.compProducts.length,
+                          separatorBuilder: (_, __) => Divider(height: 1, color: MyColors.lightGrey),
+                          itemBuilder: (_, i) => _buildComponentTile(controller.compProducts[i], i),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildAddComponentButton() {
+    return ScaledContainer(
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        onTap: () async {
+          final List<Product>? result = await showDialog<List<Product>>(
+            context: context,
+            builder: (context) => Dialog(
+              insetPadding: EdgeInsets.all(10),
+
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Container(
+                width: 1200,
+                height: 800,
+                padding: EdgeInsets.all(16),
+                child: ProductSelectorPanel(
+                  products: controller.compProducts,
+                  allowedIds: controller.availableProducts.map((p) => p.id).toList(),
+                  select: 'P',
+                ),
+              ),
+            ),
+          );
+
+          if (result != null) {
+            setState(() {
+              controller.updateComponentsFromList(result);
+            });
+          }else{
+            setState(() {});
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: MyColors.primary.withAlpha(20),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: MyColors.primary.withAlpha(50)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 18, color: MyColors.primary),
+              SizedBox(width: 4),
+              Text('Add Components', style: MyFont.semiBold(13, color: MyColors.primary)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildComponentTile(Product product, int index) {
-    final quantity = controller.compQuantities[product.id] ?? 1;
+    
+    final quantity = controller.compQuantities[product.id] ?? 0;
 
     return Container(
+      key: ValueKey('comp_${product.id}'),
       color: Colors.transparent,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -454,6 +558,7 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
 
           // Name
           Expanded(
+            flex: 2,
             child: Text(
               product.name,
               style: MyFont.semiBold(14),
@@ -461,74 +566,125 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
             ),
           ),
 
-          // Quantity
+          // Quantity Control
           SizedBox(
-            width: 60,
             child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: MyColors.blue.withAlpha(30),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: MyColors.blue.withAlpha(100)),
-                ),
-                child: Text(
-                  '$quantity',
-                  style: MyFont.semiBold(13, color: MyColors.darkBlue),
-                ),
-              ),
+              child: _buildQuantityBadge(product, index, quantity),
             ),
           ),
 
           SizedBox(width: 12),
 
           // Price
-          SizedBox(
-            width: 100,
-            child: Text(
-              'Rs. ${NumberFormat('#,##0.00').format(product.totalPrice)}',
-              style: MyFont.semiBold(14, color: MyColors.darkBlue),
-              textAlign: TextAlign.end,
+          Expanded(
+
+            child: SizedBox(
+              width: 100,
+              child: Text(
+                'Rs. ${NumberFormat('#,##0.00').format(product.totalPrice * quantity)}',
+                style: MyFont.semiBold(14, color: MyColors.darkBlue),
+                textAlign: TextAlign.end,
+              ),
             ),
           ),
 
           SizedBox(width: 12),
+
+          // Delete Button
+          SizedBox(
+            width: 28,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.delete_outline, color: MyColors.error, size: 20),
+              onPressed: () => controller.deleteComponent(product.id),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNoComponentsPlaceholder() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Components', style: MyFont.bold(16, color: MyColors.dark)),
-        SizedBox(height: 12),
-        Container(
-          height: 100,
-          decoration: BoxDecoration(
-            border: Border.all(color: MyColors.lightGrey, width: 2),
-            borderRadius: BorderRadius.circular(12),
-            color: MyColors.lightGrey.withAlpha(10),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'No Components',
-                  style: MyFont.semiBold(15, color: MyColors.grey),
+
+  Widget _buildQuantityBadge(Product product, int index, int quantity) {
+    return StatefulBuilder(
+      builder: (context, qtState) {
+        Offset mousePos = Offset.zero;
+
+        return MouseRegion(
+          onHover: (e) => mousePos = e.position,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () async {
+              qtState(() => controller.setBlinkState(product.id, true));
+              await _showQuantityDialog(product, quantity, mousePos);
+              qtState(() => controller.setBlinkState(product.id, false));
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: MyColors.lightGrey.withAlpha(50),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: MyColors.lightGrey,
+                  width: 1,
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'This product has no sub-components',
-                  style: MyFont.normal(13, color: MyColors.grey.withAlpha(180)),
-                ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Qty: $quantity',
+                    style: MyFont.semiBold(13, color: MyColors.darkBlue),
+                  ),
+                  if (controller.blinkMap[product.id] ?? false) ...[
+                    SizedBox(width: 2),
+                    BlinkingCursor(),
+                  ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showQuantityDialog(Product product, int currentQty, Offset tapPosition) async {
+    final screenSize = MediaQuery.of(context).size;
+    const dialogWidth = 400.0;
+    const dialogHeight = 200.0;
+
+    double left = tapPosition.dx - (dialogWidth / 2);
+    double top = tapPosition.dy + 20;
+
+    if (top + dialogHeight > screenSize.height) {
+      top = tapPosition.dy - dialogHeight - 20;
+    }
+
+    left = left.clamp(10.0, screenSize.width - dialogWidth - 10.0);
+
+    await showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (_) => Stack(
+        children: [
+          Positioned(
+            left: left,
+            top: top,
+            child: SizedBox(
+              width: dialogWidth,
+              height: dialogHeight,
+              child: AdderRemoverValue(
+                value: currentQty,
+                minValue: 1,
+                callBack: (newValue) {
+                  controller.updateComponentQuantity(product.id, newValue);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -631,6 +787,23 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
     );
   }
 
+  Future<void> _handleActiveToggle(bool value) async {
+    if (!value) {
+      final canDisable = await controller.canDelete();
+      if (!mounted) return;
+      if (!canDisable) {
+        final parents = await controller.getParentProducts();
+        UiHelper.showToast(
+          context,
+          "Cannot deactivate product\nComponent of: $parents",
+          type: 2,
+        );
+        return;
+      }
+    }
+    setState(() => controller.isActive = value);
+  }
+
   Future<void> _handleUpdate() async {
     final error = await controller.updateProductData();
 
@@ -639,10 +812,10 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
     if (error != null) {
       UiHelper.showToast(context, error,type: 3);
     } else {
+      UiHelper.showToast(context, "Product Updated",type: 1);
       Navigator.pop(context);
       await Future.delayed(const Duration(milliseconds: 500));
       widget.callBack();
-      UiHelper.showToast(context, "Product Updated",type: 1);
 
     }
   }

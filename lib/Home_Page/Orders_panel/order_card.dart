@@ -41,8 +41,8 @@ class OrderCard extends StatelessWidget {
       );
     }
 
-    double percent = 1-(order.paidAmount/(order.totalAmount+order.adjustment));
-
+    double percent = payment > 0 ? (1 - (order.paidAmount.abs() / payment)) : 0.0;
+    print(percent);
     return Hero(
       tag: "${order.id}",
       child: Material(

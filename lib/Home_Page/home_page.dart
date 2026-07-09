@@ -8,6 +8,7 @@ import '../Database/database.dart';
 import '../Database/db_info.dart';
 import 'Customers&Suppliers/persons_page.dart';
 import 'Orders_panel/orders_page.dart';
+import 'Reports_Page/reports_page.dart';
 import 'Settings_panel/settings_page.dart';
 import 'bottom_navbar.dart';
 import 'logout_panel.dart';
@@ -41,6 +42,7 @@ class _HomePageState extends State<HomePage> {
     OrdersPage(),
     //Center(child: Text("Transactions")),
     TransactionsPage(),
+    ReportsPage(),
    // Center(child: Text("Reports Page")),
    // Center(child: Text("Settings Page")),
     Builder(

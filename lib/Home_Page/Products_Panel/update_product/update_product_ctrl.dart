@@ -17,13 +17,17 @@ class UpdateProductController extends ChangeNotifier {
   late final TextEditingController weight;
   late final TextEditingController desc;
   final categoryController = TextEditingController();
+  final componentSearchController = TextEditingController();
 
   // State
   bool isLoading = false;
+  bool isActive = true;
   Uint8List? image;
   List<Product> compProducts = [];
   Map<int, int> compQuantities = {};
+  Map<int, bool> blinkMap = {};
   List<DBCategory> categories = [];
+  List<Product> availableProducts = [];
   int? selectedCategoryId;
 
   UpdateProductController(this.product) {
@@ -35,6 +39,7 @@ class UpdateProductController extends ChangeNotifier {
 
     image = product.imageData;
     selectedCategoryId = product.category == 0 ? null : product.category;
+    isActive = product.active;
 
     // IMPORTANT: This triggers the UI to check "showAddCategoryIcon" on every keystroke
     categoryController.addListener(() {
@@ -43,10 +48,11 @@ class UpdateProductController extends ChangeNotifier {
 
     _loadComponents();
     _loadCategories();
+    _loadAvailableProducts();
   }
   @override
   void dispose() {
-    [name, price, stock, weight, desc, categoryController].forEach((c) => c.dispose());
+    [name, price, stock, weight, desc, categoryController, componentSearchController].forEach((c) => c.dispose());
     super.dispose();
   }
 
@@ -70,12 +76,94 @@ class UpdateProductController extends ChangeNotifier {
   Future<void> _loadComponents() async {
     compProducts = await getImmediateComponentsFromDB(currentDB!, product.id);
 
+    compQuantities.clear();
     product.components
         .split(',')
         .map((e) => int.tryParse(e.trim()))
         .whereType<int>()
         .forEach((id) => compQuantities[id] = (compQuantities[id] ?? 0) + 1);
 
+    notifyListeners();
+  }
+
+  Future<void> _loadAvailableProducts() async {
+    final basics = await getTotal(currentDB!);
+
+    final result = await currentDB!.query(
+      'products',
+      where: 'id < ? AND active = 1',
+      whereArgs: [product.id],
+    );
+
+    availableProducts = result.map((row) {
+      final p = Product.fromMap(row);
+      final totals = calculateComponentTotalsForOne(p.components, basics);
+      p.totalPrice = p.basePrice + (totals['totalPrice'] ?? 0.0);
+      p.totalWeight = p.weight + (totals['totalWeight'] ?? 0.0);
+      return p;
+    }).toList();
+
+    notifyListeners();
+  }
+
+  void addComponent(int productId) {
+    if (compQuantities.containsKey(productId)) {
+      compQuantities[productId] = (compQuantities[productId] ?? 0) + 1;
+    } else {
+      final comp = availableProducts.firstWhere((p) => p.id == productId);
+      compProducts.add(comp);
+      compQuantities[productId] = 1;
+    }
+    notifyListeners();
+  }
+
+  void removeComponent(int productId) {
+    if (compQuantities.containsKey(productId)) {
+      if (compQuantities[productId]! > 1) {
+        compQuantities[productId] = compQuantities[productId]! - 1;
+      } else {
+        compQuantities.remove(productId);
+        compProducts.removeWhere((p) => p.id == productId);
+      }
+    }
+    notifyListeners();
+  }
+
+  void updateComponentQuantity(int productId, int qty) {
+    if (qty < 1) {
+      qty = 1;
+    }
+    compQuantities[productId] = qty;
+    // Ensure product is in the UI list
+    if (!compProducts.any((p) => p.id == productId)) {
+      final p = availableProducts.cast<Product?>().firstWhere((p) => p?.id == productId, orElse: () => null);
+      if (p != null) {
+        compProducts.add(p);
+      }
+    }
+    notifyListeners();
+  }
+
+  void deleteComponent(int productId) {
+    compQuantities.remove(productId);
+    compProducts.removeWhere((p) => p.id == productId);
+    notifyListeners();
+  }
+
+  void setBlinkState(int index, bool isBlinking) {
+    blinkMap[index] = isBlinking;
+    notifyListeners();
+  }
+
+  void updateComponentsFromList(List<Product> newList) {
+    // Keep existing quantities for products that are still in the list
+    // Add new products with quantity 1
+    Map<int, int> newQuantities = {};
+    for (var p in newList) {
+      newQuantities[p.id] = compQuantities[p.id] ?? 1;
+    }
+    compProducts = newList;
+    compQuantities = newQuantities;
     notifyListeners();
   }
 
@@ -101,7 +189,7 @@ class UpdateProductController extends ChangeNotifier {
     double totalWeight = double.tryParse(weight.text) ?? 0;
 
     for (var p in compProducts) {
-      final qty = compQuantities[p.id] ?? 1;
+      final qty = compQuantities[p.id] ?? 0;
       totalPrice += p.totalPrice * qty;
       totalWeight += p.weight * qty;
     }
@@ -137,17 +225,28 @@ class UpdateProductController extends ChangeNotifier {
 
     // ... (keep your existing Stock/Weight validation code) ...
 
+    // Construct components string
+    List<int> componentIds = [];
+    compQuantities.forEach((id, qty) {
+      for (int i = 0; i < qty; i++) {
+        componentIds.add(id);
+      }
+    });
+    String componentsStr = componentIds.join(',');
+
     // Update product in DB
     await updateProduct(
-      db: currentDB!,
-      id: product.id,
-      name: name.text,
-      price: _roundToTwoDecimals(double.tryParse(price.text) ?? 0.0),
-      stock: int.tryParse(stock.text) ?? 0,
-      weight: _roundToTwoDecimals(double.tryParse(weight.text) ?? 0.0),
-      description: desc.text,
-      image: image,
-      category: selectedCategoryId ?? 0, // This will now be 0 if text was empty
+        db: currentDB!,
+        id: product.id,
+        name: name.text,
+        price: _roundToTwoDecimals(double.tryParse(price.text) ?? 0.0),
+        stock: int.tryParse(stock.text) ?? 0,
+        weight: _roundToTwoDecimals(double.tryParse(weight.text) ?? 0.0),
+        description: desc.text,
+        image: image,
+        category: selectedCategoryId ?? 0, // This will now be 0 if text was empty
+        active: isActive,
+        components: componentsStr
     );
 
     isLoading = false;

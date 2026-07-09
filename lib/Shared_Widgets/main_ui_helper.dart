@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import '../Database/database.dart';
@@ -180,46 +181,54 @@ class UiHelper {
     Widget? prefix,
     EdgeInsets? padding,
   }) {
-    return TextField(
-      autofocus: autofocus,
-      onTap: onTap,
-      readOnly: readOnly,
-      controller: controller,
-      keyboardType: textType,
-      inputFormatters: inputFormatters,
-      onChanged: (_) => onChange?.call(),
+    return MouseRegion(
+      onEnter: (_)  {
+        isTextCursor =true;
+      },
+      onExit: (_) {
+        isTextCursor = false;
+      },
+      child: TextField(
+        autofocus: autofocus,
+        onTap: onTap,
+        readOnly: readOnly,
+        controller: controller,
+        keyboardType: textType,
+        inputFormatters: inputFormatters,
+        onChanged: (_) => onChange?.call(),
 
-      focusNode: focusNode,
-      style: MyFont.normal(fontSize, color: MyColors.darkBlue),
-      cursorColor: MyColors.darkBlue,
-      textAlignVertical: TextAlignVertical.center,
-      //TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
-      decoration: InputDecoration(
-        prefixText: '$prefixText',
-        suffixIcon: suffix,
-        contentPadding: padding,
-        prefixIcon: prefix,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+        focusNode: focusNode,
+        style: MyFont.normal(fontSize, color: MyColors.darkBlue),
+        cursorColor: MyColors.darkBlue,
+        textAlignVertical: TextAlignVertical.center,
+        //TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          prefixText: '$prefixText',
+          suffixIcon: suffix,
+          contentPadding: padding,
+          prefixIcon: prefix,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius + 10),
+            borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+          ),
+          labelText: label,
+          labelStyle: MyFont.semiBold(
+            fontSize,
+            color: MyColors.darkBlue.withAlpha(230),
+          ),
+          //TextStyle(fontSize:fontSize, color: MyColors.darkBlue.withAlpha(230),fontWeight: FontWeight.w600),
+          hint: hint == null
+              ? null
+              : Text(hint, style: MyFont.normal(fontSize, color: MyColors.grey)),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius + 10),
-          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-        ),
-        labelText: label,
-        labelStyle: MyFont.semiBold(
-          fontSize,
-          color: MyColors.darkBlue.withAlpha(230),
-        ),
-        //TextStyle(fontSize:fontSize, color: MyColors.darkBlue.withAlpha(230),fontWeight: FontWeight.w600),
-        hint: hint == null
-            ? null
-            : Text(hint, style: MyFont.normal(fontSize, color: MyColors.grey)),
       ),
     );
   }
@@ -237,33 +246,41 @@ class UiHelper {
     double borderRadius =15,
     FocusNode? focusNode,
   }) {
-    return TextField(
-      maxLines: maxLines,
-      controller: controller, // expands as you type
-      keyboardType: textType,
-      onChanged: (_) => onChanged?.call(),
-      focusNode: focusNode,
-      readOnly: readOnly,
-      onTap: onTap,
-      style: MyFont.normal(fontSize),
-      cursorColor: MyColors.darkBlue,
-      decoration: InputDecoration(
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+    return MouseRegion(
+      onEnter: (_)  {
+        isTextCursor =true;
+      },
+      onExit: (_) {
+        isTextCursor = false;
+      },
+      child: TextField(
+        maxLines: maxLines,
+        controller: controller, // expands as you type
+        keyboardType: textType,
+        onChanged: (_) => onChanged?.call(),
+        focusNode: focusNode,
+        readOnly: readOnly,
+        onTap: onTap,
+        style: MyFont.normal(fontSize),
+        cursorColor: MyColors.darkBlue,
+        decoration: InputDecoration(
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius+10),
+            borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+          ),
+          labelText: label,
+          labelStyle: MyFont.semiBold(fontSize, color: MyColors.darkBlue),
+          hint: Text(hint, style: MyFont.normal(fontSize, color: MyColors.grey)),
+          //TextStyle(fontSize: 20, color: MyColors.darkBlue),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius+10),
-          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-        ),
-        labelText: label,
-        labelStyle: MyFont.semiBold(fontSize, color: MyColors.darkBlue),
-        hint: Text(hint, style: MyFont.normal(fontSize, color: MyColors.grey)),
-        //TextStyle(fontSize: 20, color: MyColors.darkBlue),
       ),
     );
   }
@@ -275,6 +292,7 @@ class UiHelper {
     double textSize = 20,
     bool filled = false,
     Color? color,
+    Color backgroundColor = MyColors.translucent ,
     Widget? child,
     double borderRadius = 20,
     double? elevation,
@@ -286,7 +304,6 @@ class UiHelper {
         child: GestureDetector(
           onSecondaryTap: rightClick,
           behavior: HitTestBehavior.opaque,
-
           child: ElevatedButton(
             onPressed: callback,
             style: ElevatedButton.styleFrom(
@@ -294,7 +311,7 @@ class UiHelper {
 
               backgroundColor: filled
                   ? color ?? MyColors.primary
-                  : MyColors.translucent,
+                  : backgroundColor,
               overlayColor: filled
                   ? MyColors.translucent.withAlpha(30)
                   : color ?? MyColors.primary.withAlpha(20), // splash color
@@ -409,40 +426,48 @@ class UiHelper {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
-        return TextField(
-          enabled: !readOnly,
-          controller: controller,
-          onChanged: (_) => onChange.call(),
-          style: MyFont.semiBold(fontSize, color: MyColors.grey),
-          cursorColor: MyColors.primary,
-          decoration: InputDecoration(
-            isDense: true,
+        return MouseRegion(
+          onEnter: (_)  {
+            isTextCursor =true;
+          },
+          onExit: (_) {
+            isTextCursor = false;
+          },
+          child: TextField(
+            enabled: !readOnly,
+            controller: controller,
+            onChanged: (_) => onChange.call(),
+            style: MyFont.semiBold(fontSize, color: MyColors.grey),
+            cursorColor: MyColors.primary,
+            decoration: InputDecoration(
+              isDense: true,
 
-            prefixIcon: IconButton(
-              icon: Icon(Icons.search_rounded,color: MyColors.grey, size: 25),
-              onPressed: onPressed,
+              prefixIcon: IconButton(
+                icon: Icon(Icons.search_rounded,color: MyColors.grey, size: 25),
+                onPressed: onPressed,
+              ),
+              suffixIcon: value.text.isNotEmpty
+                  ? IconButton(
+                icon: Icon(Icons.close_rounded, size: 25),
+                color: MyColors.grey,
+                onPressed: onCancel,
+              )
+                  : null,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(width: 1.7, color: MyColors.lightGrey),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(width: 1.7, color: MyColors.lightGrey),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(width: 2, color: MyColors.grey),
+              ),
+              hintText: hint,
+              hintStyle: MyFont.normal(fontSize, color: MyColors.grey),
             ),
-            suffixIcon: value.text.isNotEmpty
-                ? IconButton(
-              icon: Icon(Icons.close_rounded, size: 25),
-              color: MyColors.grey,
-              onPressed: onCancel,
-            )
-                : null,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(width: 1.7, color: MyColors.lightGrey),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(width: 1.7, color: MyColors.lightGrey),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(width: 2, color: MyColors.grey),
-            ),
-            hintText: hint,
-            hintStyle: MyFont.normal(fontSize, color: MyColors.grey),
           ),
         );
       },
@@ -792,11 +817,11 @@ class UiHelper {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      fillColor.withAlpha(40),
-                      fillColor.withAlpha(25),
-                      fillColor.withAlpha(0), // fade into background
+                      fillColor.withAlpha(percent == 1 ? 40 : 40),
+                      fillColor.withAlpha(percent == 1 ? 40 : 25),
+                      fillColor.withAlpha(percent == 1 ? 40 : 0), // fade into background
                     ],
-                    stops: const [0.4, 0.8, 1.0],
+                    stops: const [0.4, 0.85, 1.0],
                   ),
                 ),
               ),

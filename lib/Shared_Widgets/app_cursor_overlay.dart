@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
+import 'package:inventry_management/Database/database.dart';
+
+bool isClickable = false,isTextCursor = false;
 
 /// Draws a custom SVG cursor that follows the mouse pointer.
 class AppCursorOverlay extends StatefulWidget {
@@ -77,75 +80,22 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> {
   }
 
   String _resolveCursorAsset(Offset position) {
-    final cursor = _hitTestCursor(position);
-    if (cursor == SystemMouseCursors.text && widget.textCursorAssetPath != null) {
-      return widget.textCursorAssetPath!;
+    if (isTextCursor) {
+      return widget.textCursorAssetPath ?? widget.assetPath;
+    } else if (isClickable) {
+      return widget.clickCursorAssetPath ?? widget.assetPath;
+    } else {
+      return widget.assetPath;
     }
-    if (cursor == SystemMouseCursors.click && widget.clickCursorAssetPath != null) {
-      return widget.clickCursorAssetPath!;
-    }
-    return widget.assetPath;
-  }
-
-  MouseCursor _hitTestCursor(Offset position) {
-    final result = HitTestResult();
-    RendererBinding.instance.hitTest(result, position);
-    final trackingRender = _trackingRegionKey.currentContext?.findRenderObject();
-    final hideRender = _hideCursorRegionKey.currentContext?.findRenderObject();
-    var hasClickableTarget = false;
-    for (final entry in result.path) {
-      final target = entry.target;
-      if (target == trackingRender || target == hideRender) {
-        continue;
-      }
-      if (target is RenderEditable) {
-        return SystemMouseCursors.text;
-      }
-      if (target is MouseTrackerAnnotation) {
-        final annotation = target as MouseTrackerAnnotation;
-        final resolved = _resolveMouseCursor(annotation.cursor);
-        if (_isTextCursor(resolved)) {
-          return SystemMouseCursors.text;
-        }
-        if (_isClickCursor(resolved)) {
-          return SystemMouseCursors.click;
-        }
-        if (!_isBasicCursor(resolved)) {
-          return resolved;
-        }
-      }
-      if (target is RenderSemanticsGestureHandler) {
-        if (target.onTap != null || target.onLongPress != null) {
-          hasClickableTarget = true;
-        }
-      }
-    }
-    return hasClickableTarget ? SystemMouseCursors.click : SystemMouseCursors.basic;
-  }
-
-  MouseCursor _resolveMouseCursor(MouseCursor cursor) {
-    if (cursor is MaterialStateMouseCursor) {
-      return cursor.resolve(<MaterialState>{MaterialState.hovered});
-    }
-    return cursor;
-  }
-
-  bool _isBasicCursor(MouseCursor cursor) {
-    return cursor is SystemMouseCursor && cursor.kind == SystemMouseCursors.basic.kind;
-  }
-
-  bool _isClickCursor(MouseCursor cursor) {
-    return cursor is SystemMouseCursor && cursor.kind == SystemMouseCursors.click.kind;
-  }
-
-  bool _isTextCursor(MouseCursor cursor) {
-    return cursor is SystemMouseCursor && cursor.kind == SystemMouseCursors.text.kind;
   }
 
   @override
   Widget build(BuildContext context) {
-    final cursorAsset = _activeAssetPath ?? widget.assetPath;
-    return Listener(
+    if(performanceMode) {
+      return widget.child;
+    } else {
+      final cursorAsset = _activeAssetPath ?? widget.assetPath;
+      return Listener(
       onPointerDown: _handlePointerDown,
       onPointerMove: _handlePointerMove,
       onPointerUp: _handlePointerUp,
@@ -169,7 +119,7 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> {
             ),
             if (_position != null && _isMouseInside)
               Positioned(
-                left: (_position!.dx - (widget.size / 2)+15),
+                left: (_position!.dx - ( isTextCursor ? (widget.size / 2) : ((widget.size / 2)-5))),
                 top: (_position!.dy - (widget.size / 2)+17),
                 child: IgnorePointer(
                   child: Image.asset(
@@ -183,5 +133,6 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> {
         ),
       ),
     );
+    }
   }
 }

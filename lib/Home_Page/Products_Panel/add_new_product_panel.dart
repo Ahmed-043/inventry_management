@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 
@@ -51,6 +52,8 @@ class _InputNewProductState extends State<InputNewProduct>
 
   @override
   Widget build(BuildContext context) {
+    bool larger = controller.compProducts.length > 2;
+    print(controller.compProducts.length);
     super.build(context);
     return KeyboardListener(
       focusNode: _focusNode,
@@ -62,6 +65,7 @@ class _InputNewProductState extends State<InputNewProduct>
         }
       },
       child: Container(
+        height: larger ? 800 : 700,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -69,17 +73,17 @@ class _InputNewProductState extends State<InputNewProduct>
         child: Column(
           children: [
             _buildHeader(),
-            SizedBox(height: 8),
             Expanded(
               child: SingleChildScrollView(
                 physics: BouncingScrollPhysics(),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      SizedBox(height: 8),
                       _buildMainSection(),
-                      SizedBox(height: 24),
+                      SizedBox(height: 10),
                       Center(
                         child: Wrap(
                           crossAxisAlignment: .start,
@@ -90,14 +94,20 @@ class _InputNewProductState extends State<InputNewProduct>
                             SizedBox(width: 280, child: _buildCategoryDropdown()),
                             SizedBox(
                               width: 500,
+                              height: larger ? 300 : 180,
                               child: Column(
                                 crossAxisAlignment: .start,
                                 children: [
                                   if (controller.compProducts.isNotEmpty) ...[
-                                    Text('Components', style: MyFont.bold(16, color: MyColors.dark)),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Components', style: MyFont.bold(16, color: MyColors.dark)),
+                                        _buildAddComponentButton(),
+                                      ],
+                                    ),
                                     SizedBox(height: 12),
-                                    _buildComponentsList(),
-                                    SizedBox(height: 16),
+                                    Expanded(child: _buildComponentsList()),
                                   ]
                                   else _buildAddComponentsButton(),
                                 ],
@@ -366,58 +376,49 @@ class _InputNewProductState extends State<InputNewProduct>
               ),
           ],
         ),
+
       ],
     );
   }
 
   Widget _buildComponentsList() {
     return Container(
-      constraints: BoxConstraints(maxHeight: 260),
       decoration: BoxDecoration(
         border: Border.all(color: MyColors.lightGrey, width: 2),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: MyColors.lightGrey, width: 2),
-              ),
-              color: MyColors.translucent.withAlpha(30),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _showProductPicker(),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add, size: 18, color: MyColors.blue),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add Component',
-                        style: MyFont.semiBold(14, color: MyColors.blue),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      child: ListView.separated(
+        itemCount: controller.compProducts.length,
+        separatorBuilder: (_, __) =>
+            Divider(height: 1, color: MyColors.lightGrey),
+        itemBuilder: (_, i) =>
+            _buildComponentTile(controller.compProducts[i], i),
+      ),
+    );
+  }
+  Widget _buildAddComponentButton() {
+    return ScaledContainer(
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        onTap: () => _showProductPicker(),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: MyColors.primary.withAlpha(20),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: MyColors.primary.withAlpha(50)),
           ),
-          Expanded(
-            child: ListView.separated(
-              itemCount: controller.compProducts.length,
-              separatorBuilder: (_, __) =>
-                  Divider(height: 1, color: MyColors.lightGrey),
-              itemBuilder: (_, i) =>
-                  _buildComponentTile(controller.compProducts[i], i),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 18, color: MyColors.primary),
+              SizedBox(width: 4),
+              Text('Add Components', style: MyFont.semiBold(13, color: MyColors.primary)),
+            ],
           ),
-
-        ],
+        ),
       ),
     );
   }
@@ -455,6 +456,7 @@ class _InputNewProductState extends State<InputNewProduct>
 
             // Name
             Expanded(
+              flex: 2,
               child: Text(
                 product.name,
                 style: MyFont.semiBold(14),
@@ -470,9 +472,11 @@ class _InputNewProductState extends State<InputNewProduct>
             SizedBox(width: 12),
 
             // Price
-            Text(
-              'Rs. ${NumberFormat('#,##0.00').format(product.totalPrice)}',
-              style: MyFont.semiBold(14, color: MyColors.darkBlue),
+            Expanded(
+              child: Text(
+                'Rs. ${NumberFormat('#,##0.00').format(product.totalPrice)}',
+                style: MyFont.semiBold(14, color: MyColors.darkBlue),
+              ),
             ),
 
             SizedBox(width: 12),
@@ -539,7 +543,8 @@ class _InputNewProductState extends State<InputNewProduct>
       Product product,
       int quantity,
       Offset pos,
-      ) async {
+      )
+  async {
     final size = MediaQuery.of(context).size;
     const dialogH = 220.0;
     const dialogW = 400.0;
@@ -688,6 +693,7 @@ class _InputNewProductState extends State<InputNewProduct>
       context: context,
       builder: (context) => Dialog(
         insetPadding: EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: SizedBox(
           width: 1200,
           height: 800,

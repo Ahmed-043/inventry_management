@@ -8,19 +8,17 @@ import '../../../Database/database.dart';
 import 'package:flutter/services.dart';
 
 import '../../../Database/product_stock.dart';
+import '../../../Database/Reports_Data/inventory_movments.dart';
+import '../../../Database/retrieve_products.dart';
 import '../../../Shared_Widgets/product_selector_panel.dart';
 
 class UpdateProductStock extends StatefulWidget {
-  final int productStock;
   final int id;
-  final String name;
   final VoidCallback onSave;
   final bool skipComponents;
   const UpdateProductStock({
     super.key,
-    required this.productStock,
     required this.id,
-    required this.name,
     required this.onSave,
     this.skipComponents = false,
   });
@@ -31,6 +29,7 @@ class UpdateProductStock extends StatefulWidget {
 
 class _UpdateProductStockState extends State<UpdateProductStock> {
   bool showContent = false;
+  late Product? product;
 
   final List<int> values = [
     1,
@@ -48,7 +47,7 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
   ];
 
   late int selectedValue = 0;
-  late int stock = widget.productStock;
+  late int stock = 0 ;
   late TextEditingController stockController = TextEditingController();
   late FocusNode stockFocusNode = FocusNode();
 
@@ -56,8 +55,8 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    selectedValue = 0;
-    stockController.text = stock.toString();
+
+    _loadProduct();
 
     // Show the content first, then focus the text field on the next frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,6 +68,16 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
         if (!mounted) return;
         stockFocusNode.requestFocus();
       });
+    });
+  }
+
+  _loadProduct() async{
+    product = await getProductById(currentDB!,widget.id,withoutImage: true);
+
+    setState(() {
+      stock = product!.stock;
+      selectedValue = 0;
+      stockController.text = stock.toString();
     });
   }
 
@@ -127,13 +136,13 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.name.length > 40
-                                    ? '${widget.name.substring(0, 40)}…'
-                                    : widget.name,
+                                product!.name.length > 40
+                                    ? '${product!.name.substring(0, 40)}…'
+                                    : product!.name,
                                 style: MyFont.semiBold(20, color: MyColors.darkBlue),
                               ),
                               Text(
-                                "Current Stock: ${NumberFormat.decimalPattern().format(widget.productStock)} units",
+                                "Current Stock: ${NumberFormat.decimalPattern().format(product!.stock)} units",
                                 style: MyFont.semiBold(20, color: MyColors.darkBlue),
                               ),
                             ],
@@ -202,7 +211,7 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
                                     ),
                                     IconButton(
                                       onPressed: () {
-                                        stock = widget.productStock;
+                                        stock = product!.stock;
                                         stockController.text = stock.toString();
                                       },
                                       icon: Icon(Icons.undo_sharp),
@@ -322,15 +331,12 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
   }
 
   Future<void> updateStock(int id, int stock) async {
-      int change = stock - widget.productStock;
+      int change = stock - product!.stock;
       Map<int, int> a = {}, b = {};
-      print("Change: $change");
       if(change>0) {
         a.putIfAbsent(id, () => change);
       }
-      //print("a: $a");
       b = await getComponentStock(a, currentDB!);
-      //print(b);
       if(!widget.skipComponents && change > 0){
 
         if (b.isNotEmpty) {
@@ -341,13 +347,13 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
             return;
           }else {
             await updateAndDeductDirectComponentsOnly(a, currentDB!);
-            UiHelper.showToast(context, "Stock Updated Successfully");
+            UiHelper.showToast(context, "Stock Updated Successfully",type:1);
           }
           close();
         }else{
           await updateAndDeductDirectComponentsOnly(a, currentDB!);
           close();
-          UiHelper.showToast(context, "Stock Updated Successfully");
+          UiHelper.showToast(context, "Stock Updated Successfully",type:1);
         }
       }
       else{
@@ -356,15 +362,35 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
       }
 
   }
+
   update(int id) async {
     final db = currentDB!; // your DB getter
+
+    // 1️⃣ Get stock before update for movement record
+    final pData = await db.rawQuery('SELECT stock FROM products WHERE id = ?', [id]);
+    final  stockBefore = (pData.isNotEmpty ? (pData.first['stock'] as num?)?.toInt() : 0) ?? 0;
+    final  stockAfter = stock.toInt();
+
     await db.update(
       'products',
       {'stock': stock},
       where: 'id = ?',
       whereArgs: [id],
     );
-    UiHelper.showToast(context, "Stock Updated Successfully");
+
+    // 2️⃣ Record the manual stock adjustment movement
+    final movement = InventoryMovement(
+      productId: id,
+      movementType: 'Stock Adjustment',
+      quantityChange: stockAfter - stockBefore,
+      stockBefore: stockBefore,
+      stockAfter: stockAfter,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      remark: 'Manual stock update',
+    );
+    await insertInventoryMovement(db, movement);
+
+    UiHelper.showToast(context, "Stock Updated Successfully", type: 1);
     close();
   }
   close(){

@@ -11,6 +11,7 @@ import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
 
 import '../../Database/database.dart';
 import '../../Database/person.dart';
+import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
 import 'new_transaction_page.dart';
@@ -282,127 +283,135 @@ class _TransactionsPageState extends State<TransactionsPage> {
                         : buttonNames[i];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          splashColor: MyColors.blue.withAlpha(50),
-                          onHover: (a) {
-                            if (a && i < 3) {
-                              isHover = i;
-                            } else {
-                              isHover = -1;
-                            }
-                            setState(() {});
-                          },
+                      child: MouseRegion(
+                        onEnter: (_)  {
+                          isClickable =true;
+                        },
+                        onExit: (_) {
+                          isClickable = false;
+                        },
+                        child: Material(
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
-                          onTapDown: (TapDownDetails details) async {
-                            if (i == 3) {
-                              // Reset button
-                              status = type = startDate = endDate = dueStart =
-                                  dueEnd = 0;
-                              searchController.clear();
-                              _loadTransactions();
-                              return;
-                            }
+                          child: InkWell(
+                            splashColor: MyColors.blue.withAlpha(50),
+                            onHover: (a) {
+                              if (a && i < 3) {
+                                isHover = i;
+                              } else {
+                                isHover = -1;
+                              }
+                              setState(() {});
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            onTapDown: (TapDownDetails details) async {
+                              if (i == 3) {
+                                // Reset button
+                                status = type = startDate = endDate = dueStart =
+                                    dueEnd = 0;
+                                searchController.clear();
+                                _loadTransactions();
+                                return;
+                              }
 
-                            // Status / Type menu
-                            final tapPosition = details.globalPosition;
-                            List<String> options = filters[i];
+                              // Status / Type menu
+                              final tapPosition = details.globalPosition;
+                              List<String> options = filters[i];
 
-                            showDialog(
-                              context: context,
-                              barrierColor: Colors.transparent,
-                              builder: (_) => Stack(
-                                children: [
-                                  // Tap outside to close
-                                  Positioned.fill(
-                                    child: GestureDetector(
-                                      onTap: () => Navigator.of(context).pop(),
-                                      behavior: HitTestBehavior.translucent,
+                              showDialog(
+                                context: context,
+                                barrierColor: Colors.transparent,
+                                builder: (_) => Stack(
+                                  children: [
+                                    // Tap outside to close
+                                    Positioned.fill(
+                                      child: GestureDetector(
+                                        onTap: () => Navigator.of(context).pop(),
+                                        behavior: HitTestBehavior.translucent,
+                                      ),
                                     ),
-                                  ),
-                                  Positioned(
-                                    left: tapPosition.dx - 10,
-                                    top: tapPosition.dy + 5,
-                                    child: Material(
-                                      elevation: 6,
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: SizedBox(
-                                        width: i == 2 ? 170 : 150,
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          padding: EdgeInsets.zero,
-                                          itemCount: options.length,
-                                          itemBuilder: (context, idx) {
-                                            final e = options[idx];
-                                            return ListTile(
-                                              title: Text(e),
-                                              contentPadding: EdgeInsets.only(
-                                                left: 10,
-                                              ),
-                                              onTap: () async {
-                                                if (i == 0) {
-                                                  status = idx;
-                                                }
-                                                if (i == 1) {
-                                                  type = idx;
-                                                }
-                                                if (i == 2) {
-                                                  final sel = e[0] == 'S' ? 0 : 1;
-                                                  await date(i: sel);
-                                                }
-                                                _loadTransactions();
-                                                Navigator.of(context).pop();
-                                              },
-                                            );
-                                          },
+                                    Positioned(
+                                      left: tapPosition.dx - 10,
+                                      top: tapPosition.dy + 5,
+                                      child: Material(
+                                        elevation: 6,
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: SizedBox(
+                                          width: i == 2 ? 170 : 150,
+                                          child: ListView.builder(
+                                            shrinkWrap: true,
+                                            padding: EdgeInsets.zero,
+                                            itemCount: options.length,
+                                            itemBuilder: (context, idx) {
+                                              final e = options[idx];
+                                              return ListTile(
+                                                title: Text(e),
+                                                contentPadding: EdgeInsets.only(
+                                                  left: 10,
+                                                ),
+                                                onTap: () async {
+                                                  if (i == 0) {
+                                                    status = idx;
+                                                  }
+                                                  if (i == 1) {
+                                                    type = idx;
+                                                  }
+                                                  if (i == 2) {
+                                                    final sel = e[0] == 'S' ? 0 : 1;
+                                                    await date(i: sel);
+                                                  }
+                                                  _loadTransactions();
+                                                  Navigator.of(context).pop();
+                                                },
+                                              );
+                                            },
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: filterButtonWidth,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                // color: MyColors.grey.withAlpha(30),
+                                border: Border.all(
+                                  width: 2,
+                                  color: MyColors.lightGrey,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            );
-                          },
-                          child: Container(
-                            width: filterButtonWidth,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              // color: MyColors.grey.withAlpha(30),
-                              border: Border.all(
-                                width: 2,
-                                color: MyColors.lightGrey,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    title,
-                                    style: MyFont.semiBold(
-                                      compress ? 12 : 15,
-                                      color: MyColors.darkBlue,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      title,
+                                      style: MyFont.semiBold(
+                                        compress ? 12 : 15,
+                                        color: MyColors.darkBlue,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (i == 2)
-                                  Icon(
-                                    Icons.edit_calendar_rounded,
-                                    size: 20,
-                                    color: (startDate > 0 || endDate > 0)
-                                        ? MyColors.success
-                                        : MyColors.darkBlue,
-                                  ),
+                                  if (i == 2)
+                                    Icon(
+                                      Icons.edit_calendar_rounded,
+                                      size: 20,
+                                      color: (startDate > 0 || endDate > 0)
+                                          ? MyColors.success
+                                          : MyColors.darkBlue,
+                                    ),
 
-                                if (isHover == i)
-                                  Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: MyColors.darkBlue,
-                                  ),
-                              ],
+                                  if (isHover == i)
+                                    Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: MyColors.darkBlue,
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

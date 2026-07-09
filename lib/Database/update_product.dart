@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'Reports_Data/inventory_movments.dart';
+
 Future<void> updateProduct({
   required Database db,
   required int id,
@@ -12,9 +14,14 @@ Future<void> updateProduct({
   required double weight,
   required String description,
   required int category,
+  required bool active,
+  String? components,
   Uint8List? image,
 }) async {
   try {
+    final result = await db.rawQuery('SELECT stock FROM products WHERE id = ?', [id]);
+    final stockBefore = result.first['stock'] as int;
+
     await db.update(
       'products',
       {
@@ -25,11 +32,35 @@ Future<void> updateProduct({
         'description': description,
         'image': image,
         'category': category,
+        'active': active ? 1 : 0,
+        'components': components,
       },
       where: 'id = ?',
       whereArgs: [id],
     );
     debugPrint("Product with id=$id updated successfully");
+
+
+    if(stock != stockBefore){
+      final movement = InventoryMovement(
+        productId: id,
+        movementType: 'Stock Adjustment',
+        quantityChange: (stock - stockBefore),
+        stockBefore: stockBefore,
+        stockAfter: stock,
+        unitCost: price,
+        unitPrice: price.round(),
+        totalValue: (stock * price).round(),
+        timestamp: DateTime
+            .now()
+            .millisecondsSinceEpoch,
+        remark: 'Updated product details',
+      );
+
+      await db.insert('inventory_movements', movement.toMap());
+    }
+
+
   } catch (e) {
     debugPrint("Update error: $e");
   }

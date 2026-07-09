@@ -4,6 +4,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 
+import 'Reports_Data/inventory_movments.dart';
+
 
 class Product {
   final int id;
@@ -21,6 +23,7 @@ class Product {
   // ✅ New fields
   double totalPrice;
   double totalWeight;
+  bool active;
 
   Product({
     required this.id,
@@ -37,6 +40,7 @@ class Product {
     this.totalPrice = 0.0,
     this.totalWeight = 0.0,
     this.category,
+    this.active = true,
   });
 
   factory Product.fromMap(Map<String, Object?> map) {
@@ -52,6 +56,7 @@ class Product {
       components: map['components'] as String,
       imageData: map['image'] as Uint8List?,
       category: map['category'] as int?,
+      active: map['active'] == 1 || map['active'] == true,
     );
   }
 
@@ -68,6 +73,7 @@ class Product {
       'components': components,
       'image': imageData,
       'category': category,
+      'active': active,
     };
   }
 }
@@ -83,6 +89,8 @@ Future<List<Product>> getProductsPage(
       int? upperLimit,
       int sortMode = 0,         // 0–10 product sorting
       int categorySortMode = 0, // 0=no sort, 1=sequence ASC, 2=sequence DESC
+      bool active = true,
+      bool allProducts = false,
     }) async
 {
   final offset = page * pageSize;
@@ -107,6 +115,10 @@ Future<List<Product>> getProductsPage(
       '%$normalizedSearch%',
     ]);
   }
+  // ---------------- Active products FILTER ----------------
+
+    whereClause += '${whereClause.isEmpty ? '' : ' AND '}active = ${active ? '1' : '0'}';
+
 
   // ---------------- STOCK FILTER ----------------
   if (upperLimit != null) {
@@ -202,8 +214,8 @@ Future<List<Product>> getProductsPage(
         : null,
     where: whereClause.isEmpty ? null : whereClause,
     whereArgs: whereArgs.isEmpty ? null : whereArgs,
-    limit: pageSize,
-    offset: offset,
+    limit: allProducts ? null : pageSize,
+    offset: allProducts ? null : offset,
     orderBy: orderBy,
   );
 
@@ -281,21 +293,30 @@ Future<List<Product>> getProductsByIds(
 }
 
 Future<Map<String, int>> getStockSummary(int lowLimit, Database db) async {
-  final all = await db.rawQuery('SELECT stock FROM products');
+  final all = await db.rawQuery('SELECT stock, active FROM products');
 
   int getStock(Map<String, dynamic> p) =>
       (p['stock'] is int) ? p['stock'] as int : int.tryParse(p['stock'].toString()) ?? 0;
 
+  bool isActive(Map<String, dynamic> p) {
+    final a = p['active'];
+    if (a is int) return a == 1;
+    if (a is bool) return a;
+    return true; // Default to active if null or missing
+  }
+
   int total = all.length;
-  int inStock = all.where((p) => getStock(p) > lowLimit).length;
-  int lowStock = all.where((p) => getStock(p) > 0 && getStock(p) <= lowLimit).length;
-  int outOfStock = all.where((p) => getStock(p) == 0).length;
+  int inStock = all.where((p) => isActive(p) && getStock(p) > lowLimit).length;
+  int lowStock = all.where((p) => isActive(p) && getStock(p) > 0 && getStock(p) <= lowLimit).length;
+  int outOfStock = all.where((p) => isActive(p) && getStock(p) == 0).length;
+  int inactive = all.where((p) => !isActive(p)).length;
 
   return {
     'all': total,
     'inStock': inStock,
     'lowStock': lowStock,
     'outOfStock': outOfStock,
+    'inactive': inactive,
   };
 }
 
@@ -398,11 +419,14 @@ Future<bool> insertProduct({
   double weight = 0.0,
   Uint8List? image,
   String components = '',
-  int category = 0,  // ✅ Added category parameter
+  int category = 0,
+  bool active = true,
 }) async {
+  int id = 0;
+
   try {
     await db.transaction((txn) async {
-      await txn.insert(
+      id = await txn.insert(
         'products',
         {
           'name': name,
@@ -414,11 +438,28 @@ Future<bool> insertProduct({
           'weight': weight,
           'components': components,
           'image': image,
-          'category': category,  // ✅ Added category field
+          'category': category,
+          'active': active ? 1 : 0,
         },
         conflictAlgorithm: ConflictAlgorithm.abort,
       );
     });
+    if(id > 0) {
+      final movement = InventoryMovement(
+        productId: id,
+        movementType: 'Stock Adjustment',
+        quantityChange: 0,
+        stockBefore: stock,
+        stockAfter: stock,
+        unitCost: basePrice,
+        unitPrice: basePrice.round(),
+        totalValue: (stock * basePrice).round(),
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        remark: 'New Product',
+      );
+
+      await db.insert('inventory_movements', movement.toMap());
+    }
     return true;
   } catch (e) {
     if (e is DatabaseException) {

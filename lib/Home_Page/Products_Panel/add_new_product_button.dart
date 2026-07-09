@@ -73,7 +73,7 @@ class _AddNewProductDialogState extends State<_AddNewProductDialog> {
           child: Container(
             constraints: const BoxConstraints(
               maxWidth: 850,
-              maxHeight: 680,
+              maxHeight: 800,
               minWidth: 400,
             ),
             decoration: BoxDecoration(

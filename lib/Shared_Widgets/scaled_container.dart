@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
+
+import '../Database/database.dart';
 
 class ScaledContainer extends StatefulWidget {
   final Widget child;
@@ -13,9 +16,18 @@ class _ScaledContainerState extends State<ScaledContainer> {
 
   @override
   Widget build(BuildContext context) {
+    if(performanceMode) {
+      return widget.child;
+    }
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) => setState(() {
+        _isHovered = true;
+        isClickable =true;
+      }),
+      onExit: (_) => setState((){
+        _isHovered = false;
+        isClickable = false;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,

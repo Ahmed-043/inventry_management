@@ -3,6 +3,8 @@ import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 
+import 'app_cursor_overlay.dart';
+
 class PaginationBar extends StatefulWidget {
   final int page;
   final int pageSize;
@@ -59,27 +61,43 @@ class _PaginationBarState extends State<PaginationBar> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: widget.page > 0
-                      ? () {
-                    widget.onPrevious?.call();
-                    _scrollToTop(); // Scroll to top on page change
-                  }
-                      : null,
+                MouseRegion(
+                  onEnter: (_)  {
+                    isClickable =true;
+                  },
+                  onExit: (_) {
+                    isClickable = false;
+                  },
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: widget.page > 0
+                        ? () {
+                      widget.onPrevious?.call();
+                      _scrollToTop(); // Scroll to top on page change
+                    }
+                        : null,
+                  ),
                 ),
                 Text(
                   "Page ${widget.page + 1}",
                   style: MyFont.semiBold(15, color: MyColors.black),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: widget.itemCount == widget.pageSize
-                      ? () {
-                    widget.onNext?.call();
-                    _scrollToTop(); // Scroll to top on page change
-                  }
-                      : null,
+                MouseRegion(
+                  onEnter: (_)  {
+                    isClickable =true;
+                  },
+                  onExit: (_) {
+                    isClickable = false;
+                  },
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: widget.itemCount == widget.pageSize
+                        ? () {
+                      widget.onNext?.call();
+                      _scrollToTop(); // Scroll to top on page change
+                    }
+                        : null,
+                  ),
                 ),
               ],
             ),

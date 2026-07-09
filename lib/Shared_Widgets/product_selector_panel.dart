@@ -23,6 +23,7 @@ class ProductSelectorPanel extends StatefulWidget {
   late final String select;
   final bool singleItem;
   final String? search;
+  final List<int>? allowedIds;
   ProductSelectorPanel({
     super.key,
     List<Product>? products,
@@ -32,6 +33,7 @@ class ProductSelectorPanel extends StatefulWidget {
     this.singleItem = false,
     this.select = 'P',
     this.search = '',
+    this.allowedIds,
   }): products = products ?? [],
         orderItems = orderItems ?? [],
         productIndexes = productIndexes ?? [],
@@ -100,6 +102,7 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
           pSize,
           performanceMode,
           search: searchController.text.trim().toString(),
+          IDS: widget.allowedIds,
         );
       }
       setState(() => products = list);
@@ -554,8 +557,6 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
           ),
           child: UpdateProductStock(
             id: product.id,
-            productStock: product.stock,
-            name: product.name,
             skipComponents: skipComponents,
             onSave: () {
               setState(() {

@@ -384,6 +384,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                 });
                 if (widget.selectedProducts.isEmpty) {
                   widget.order.orderStatus = 'Pending';
+                  widget.order.paymentStatus = 'Pending';
                 }
               },
               icon: Icon(Icons.delete_outline_rounded, color: MyColors.error),
@@ -551,6 +552,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
       widget.callback.call();
     } else {
       widget.order.orderStatus = 'Pending';
+      widget.order.paymentStatus = 'Pending';
       widget.callback.call();
     }
     _updateTotal();

@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import '../Database/database.dart';
+import 'app_cursor_overlay.dart';
 import 'main_ui_helper.dart';
 
 class Topbar extends StatelessWidget {
@@ -154,15 +155,23 @@ class ReusableTopBar extends StatelessWidget {
                             child: Row(
                               children: List.generate(stockButtons.length, (i) {
                                 final btn = stockButtons[i];
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 5),
-                                  child: Tooltip(
-                                    message:
-                                    "${btn['title']}${btn['count'].toString().contains(RegExp(r'[^0-9]')) ? '\n' : ' '}${btn['count'].toString().replaceAll(RegExp(r'[\{\}\[\]]'), '').replaceAll(':', ' ').replaceAll(',', '\n')}".trim(),
-                                    child: UiHelper.mySelectableButton(
-                                      title: btn['title'],
-                                      isSelected: selectedIndex == i,
-                                      onPressed: () => onButtonSelect(i),
+                                return MouseRegion(
+                                  onEnter: (_)  {
+                                    isClickable =true;
+                                  },
+                                  onExit: (_) {
+                                    isClickable = false;
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 5),
+                                    child: Tooltip(
+                                      message:
+                                      "${btn['title']}${btn['count'].toString().contains(RegExp(r'[^0-9]')) ? '\n' : ' '}${btn['count'].toString().replaceAll(RegExp(r'[\{\}\[\]]'), '').replaceAll(':', ' ').replaceAll(',', '\n')}".trim(),
+                                      child: UiHelper.mySelectableButton(
+                                        title: btn['title'],
+                                        isSelected: selectedIndex == i,
+                                        onPressed: () => onButtonSelect(i),
+                                      ),
                                     ),
                                   ),
                                 );

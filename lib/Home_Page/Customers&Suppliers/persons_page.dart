@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../../Database/database.dart';
 import '../../Database/person.dart';
+import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../Shared_Widgets/topbar.dart';
 import '../../colors.dart';
@@ -178,26 +179,34 @@ class _PersonsPageState extends State<PersonsPage> {
           Positioned(
             bottom: 10,
             right: 10,
-            child: FloatingActionButton(
-              elevation: 0,
-              onPressed: () {
-                setState(() {
-                  cSize += 25;
-                  if (cSize > 250) {
-                    cSize = 125;
-                  }
-                  debugPrint(cSize.toString());
-                  personCardSize = cSize;
-                  SharedPreferences.getInstance().then((prefs) {
-                    prefs.setDouble('personCardSize', cSize);
-                  });
-                });
+            child: MouseRegion(
+              onEnter: (_)  {
+                isClickable =true;
               },
-              splashColor: Colors.white.withAlpha(50),
-              backgroundColor: cSize > 225 ? MyColors.blue : MyColors.primary,
-              child: Icon(
-                Icons.photo_size_select_large_rounded,
-                color: MyColors.light,
+              onExit: (_) {
+                isClickable = false;
+              },
+              child: FloatingActionButton(
+                elevation: 0,
+                onPressed: () {
+                  setState(() {
+                    cSize += 25;
+                    if (cSize > 250) {
+                      cSize = 125;
+                    }
+                    debugPrint(cSize.toString());
+                    personCardSize = cSize;
+                    SharedPreferences.getInstance().then((prefs) {
+                      prefs.setDouble('personCardSize', cSize);
+                    });
+                  });
+                },
+                splashColor: Colors.white.withAlpha(50),
+                backgroundColor: cSize > 225 ? MyColors.blue : MyColors.primary,
+                child: Icon(
+                  Icons.photo_size_select_large_rounded,
+                  color: MyColors.light,
+                ),
               ),
             ),
           ),

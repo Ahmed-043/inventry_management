@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'Reports_Data/inventory_movments.dart';
 import 'order_items.dart';
 
 class TwoValue {
@@ -43,7 +44,7 @@ class Order {
     this.paidAmount = 0.0,
     this.totalWeight = 0.0,
     this.orderStatus = 'Pending',
-    this.paymentStatus = 'Paid',
+    this.paymentStatus = 'Pending',
     this.paymentMethod = 'Cash',
     required this.orderTimestamp,
     this.dueDateTimestamp = 0,
@@ -132,7 +133,7 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
     }
 
     // 3️⃣ Handle Product Stock and Sold
-    await handleProductUpdates(order, items, txn);
+    await handleProductUpdates(order, items, txn, orderId);
 
     // 3️⃣ Insert Payment Transaction
     await txn.insert('payment_transactions', {
@@ -155,7 +156,7 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
 
 /// 🔧 Handles product stock & sold updates (main + nested components)
 Future<void> handleProductUpdates(
-    Order order, List<OrderItem> items, Transaction txn) async {
+    Order order, List<OrderItem> items, Transaction txn, int orderId) async {
   Future<void> increaseSoldRecursively(int id, int qty) async {
     final data =
     await txn.rawQuery('SELECT components FROM products WHERE id = ?', [id]);
@@ -176,23 +177,46 @@ Future<void> handleProductUpdates(
     }
   }
 
-  if (order.orderType == 'buy') {
-    // ➕ Add stock for main products only
-    for (final item in items) {
+  final isBuy = order.orderType == 'buy';
+
+  for (final item in items) {
+    // 1️⃣ Get current stock before update
+    final pData = await txn.rawQuery('SELECT stock FROM products WHERE id = ?', [item.productId]);
+    final stockBefore = (pData.isNotEmpty ? (pData.first['stock'] as num?)?.toInt() : 0) ?? 0;
+
+    // quantity and stock fields are integers in schema; convert quantities to int
+    final int qtyChange = isBuy ? item.quantity.toInt() : -item.quantity.toInt();
+    final int stockAfter = stockBefore + qtyChange;
+
+    if (isBuy) {
+      // ➕ Add stock for main products only (use integer quantity)
       await txn.rawUpdate(
         'UPDATE products SET stock = stock + ? WHERE id = ?',
-        [item.quantity, item.productId],
+        [item.quantity.toInt(), item.productId],
       );
-    }
-  } else {
-    // ➖ Deduct stock for main products & increase sold (including nested)
-    for (final item in items) {
+    } else {
+      // ➖ Deduct stock for main products & increase sold (including nested)
       await txn.rawUpdate(
         'UPDATE products SET stock = stock - ?, sold = sold + ? WHERE id = ?',
-        [item.quantity, item.quantity, item.productId],
+        [item.quantity.toInt(), item.quantity.toInt(), item.productId],
       );
-      await increaseSoldRecursively(item.productId, item.quantity);
+      await increaseSoldRecursively(item.productId, item.quantity.toInt());
     }
+
+    // 2️⃣ Record Inventory Movement (integer fields)
+    final movement = InventoryMovement(
+      productId: item.productId,
+      orderId: orderId,
+      movementType: isBuy ? 'Purchase' : 'Sale',
+      quantityChange: qtyChange,
+      stockBefore: stockBefore,
+      stockAfter: stockAfter,
+      unitPrice: item.price.abs().toInt(),
+      totalValue: (item.price * item.quantity).abs().toInt(),
+      timestamp: order.orderTimestamp,
+      remark: order.remark,
+    );
+    await txn.insert('inventory_movements', movement.toMap());
   }
 }
 

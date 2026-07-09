@@ -184,9 +184,9 @@ class _ProductCardState extends State<ProductCard> {
                         child: widget.product.imageData != null
                             ? Image.memory(widget.product.imageData!, fit: BoxFit.cover)
                             : Container(
-                                color: MyColors.grey.withAlpha(30),
-                                child: const Icon(Icons.browser_not_supported_rounded),
-                              ),
+                          color: MyColors.grey.withAlpha(30),
+                          child: const Icon(Icons.browser_not_supported_rounded),
+                        ),
                       ),
                     ),
                   ),
@@ -247,15 +247,15 @@ class _ProductCardState extends State<ProductCard> {
                               color: widget.product.stock < 1
                                   ? MyColors.error
                                   : widget.product.stock < lowStockLimit
-                                      ? MyColors.primary
-                                      : MyColors.success,
+                                  ? MyColors.primary
+                                  : MyColors.success,
                             ),
                             child: Text(
                               widget.product.stock < 1
                                   ? "Out of Stock"
                                   : widget.product.stock < lowStockLimit
-                                      ? "Low Stock"
-                                      : "In Stock",
+                                  ? "Low Stock"
+                                  : "In Stock",
                               style: MyFont.semiBold(
                                 h * 0.14,
                                 color: MyColors.translucent,
