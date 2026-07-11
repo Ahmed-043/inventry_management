@@ -400,7 +400,7 @@ Future<List<SalesData>> getTop10MostSold(Database db) async {
 Future<double> getTotalUnpaidAmount(Database db) async {
   final result = await db.rawQuery(
       '''
-    SELECT SUM(amount) AS total
+    SELECT SUM(amount - paid_amount) AS total
     FROM payment_transactions
     WHERE payment_status != 'Paid'
     '''

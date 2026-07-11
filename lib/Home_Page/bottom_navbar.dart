@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/profile.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/colors.dart';
@@ -30,9 +31,24 @@ class _BottomNavPanelState extends State<BottomNavPanel> {
     {'title': 'Suppliers', 'icon': Icons.local_shipping_outlined},
     {'title': 'Orders', 'icon': Icons.production_quantity_limits_rounded},
     {'title': 'Transactions', 'icon': Icons.mobile_friendly_rounded},
+    {'title': 'Reports', 'icon': Icons.bar_chart_outlined},
     {'title': 'Settings', 'icon': Icons.settings_outlined},
     {'title': 'Logout', 'icon': Icons.logout},
   ];
+
+  bool _isItemHidden(int index) {
+    switch (index) {
+      case 0: return hideDashboard;
+      case 1: return hideProducts;
+      case 2: return hideCustomers;
+      case 3: return hideSuppliers;
+      case 4: return hideOrders;
+      case 5: return hideTransactions;
+      case 6: return hideReports;
+      case 7: return hideSettings;
+      default: return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,16 +72,18 @@ class _BottomNavPanelState extends State<BottomNavPanel> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List.generate(tiles.length, (index) {
-                  return navTile(
-                    title: widget.collaps
-                        ? null
-                        : tiles[index]['title'] as String,
-                    icon: tiles[index]['icon'] as IconData,
-                    isSelected: widget.selectedIndex == index,
-                    onTap: () => widget.onItemSelected(index),
-                  );
-                }),
+                children: [
+                  for (int index = 0; index < tiles.length; index++)
+                    if (!_isItemHidden(index))
+                      navTile(
+                        title: widget.collaps
+                            ? null
+                            : tiles[index]['title'] as String,
+                        icon: tiles[index]['icon'] as IconData,
+                        isSelected: widget.selectedIndex == index,
+                        onTap: () => widget.onItemSelected(index),
+                      ),
+                ],
               ),
             ),
           ),

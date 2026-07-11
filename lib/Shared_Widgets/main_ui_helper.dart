@@ -360,6 +360,57 @@ class UiHelper {
     );
   }
 
+  static Widget switchTile({
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    double height = 50,
+    double switchScale = 0.85,
+    Decoration? decoration,
+    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 16),
+  }) {
+    return MouseRegion(
+      child: Container(
+        height: height,
+        decoration: decoration ?? UiHelper.myDecoration(),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => onChanged(!value),
+              hoverColor: Colors.transparent,
+              splashColor: MyColors.primary.withAlpha(50),
+              highlightColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              child: Padding(
+                padding: padding,
+                child: Row(
+                  children: [
+                    Text(
+                      title,
+                      style: MyFont.bold(16, color: MyColors.dark),
+                    ),
+                    const Spacer(),
+                    Transform.scale(
+                      scale: switchScale,
+                      child: Switch(
+                        value: value,
+                        activeTrackColor: MyColors.primary,
+                        activeColor: MyColors.translucent,
+                        onChanged: onChanged,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   static Widget mySelectableButton({
     required String title,
     required bool isSelected, // 🔹 controls pressed/highlighted state

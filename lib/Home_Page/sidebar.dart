@@ -41,6 +41,21 @@ class _SidebarPanelState extends State<SidebarPanel> {
     {'title': 'Settings', 'icon': Icons.settings_outlined},
     {'title': 'Logout', 'icon': Icons.logout},
   ];
+
+  bool _isItemHidden(int index) {
+    switch (index) {
+      case 0: return hideDashboard;
+      case 1: return hideProducts;
+      case 2: return hideCustomers;
+      case 3: return hideSuppliers;
+      case 4: return hideOrders;
+      case 5: return hideTransactions;
+      case 6: return hideReports;
+      case 7: return hideSettings;
+      default: return false;
+    }
+  }
+
   @override
   initState() {
     // TODO: implement initState
@@ -69,24 +84,26 @@ class _SidebarPanelState extends State<SidebarPanel> {
                       child: widget.collaps ? Image.asset('assets/images/app_logo.png') : Image.asset('assets/images/odventory_logo.png')
                   ),
                   Column(
-                    children: List.generate(tiles.length, (index) {
-                      return listTile(
-                        title: widget.collaps
-                            ? null
-                            : tiles[index]['title'] as String,
-                        icon: tiles[index]['icon'] as IconData,
-                        isSelected: widget.selectedIndex == index,
-                        callBack: () {
-                          widget.onItemSelected(index);
-                        },
-                      );
-                    }),
+                    children: [
+                      for (int index = 0; index < tiles.length; index++)
+                        if (!_isItemHidden(index))
+                          listTile(
+                            title: widget.collaps
+                                ? null
+                                : tiles[index]['title'] as String,
+                            icon: tiles[index]['icon'] as IconData,
+                            isSelected: widget.selectedIndex == index,
+                            callBack: () {
+                              widget.onItemSelected(index);
+                            },
+                          ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          ?widget.vCollaps ? null :
+          if (!widget.vCollaps)
           widget.info != null ?
 
             InkWell(
@@ -135,8 +152,8 @@ class _SidebarPanelState extends State<SidebarPanel> {
                               : const Icon(Icons.person),
                         ),
                       ),
-                      ?widget.collaps? null:  const SizedBox(width: 10),
-                      ?widget.collaps? null: Expanded(
+                      if (!widget.collaps) const SizedBox(width: 10),
+                      if (!widget.collaps) Expanded(
                         child: SizedBox(
                           height: double.infinity,
                           child: Center(
@@ -193,7 +210,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
           child: SizedBox(
             height: 40,
             child: Row(
-        
+
               children: [
                 Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue,size: 20,),
                 if (title != null) ...[

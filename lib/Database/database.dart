@@ -14,6 +14,14 @@ int? productsPerPage, transactionsPerPage, personsPerPage, ordersPerPage;
 double? cardSize;
 double? personCardSize;
 bool performanceMode = false, plainUi = true, tileUi = false;
+bool hideDashboard = false,
+    hideProducts = false,
+    hideCustomers = false,
+    hideSuppliers = false,
+    hideOrders = false,
+    hideTransactions = false,
+    hideReports = false,
+    hideSettings = false;
 int lowStockLimit = 50, sortCategory = 0,sort = 9;
 
 Future<bool> createDatabase({required String dbName, Directory? path, Uint8List? image}) async {
