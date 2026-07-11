@@ -165,6 +165,14 @@ Future<void> loadPreferences() async {
   }
   sort = prefs.getInt('sort')!;
 
+  hideDashboard = prefs.getBool('hideDashboard') ?? false;
+  hideProducts = prefs.getBool('hideProducts') ?? false;
+  hideCustomers = prefs.getBool('hideCustomers') ?? false;
+  hideSuppliers = prefs.getBool('hideSuppliers') ?? false;
+  hideOrders = prefs.getBool('hideOrders') ?? false;
+  hideTransactions = prefs.getBool('hideTransactions') ?? false;
+  hideReports = prefs.getBool('hideReports') ?? false;
+  hideSettings = false;
 
   debugPrint("Loaded preferences: pageSize=$productsPerPage, cardSize=$cardSize, PersonCardSize=$personCardSize");
 }

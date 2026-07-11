@@ -27,8 +27,23 @@ class HomePage extends StatefulWidget {
 
 
 class _HomePageState extends State<HomePage> {
-  int selectedIndex = 0; // track sidebar selection here
-  final FocusNode _focusNode = FocusNode();
+  int selectedIndex = !hideDashboard
+      ? 0
+      : !hideProducts
+      ? 1
+      : !hideCustomers
+      ? 2
+      : !hideSuppliers
+      ? 3
+      : !hideOrders
+      ? 4
+      : !hideTransactions
+      ? 5
+      : !hideReports
+      ? 6
+      : 7; // Settings (or last item if all others are hidden)
+
+    final FocusNode _focusNode = FocusNode();
 
   late final pages = [
     Dashboard(info: widget.info,),
