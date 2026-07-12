@@ -320,9 +320,9 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                                           crossAxisSpacing: 10,
                                           childAspectRatio: 380 / 80,
                                         ),
-                                        itemCount: products.where((p) => !inStock || p.stock >= 1).length,
+                                        itemCount: products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).length,
                                         itemBuilder: (context, index) {
-                                          final visible = products.where((p) => !inStock || p.stock >= 1).toList();
+                                          final visible = products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).toList();
                                           final p = visible[index];
                                           return InkWell(
                                             onTap: () {
@@ -490,23 +490,37 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                       Expanded(child: SizedBox()),
                       Expanded(
                         flex: 2,
-                        child: UiHelper.myButton(
-                          callback: () {
-                            stockUpdateDialog(product);
-                          },
-                          title: product.stock < 1
-                              ? "Out of Stock"
-                              : product.stock < lowStockLimit
-                              ? "Low Stock"
-                              : "In Stock",
-                          filled: true,
-                          color: product.stock < 1
-                              ? MyColors.error
-                              : product.stock < lowStockLimit
-                              ? MyColors.primary
-                              : MyColors.success,
-                          textSize: 14,
-                          borderRadius: 5,
+                        child: Builder(
+                          builder: (context) {
+                            final effectiveLowStock = product.lowStock == -1 ? lowStockLimit : product.lowStock;
+                            String text;
+                            Color color;
+
+                            if (product.lowStock == product.stock) {
+                              text = "In Stock";
+                              color = MyColors.success;
+                            } else if (product.stock < 1) {
+                              text = "Out of Stock";
+                              color = MyColors.error;
+                            } else if (product.stock < effectiveLowStock) {
+                              text = "Low Stock";
+                              color = MyColors.warning;
+                            } else {
+                              text = "In Stock";
+                              color = MyColors.success;
+                            }
+
+                            return UiHelper.myButton(
+                              callback: () {
+                                stockUpdateDialog(product);
+                              },
+                              title: text,
+                              filled: true,
+                              color: color,
+                              textSize: 14,
+                              borderRadius: 5,
+                            );
+                          }
                         ),
                       ),
                       Expanded(

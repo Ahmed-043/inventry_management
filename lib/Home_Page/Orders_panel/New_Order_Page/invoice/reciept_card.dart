@@ -240,6 +240,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
       builder: (BuildContext context) {
         return Dialog(
           insetPadding: EdgeInsets.all(10),
+          backgroundColor: MyColors.mainBg,
           child: SizedBox(
             width: 800,
             height: 800,

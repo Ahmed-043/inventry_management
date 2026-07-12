@@ -14,6 +14,7 @@ class InputNewProductController extends ChangeNotifier {
   final price = TextEditingController();
   final stock = TextEditingController();
   final weight = TextEditingController();
+  final lowStock = TextEditingController(text: '-1');
   final sku = TextEditingController();
   final desc = TextEditingController();
   final categoryController = TextEditingController();
@@ -34,7 +35,7 @@ class InputNewProductController extends ChangeNotifier {
 
   @override
   void dispose() {
-    [name, price, stock, weight, desc, sku, categoryController].forEach((c) => c.dispose());
+    [name, price, stock, weight, lowStock, desc, sku, categoryController].forEach((c) => c.dispose());
     super.dispose();
   }
 
@@ -170,12 +171,15 @@ class InputNewProductController extends ChangeNotifier {
       return "Weight is too large!";
     }
 
+    if(int.tryParse(lowStock.text) == null || int.parse(lowStock.text) < -1) lowStock.text = '-1';
+
     // Insert product
     final success = await insertProduct(
       db: currentDB!,
       name: name.text,
       basePrice: _roundToTwoDecimals(double.tryParse(price.text) ?? 0.0),
       stock: int.tryParse(stock.text) ?? 0,
+      lowStock: int.tryParse(lowStock.text) ?? -1,
       weight: _roundToTwoDecimals(double.tryParse(weight.text) ?? 0.0),
       sku: sku.text.isEmpty ? null : sku.text,
       description: desc.text,

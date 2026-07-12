@@ -11,6 +11,12 @@ class MyFont {
     fontWeight: FontWeight.w400,
     color: color,
   );
+  static TextStyle medium(double size, {Color? color}) => TextStyle(
+    fontFamily: family,
+    fontSize: size,
+    fontWeight: FontWeight.w400,
+    color: color,
+  );
 
   static TextStyle bold(double size, {Color? color}) => TextStyle(
     fontFamily: family,

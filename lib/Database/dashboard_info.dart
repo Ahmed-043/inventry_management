@@ -47,10 +47,10 @@ Future<List<ChipData>> loadDashboardChipData(
       (SELECT COUNT(*) FROM payment_transactions WHERE payment_status IN ('Pending','Overdue')) AS pendingTxnAll,
       (SELECT COUNT(*) FROM payment_transactions WHERE payment_status IN ('Pending','Overdue') AND timestamp BETWEEN ? AND ?) AS pendingTxnPeriod,
 
-      (SELECT COUNT(*) FROM products WHERE stock < ? AND stock > 0) AS lowStock,
-      (SELECT COUNT(*) FROM products WHERE stock = 0) AS OutOfStock,
+      (SELECT COUNT(*) FROM products WHERE stock > 0 AND ((low_stock = -1 AND stock < ?) OR (low_stock >= 0 AND stock < low_stock))) AS lowStock,
+      (SELECT COUNT(*) FROM products WHERE stock <= 0 AND ((low_stock = -1) OR (low_stock >= 0 AND stock != low_stock))) AS OutOfStock,
       (SELECT COUNT(*) FROM products) AS allStock,
-      (SELECT COUNT(*) FROM products WHERE stock >= ? ) AS inStock
+      (SELECT COUNT(*) FROM products WHERE ((low_stock = -1 AND stock >= ?) OR (low_stock >= 0 AND stock >= low_stock))) AS inStock
 
   ''',
     [

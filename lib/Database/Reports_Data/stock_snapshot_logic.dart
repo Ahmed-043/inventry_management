@@ -5,9 +5,11 @@ import '../database.dart';
 
 class StockSnapshotRow {
   final int productId;
+  final int category;
   final String productName;
   final String? sku;
   final int lowStockLimit;
+  final int originalLowStock;
   final List<DayStockInfo> dailyStock;
   final double currentStock;
 
@@ -15,7 +17,9 @@ class StockSnapshotRow {
     required this.productId,
     required this.productName,
     this.sku,
+    this.category = 0,
     required this.lowStockLimit,
+    required this.originalLowStock,
     required this.dailyStock,
     required this.currentStock,
   });
@@ -48,7 +52,15 @@ class Category {
   });
 }
 
-Future<List<StockSnapshotRow>> getStockSnapshotMatrix(Database db, {DateTime? startDate, DateTime? endDate, String searchString = '', int? categoryId}) async {
+Future<List<StockSnapshotRow>> getStockSnapshotMatrix(
+    Database db,
+    {DateTime? startDate,
+      DateTime? endDate,
+      String searchString = '',
+      int? categoryId,
+
+    })
+async {
   // 1. Get filtered active products
   String whereClause = 'active = 1';
   List<dynamic> whereArgs = [];
@@ -65,10 +77,17 @@ Future<List<StockSnapshotRow>> getStockSnapshotMatrix(Database db, {DateTime? st
 
   final productRows = await db.query(
     'products',
-    columns: ['id', 'name', 'sku', 'stock'],
+    columns: ['id', 'name', 'sku', 'stock', 'category', 'low_stock'],
     where: whereClause,
     whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
-    orderBy: 'name ASC',
+    orderBy: sortCategory == 0 ? 'id DESC' : '''(category IS NULL OR category = 0) ASC,
+  (
+  SELECT sequence
+  FROM categories
+  WHERE categories.id = products.category
+  ) ASC,
+  id DESC
+  ''',
   );
 
   if (productRows.isEmpty) return [];
@@ -91,47 +110,26 @@ Future<List<StockSnapshotRow>> getStockSnapshotMatrix(Database db, {DateTime? st
   final startTs = normalizedStart.millisecondsSinceEpoch;
   final endTs = normalizedEnd.millisecondsSinceEpoch;
 
-  // 2. Get the latest movement before the start date for these products to get starting stock
-  // Efficient query to get the last stock_after for each product before the range
-  final startingMovements = await db.rawQuery('''
-    SELECT product_id, stock_after 
-    FROM inventory_movements 
-    WHERE id IN (
-      SELECT MAX(id) 
-      FROM inventory_movements 
-      WHERE timestamp < ? AND product_id IN ($idPlaceholders)
-      GROUP BY product_id
-    )
-  ''', [startTs, ...productIds]);
-
-  Map<int, double> productStartingStock = {};
-  for (var row in startingMovements) {
-    productStartingStock[row['product_id'] as int] = (row['stock_after'] as num).toDouble();
-  }
-
-  // 3. Get all movements within the range for these products
+  // 2. Get all movements within the range for these products
   final movementsInRange = await db.query(
     'inventory_movements',
     where: 'timestamp BETWEEN ? AND ? AND product_id IN ($idPlaceholders)',
     whereArgs: [startTs, endTs, ...productIds],
-    orderBy: 'timestamp ASC, id ASC',
+    orderBy: 'id ASC', // Ordered by insertion sequence to reliably get the last state
   );
 
-  // Group movements by product and then by day index
-  Map<int, Map<int, List<Map<String, dynamic>>>> movementsByProductAndDay = {};
+  // Group movements by product and then by day key (yyyy-MM-dd)
+  Map<int, Map<String, List<Map<String, dynamic>>>> movementsByProductAndDate = {};
 
   for (var m in movementsInRange) {
     final pId = m['product_id'] as int;
     final ts = m['timestamp'] as int;
     final mDate = DateTime.fromMillisecondsSinceEpoch(ts);
-    final normalizedMDate = DateTime(mDate.year, mDate.month, mDate.day);
-    final dayIndex = normalizedMDate.difference(normalizedStart).inDays;
+    final dateKey = "${mDate.year}-${mDate.month.toString().padLeft(2, '0')}-${mDate.day.toString().padLeft(2, '0')}";
 
-    if (dayIndex >= 0 && dayIndex < daysCount) {
-      movementsByProductAndDay.putIfAbsent(pId, () => {});
-      movementsByProductAndDay[pId]!.putIfAbsent(dayIndex, () => []);
-      movementsByProductAndDay[pId]![dayIndex]!.add(m);
-    }
+    movementsByProductAndDate.putIfAbsent(pId, () => {});
+    movementsByProductAndDate[pId]!.putIfAbsent(dateKey, () => []);
+    movementsByProductAndDate[pId]![dateKey]!.add(m);
   }
 
   List<StockSnapshotRow> matrix = [];
@@ -141,39 +139,48 @@ Future<List<StockSnapshotRow>> getStockSnapshotMatrix(Database db, {DateTime? st
     final productName = pRow['name'] as String;
     final sku = pRow['sku'] as String?;
     final currentStock = (pRow['stock'] as num).toDouble();
+    final category = pRow['category'] as int;
+    final lowStock = pRow['low_stock'] as int? ?? -1;
+    final effectiveLimit = lowStock == -1 ? lowStockLimit : lowStock;
 
-    double rollingStock = productStartingStock[productId] ?? 0;
     List<DayStockInfo> dailyInfo = [];
 
-    final productMovements = movementsByProductAndDay[productId] ?? {};
+    final productMovements = movementsByProductAndDate[productId] ?? {};
 
     for (int i = 0; i < daysCount; i++) {
-      final dayMovements = productMovements[i] ?? [];
-      
+      final date = days[i];
+      final dateKey = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      final dayMovements = productMovements[dateKey] ?? [];
+
       double sold = 0;
       double purchased = 0;
       double adjustment = 0;
+      double stockAtEnd = 0;
 
       if (dayMovements.isNotEmpty) {
         for (final m in dayMovements) {
           final type = m['movement_type'] as String;
           final change = (m['quantity_change'] as num).toDouble();
-          
-          if (type == 'Sale' || type == 'Sales Return') {
+
+          if (type == 'Sale') {
             sold += change.abs();
-          } else if (type == 'Purchase' || type == 'Purchase Return') {
+          } else if (type == 'Sales Return') {
+            sold -= change.abs(); // Reduces net sales
+          } else if (type == 'Purchase') {
             purchased += change.abs();
+          } else if (type == 'Purchase Return') {
+            purchased -= change.abs(); // Reduces net purchases
           } else {
             adjustment += change;
           }
         }
-        // Stock at end of day is the stock_after of the last movement of the day
-        rollingStock = (dayMovements.last['stock_after'] as num).toDouble();
+        // Since we ordered by id ASC, the last one in the list is the last inserted row
+        stockAtEnd = (dayMovements.last['stock_after'] as num).toDouble();
       }
 
       dailyInfo.add(DayStockInfo(
-        date: days[i],
-        stockAtEnd: rollingStock,
+        date: date,
+        stockAtEnd: stockAtEnd,
         sold: sold,
         purchased: purchased,
         adjustment: adjustment,
@@ -184,9 +191,11 @@ Future<List<StockSnapshotRow>> getStockSnapshotMatrix(Database db, {DateTime? st
       productId: productId,
       productName: productName,
       sku: sku,
-      lowStockLimit: lowStockLimit,
+      lowStockLimit: effectiveLimit,
+      originalLowStock: lowStock,
       dailyStock: dailyInfo,
       currentStock: currentStock,
+      category: category,
     ));
   }
 

@@ -12,8 +12,8 @@ class AddNewPerson {
     final String heroTag = 'newPersonHero_${isCustomer ? "customer" : "supplier"}';
 
     return Container(
-      height: double.infinity,
-      margin: const EdgeInsets.only(top: 5),
+      height: 30,
+      //margin: const EdgeInsets.only(top: 5),
       width: 200,
       child: Hero(
         tag: heroTag,

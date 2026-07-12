@@ -94,7 +94,7 @@ class _HomePageState extends State<HomePage> {
         viewInsets: EdgeInsets.zero,
       ),
       child: Scaffold(
-        backgroundColor: plainUi ? MyColors.lightestGrey : MyColors.light,
+        backgroundColor: MyColors.mainBg,
        body: KeyboardListener(
           focusNode: _focusNode,
           autofocus: true,
@@ -127,17 +127,11 @@ class _HomePageState extends State<HomePage> {
                       if(!collapsed)
                       Align(
                         alignment: .topLeft,
-                        child: Container(
-                          width: collapse ? 60 : 180,
+                        child: SizedBox(
+                          width: collapse || collapseSideBar ? 60 : 175,
                           height: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            border: Border(
-                             // right: BorderSide(color: MyColors.lightGrey,width: 2)
-                            )
-                          ),
                           child: SidebarPanel(
-                            collaps: collapse,
+                            collaps: collapse || collapseSideBar,
                             selectedIndex: selectedIndex,
                             info: widget.info,
                             onItemSelected: (index) {
@@ -157,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                       ),
 
                       Positioned(
-                        left: collapsed ? 0 : (collapse ? 60 : 180),
+                        left: collapsed ? 0 : ( collapse ? 60 : collapseSideBar ? 80 : 200),
                         top: 0,
                         right: 0,
                         bottom: 0,

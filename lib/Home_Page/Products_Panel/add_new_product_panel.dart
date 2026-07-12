@@ -5,6 +5,7 @@ import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 
+import '../../Database/database.dart';
 import '../../Database/retrieve_products.dart';
 import '../../Shared_Widgets/adder_remover_value.dart';
 import '../../Shared_Widgets/blinker.dart';
@@ -91,7 +92,11 @@ class _InputNewProductState extends State<InputNewProduct>
                           spacing: 20,
                           runSpacing: 20,
                           children: [
-                            SizedBox(width: 280, child: _buildCategoryDropdown()),
+                            SizedBox(width: 280, child: Column(
+                              children: [
+                                _buildCategoryDropdown(),
+                              ],
+                            )),
                             SizedBox(
                               width: 500,
                               height: larger ? 300 : 180,
@@ -113,7 +118,6 @@ class _InputNewProductState extends State<InputNewProduct>
                                 ],
                               ),
                             ),
-
                           ],
                         ),
                       ),
@@ -376,7 +380,55 @@ class _InputNewProductState extends State<InputNewProduct>
               ),
           ],
         ),
+        SizedBox(height: 20),
 
+        Container(
+          padding: const EdgeInsets.only(left: 16,top: 6,bottom: 6,right: 16),
+          decoration: UiHelper.myDecoration(),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: .spaceBetween,
+                children: [
+                  Text('Low Stock Limit', style: MyFont.bold(16, color: MyColors.dark)),
+                  Transform.scale(
+                    scale: 0.85,
+                    child: Switch(
+                      value: (int.parse(controller.lowStock.text) > -1),
+                      activeTrackColor: MyColors.primary,
+                      activeColor: MyColors.translucent,
+                      onChanged: (e){
+                        print(e);
+                        if(e){
+                          setState(() => controller.lowStock.text = '$lowStockLimit');
+                        }else{
+                          setState(() => controller.lowStock.text = '-1');
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              if((int.parse(controller.lowStock.text) > -1))
+                SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: UiHelper.myTextField(
+                    label: 'Low Stock',
+                    controller: controller.lowStock,
+                    hint: '-1',
+                    fontSize: 15,
+                    textType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
+                    ],
+                  ),
+                ),
+
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -692,6 +744,7 @@ class _InputNewProductState extends State<InputNewProduct>
     await showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: MyColors.mainBg,
         insetPadding: EdgeInsets.all(10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: SizedBox(

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_ctrl.dart';
 import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
@@ -25,7 +26,7 @@ class UpdateProductDialog extends StatefulWidget {
 }
 
 class UpdateProductDialogState extends State<UpdateProductDialog> {
-  bool showContent = false;
+  bool showContent = true;
   final FocusNode _focusNode = FocusNode();
   late UpdateProductController controller;
 
@@ -55,76 +56,90 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
   @override
   Widget build(BuildContext context) {
     bool larger = controller.compProducts.length > 2;
-    return Center(
-      child: Hero(
-        tag: 'product_${widget.product.id}',
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(
-              maxWidth: 850,
-              maxHeight: 780,
-              minWidth: 400,
-            ),
-            height: larger ? 780 : 700,
+    final constraints = const BoxConstraints(
+      maxWidth: 850,
+      maxHeight: 780,
+      minWidth: 400,
+    );
+    final height = larger ? 780.0 : 700.0;
 
-            decoration: BoxDecoration(
-              color: MyColors.translucent,
-              borderRadius: BorderRadius.circular(16),
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Body Hero (Background)
+            Hero(
+              tag: 'product_${widget.product.id}',
+              child: Container(
+                constraints: constraints,
+                height: height,
+                decoration: BoxDecoration(
+                  color: MyColors.translucent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
             ),
-            child: showContent ? KeyboardListener(
-              focusNode: _focusNode,
-              autofocus: true,
-              onKeyEvent: (event) {
-                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-                  _handleUpdate();
-                }
-              },
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  SizedBox(height: 8),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildMainSection(),
-                            SizedBox(height: 10),
-                            Center(
-                              child: Wrap(
-                                crossAxisAlignment: .start,
-                                alignment: .center,
-                                spacing: 20,
-                                runSpacing: 20,
-                                children: [
-                                  SizedBox(width: 280, child: _buildCategorySection()),
-                                  SizedBox(
-                                    width: 500,
-                                    height: larger ? 300 : 200,
-                                    child: _buildComponentsSection(),
-                                  ),
-                                ],
+            // Dialog Content (Siblings to Body Hero)
+            Container(
+              constraints: constraints,
+              height: height,
+              child: showContent
+                  ? KeyboardListener(
+                focusNode: _focusNode,
+                autofocus: true,
+                onKeyEvent: (event) {
+                  if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+                    _handleUpdate();
+                  }
+                },
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildMainSection(),
+                              SizedBox(height: 10),
+                              Center(
+                                child: Wrap(
+                                  crossAxisAlignment: .start,
+                                  alignment: .center,
+                                  spacing: 20,
+                                  runSpacing: 20,
+                                  children: [
+                                    SizedBox(width: 280, child: _buildCategorySection()),
+                                    SizedBox(
+                                      width: 500,
+                                      height: larger ? 300 : 200,
+                                      child: _buildComponentsSection(),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  _buildFooter(),
-                ],
-              ),
-            ) : SizedBox(
+                    _buildFooter(),
+                  ],
+                ),
+              ) : SizedBox(
                 width: 850,height: 680,
-              child: Padding(
-                padding: const EdgeInsets.all(100.0),
-                child: UiHelper.appLogo(),
+                child: Padding(
+                  padding: const EdgeInsets.all(100.0),
+                  child: UiHelper.appLogo(),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -169,16 +184,15 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                 SizedBox(height: 8),
                 Container(
                   height: 280,
+                  clipBehavior: Clip.none,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: MyColors.lightGrey),
+                   // border: Border.all(color: MyColors.lightGrey),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: UploadBox(
-                      image: controller.image,
-                      onFileSelected: (file) => setState(() => controller.updateImage(file)),
-                    ),
+                  child: UploadBox(
+                    image: controller.image,
+                    heroTag: "product_${widget.product.id}_image",
+                    onFileSelected: (file) => setState(() => controller.updateImage(file)),
                   ),
                 ),
               ],
@@ -194,39 +208,57 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                 Text('Product Details', style: MyFont.bold(16, color: MyColors.dark)),
                 SizedBox(height: 8),
 
-                UiHelper.myTextField(
-                  label: 'Product Name',
-                  controller: controller.name,
-                  hint: 'Enter product name',
-                  fontSize: 15,
+                Hero(
+                  tag: "product_${widget.product.id}_name",
+                  child: Material(
+                    color: Colors.transparent,
+                    child: UiHelper.myTextField(
+                      label: 'Product Name',
+                      controller: controller.name,
+                      hint: 'Enter product name',
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
                 SizedBox(height: 16),
 
                 Row(
                   children: [
                     Expanded(
-                      child: UiHelper.myTextField(
-                        label: 'Price',
-                        controller: controller.price,
-                        hint: '0.00',
-                        prefixText: 'Rs. ',
-                        fontSize: 15,
-                        textType: TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                        ],
-                        onChange: () => setState(() {}),
+                      child: Hero(
+                        tag: "product_${widget.product.id}_price",
+                        child: Material(
+                          color: Colors.transparent,
+                          child: UiHelper.myTextField(
+                            label: 'Price',
+                            controller: controller.price,
+                            hint: '0.00',
+                            prefixText: 'Rs. ',
+                            fontSize: 15,
+                            textType: TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                            ],
+                            onChange: () => setState(() {}),
+                          ),
+                        ),
                       ),
                     ),
                     SizedBox(width: 12),
                     Expanded(
-                      child: UiHelper.myTextField(
-                        label: 'Stock',
-                        controller: controller.stock,
-                        hint: '0',
-                        fontSize: 15,
-                        textType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      child: Hero(
+                        tag: "product_${widget.product.id}_stock",
+                        child: Material(
+                          color: Colors.transparent,
+                          child: UiHelper.myTextField(
+                            label: 'Stock',
+                            controller: controller.stock,
+                            hint: '0',
+                            fontSize: 15,
+                            textType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -251,12 +283,18 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                     ),
                     SizedBox(width: 12),
                     Expanded(
-                      child: UiHelper.myTextField(
-                        label: 'SKU',
-                        controller: TextEditingController(text: widget.product.sku),
-                        hint: 'SKU',
-                        fontSize: 15,
-                        readOnly: true,
+                      child: Hero(
+                        tag: "product_${widget.product.id}_sku",
+                        child: Material(
+                          color: Colors.transparent,
+                          child: UiHelper.myTextField(
+                            label: 'SKU',
+                            controller: TextEditingController(text: widget.product.sku),
+                            hint: 'SKU',
+                            fontSize: 15,
+                            readOnly: true,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -283,96 +321,103 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
 
-        Container(
-          height: 50,
-          padding: const EdgeInsets.only(left: 16,top: 6,bottom: 6,right: 3),
-          decoration: UiHelper.myDecoration(),
-          child: Row(
-            children: [
-              Text('Category', style: MyFont.bold(16, color: MyColors.dark)),
-              SizedBox(width: 12),
+        Hero(
+          tag: "product_${widget.product.id}_category",
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              height: 50,
+              padding: const EdgeInsets.only(left: 16,top: 6,bottom: 6,right: 3),
+              decoration: UiHelper.myDecoration(),
+              child: Row(
+                children: [
+                  Text('Category', style: MyFont.bold(16, color: MyColors.dark)),
+                  SizedBox(width: 12),
 
-              Expanded(
-                child: MouseRegion(
-                  onEnter: (e) => isClickable = true,
-                  onExit: (e) => isClickable = false,
+                  Expanded(
+                    child: MouseRegion(
+                      onEnter: (e) => isClickable = true,
+                      onExit: (e) => isClickable = false,
 
-                  child: DropdownMenuTheme(
-                    data: DropdownMenuThemeData(
-                      menuStyle: MenuStyle(
-                        padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      child: DropdownMenuTheme(
+                        data: DropdownMenuThemeData(
+                          menuStyle: MenuStyle(
+                            padding: WidgetStateProperty.all(EdgeInsets.zero),
 
-                        backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ), // rounded corners
-                        elevation: WidgetStateProperty.all(6), // optional shadow
+                            backgroundColor: WidgetStateProperty.all(Colors.white), // white menu background
+                            shape: WidgetStateProperty.all(
+                              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ), // rounded corners
+                            elevation: WidgetStateProperty.all(6), // optional shadow
+                          ),
+                        ),
+                        child: DropdownMenu<int>(
+                          controller: controller.categoryController,
+                          hintText: 'Select or type category',
+                          expandedInsets: EdgeInsets.zero,
+                          showTrailingIcon: false,
+                          inputDecorationTheme: InputDecorationTheme(
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                          ),
+                          textStyle: MyFont.semiBold(14, color: MyColors.dark),
+                          textAlign: TextAlign.center,
+                          onSelected: (int? value) {
+                            setState(() => controller.selectCategory(value));
+                          },
+                          dropdownMenuEntries: controller.categories.map((category) {
+                            return DropdownMenuEntry<int>(
+                              value: category.id,
+                              label: category.name,
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    ),
-                    child: DropdownMenu<int>(
-                      controller: controller.categoryController,
-                      hintText: 'Select or type category',
-                      expandedInsets: EdgeInsets.zero,
-                      showTrailingIcon: false,
-                      inputDecorationTheme: InputDecorationTheme(
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(width: 2, color: MyColors.darkBlue),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                      ),
-                      textStyle: MyFont.semiBold(14, color: MyColors.dark),
-                      onSelected: (int? value) {
-                        setState(() => controller.selectCategory(value));
-                      },
-                      dropdownMenuEntries: controller.categories.map((category) {
-                        return DropdownMenuEntry<int>(
-                          value: category.id,
-                          label: category.name,
-                        );
-                      }).toList(),
                     ),
                   ),
-                ),
+                  // This is the part that adds the "Add Category" icon
+                  if (controller.showAddCategoryIcon)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Material(
+                        color: MyColors.success.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () async {
+                            final categoryName = controller.categoryController.text.trim();
+                            if (categoryName.isNotEmpty) {
+                              final result = await controller.addNewCategory(categoryName);
+                              if (result != null && mounted) {
+                                UiHelper.showToast(context, result,type: 1);
+                                setState(() {});
+                              }
+                            }
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(10),
+                            child: Icon(Icons.add, color: MyColors.success, size: 20),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              // This is the part that adds the "Add Category" icon
-              if (controller.showAddCategoryIcon)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Material(
-                    color: MyColors.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () async {
-                        final categoryName = controller.categoryController.text.trim();
-                        if (categoryName.isNotEmpty) {
-                          final result = await controller.addNewCategory(categoryName);
-                          if (result != null && mounted) {
-                            UiHelper.showToast(context, result,type: 1);
-                            setState(() {});
-                          }
-                        }
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(10),
-                        child: Icon(Icons.add, color: MyColors.success, size: 20),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 10),
         MouseRegion(
           onEnter: (e) => isClickable = true,
           onExit: (e) => isClickable = false,
@@ -412,6 +457,54 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                 ),
               ),
             ),
+          ),
+        ),
+        SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.only(left: 16,top: 6,bottom: 6,right: 16),
+          decoration: UiHelper.myDecoration(),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: .spaceBetween,
+                children: [
+                  Text('Low Stock Limit', style: MyFont.bold(16, color: MyColors.dark)),
+                  Transform.scale(
+                    scale: 0.85,
+                    child: Switch(
+                      value: (int.parse(controller.lowStock.text) > -1),
+                      activeTrackColor: MyColors.primary,
+                      activeColor: MyColors.translucent,
+                      onChanged: (e){
+                        print(e);
+                        if(e){
+                          setState(() => controller.lowStock.text = '$lowStockLimit');
+                        }else{
+                          setState(() => controller.lowStock.text = '-1');
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              if((int.parse(controller.lowStock.text) > -1))
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: UiHelper.myTextField(
+                  label: 'Low Stock',
+                  controller: controller.lowStock,
+                  hint: '-1',
+                  fontSize: 15,
+                  textType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
+                  ],
+                ),
+              ),
+
+            ],
           ),
         ),
       ],
@@ -479,7 +572,7 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
             context: context,
             builder: (context) => Dialog(
               insetPadding: EdgeInsets.all(10),
-
+              backgroundColor: MyColors.mainBg,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Container(
                 width: 1200,

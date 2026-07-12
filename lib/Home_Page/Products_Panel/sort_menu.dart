@@ -516,7 +516,7 @@ class _SortMenuState extends State<SortMenu> {
           child: DropdownButtonHideUnderline(
 
             child: DropdownButton<String>(
-              dropdownColor: Colors.white, // ✅ menu background color
+              dropdownColor: MyColors.translucent, // ✅ menu background color
               borderRadius: BorderRadius.circular(12), // ✅ rounded corners for menu
               isExpanded: true,
               value: value,

@@ -13,7 +13,8 @@ import '../files.dart';
 class UploadBox extends StatefulWidget {
   final void Function(Uint8List? file)? onFileSelected;
   final Uint8List? image;
-  const UploadBox({super.key, this.onFileSelected, this.image});
+  final String? heroTag;
+  const UploadBox({super.key, this.onFileSelected, this.image, this.heroTag});
 
   @override
   State<UploadBox> createState() => _UploadBoxState();
@@ -110,10 +111,10 @@ class _UploadBoxState extends State<UploadBox> {
         child: DottedBorder(
           options: RoundedRectDottedBorderOptions(
             dashPattern: [6, 3],
-            strokeWidth: 2,
+            strokeWidth: 1,
             radius: Radius.circular(12),
             color: Colors.grey,
-            padding: EdgeInsets.all(4),
+            //padding: EdgeInsets.all(4),
           ),
           child: selectedFile == null
               ? SizedBox(
@@ -124,8 +125,8 @@ class _UploadBoxState extends State<UploadBox> {
                     child: Stack(
                       children: [
                         Positioned(
-                          top: 0,
-                          left: 0,
+                          top: 5,
+                          left:10,
                           child: SizedBox(
                             height: 20,
                             child: Text(
@@ -193,9 +194,12 @@ class _UploadBoxState extends State<UploadBox> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            ClipRRect(
-                        borderRadius : BorderRadius.all(Radius.circular(12)),
-                                child: Image.memory(selectedFile!, fit: BoxFit.fitHeight)),
+                            Hero(
+                              tag: "${widget.heroTag}",
+                              child: ClipRRect(
+                                                      borderRadius : BorderRadius.all(Radius.circular(12)),
+                                  child: Image.memory(selectedFile!, fit: BoxFit.fitHeight)),
+                            ),
                             if(isLoading) CircularProgressIndicator(),
                             if (isHovered && !isLoading)
                               Container(

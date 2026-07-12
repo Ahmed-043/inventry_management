@@ -7,34 +7,35 @@ class AddNewProduct {
     required BuildContext context,
     required Widget action,
   }) {
-    return Container(
-      height: double.infinity,
-      width: 200,
-      margin: const EdgeInsets.only(top: 5),
-      child: Hero(
-        tag: 'newProduct',
-        child: UiHelper.myButton(
-          callback: () {
-            // Use a PageRouteBuilder for Hero animation instead of showDialog
-            UiHelper.pushPage(
-              context: context,
-              opaque: false,
-              barrierColor: Colors.black54,
-              page: _AddNewProductDialog(action: action),
-            );
-            // Navigator.of(context).push(
-            //   PageRouteBuilder(
-            //     opaque: false, // background remains visible
-            //     barrierColor: Colors.black54, // dim background
-            //     pageBuilder: (_, __, ___) => _AddNewProductDialog(action: action),
-            //   ),
-            // );
-          },
-          title: "Add New Product",
-          textSize: 15,
-          filled: true,
-          borderRadius: 10,
+    return Hero(
+      tag: 'newProduct',
+      child: UiHelper.myButton(
+
+        callback: () {
+          // Use a PageRouteBuilder for Hero animation instead of showDialog
+          UiHelper.pushPage(
+            context: context,
+            opaque: false,
+            barrierColor: Colors.black54,
+            page: _AddNewProductDialog(action: action),
+          );
+          // Navigator.of(context).push(
+          //   PageRouteBuilder(
+          //     opaque: false, // background remains visible
+          //     barrierColor: Colors.black54, // dim background
+          //     pageBuilder: (_, __, ___) => _AddNewProductDialog(action: action),
+          //   ),
+          // );
+        },
+        child: const Icon(Icons.add, color: Colors.white, size: 18),
+        title: "Add New Product",
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
         ),
+        textSize: 15,
+        filled: true,
+        borderRadius: 10,
       ),
     );
   }

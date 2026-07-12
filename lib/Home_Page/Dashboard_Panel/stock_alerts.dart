@@ -34,7 +34,7 @@ class StockAlerts extends StatelessWidget {
       enableOuterScroll: false,
       controller: controller ,
       child: SizedBox(
-        height: 75, // box height (74) + vertical margins/padding
+        height: 60, // box height (74) + vertical margins/padding
         child: ListView.builder(
           controller: controller,
           scrollDirection: Axis.horizontal,

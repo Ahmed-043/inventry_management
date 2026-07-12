@@ -143,8 +143,8 @@ class _DashboardState extends State<Dashboard> {
         0,
         productsPerPage ?? 20,
         performanceMode,
-        upperLimit: current[3] ? 0 : lowStockLimit-1,
-        lowerLimit: current[3] ? 0 : 1,
+        isLowStock: !current[3],
+        globalLowStockLimit: lowStockLimit,
         sortMode: 4,
       );
 
@@ -227,8 +227,8 @@ class _DashboardState extends State<Dashboard> {
           0,
           productsPerPage ?? 20,
           performanceMode,
-          upperLimit: current[3] ? 0 : lowStockLimit-1,
-          lowerLimit: current[3] ? 0 : 1,
+          isLowStock: !current[3],
+          globalLowStockLimit: lowStockLimit,
           sortMode: 4,
         );
         setState(() {});
@@ -408,226 +408,117 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget _topbar() {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Text(
             "Dashboard",
-            style: MyFont.bold(30, color: MyColors.blue),
+            style: MyFont.bold(24, color: MyColors.textMain),
           ),
-        ),
-        Expanded(
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Container(
-              margin: const EdgeInsets.only(top: 5, right: 10),
-              width: 200,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.notifications_none_rounded),
-                  ),
-                  SizedBox(width: 10),
-                  InkWell(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => Dialog(
-
-                          backgroundColor: Colors.transparent,
-                          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ProfileSettings(
-                            info: widget.info!, // Pass your DBInfo object here
-                            onSave: () {
-                              // Add your database update logic here
-                              Navigator.pop(context); // Close dialog after saving
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: ClipOval(
-                        child: widget.info!.image != null
-                            ? Image.memory(widget.info!.image!, fit: BoxFit.cover)
-                            : const Icon(Icons.person),
-                      ),
+          const Spacer(),
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              UiHelper.myButton(
+                callback: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          NewOrderPage(sell: true, callback: () {}),
                     ),
-                  ),
-                ],
+                  );
+                },
+                child: Icon(Icons.add, color: Colors.white, size: 18),
+                title: "Create new order",
+                textSize: 14,
+                filled: true,
+                color: MyColors.sidebarSelected,
+                borderRadius: 10,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-            ),
+              Hero(
+                tag: 'newTransaction',
+                child: UiHelper.myButton(
+                  callback: () {
+                    UiHelper.pushPage(
+                      context: context,
+                      opaque: false,
+                      barrierColor: Colors.black54,
+                      page: AddNewTransactionDialog(
+                        action: NewTransactionDialog(
+                          onSave: () {
+                            loadDashboard();
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(Icons.swap_horiz_rounded, color: MyColors.textMain, size: 18),
+                  title: "Record Transaction",
+                  textSize: 14,
+                  filled: false,
+                  color: MyColors.textMain,
+                  borderRadius: 10,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _welcome() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 1100;
-          final buttonWidth = constraints.maxWidth < 520
-              ? constraints.maxWidth - 20
-              : 200.0;
-
-          final heading = Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isWide
-                      ? constraints.maxWidth * 0.45
-                      : constraints.maxWidth - 20,
-                ),
-                child: Text(
-                  "Welcome back, ${widget.info?.dbName}!",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: MyFont.bold(24, color: MyColors.blue),
-                ),
-              ),
-              if (pendingPayment != 0)
-                Tooltip(
-                  waitDuration: const Duration(milliseconds: 500),
-                  message: pendingPayment > 0
-                      ? 'Pending Receivable'
-                      : 'Pending Payable',
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "Rs. ${NumberFormat.decimalPattern().format(pendingPayment)}",
-                          textAlign: TextAlign.center,
-                          style: MyFont.bold(
-                            20,
-                            color: pendingPayment > 0
-                                ? MyColors.success
-                                : MyColors.error,
-                          ),
-                        ),
-                        Icon(
-                          pendingPayment > 0
-                              ? Icons.keyboard_double_arrow_up_rounded
-                              : Icons.keyboard_double_arrow_down_rounded,
-                          size: 20,
-                          color: pendingPayment > 0
-                              ? MyColors.success
-                              : MyColors.error,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          );
-
-          final actionButtons = Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            alignment: WrapAlignment.end,
-            children: [
-              SizedBox(
-                width: buttonWidth,
-                height: 40,
-                child: UiHelper.myButton(
-                  callback: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            NewOrderPage(sell: true, callback: () {}),
-                      ),
-                    );
-                  },
-                  rightClick: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            NewOrderPage(sell: false, callback: () {}),
-                      ),
-                    );
-                  },
-                  child: Icon(Icons.add, color: MyColors.translucent),
-                  title: "Create new order",
-                  textSize: 17,
-                  filled: true,
-                  borderRadius: 10,
-                  padding: const EdgeInsets.all(10),
-                ),
-              ),
-              SizedBox(
-                width: buttonWidth,
-                height: 40,
-                child: Hero(
-                  tag: 'newTransaction',
-                  child: UiHelper.myButton(
-                    callback: () {
-                      UiHelper.pushPage(
-                        context: context,
-                        opaque: false,
-                        barrierColor: Colors.black54,
-                        page: AddNewTransactionDialog(
-                          action: NewTransactionDialog(
-                            onSave: () {
-                              loadDashboard();
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    child: Icon(
-                      Icons.attach_money_rounded,
-                      color: MyColors.primary,
-                    ),
-                    title: "Record Transaction",
-                    textSize: 17,
-                    filled: false,
-                    borderRadius: 10,
-                    padding: const EdgeInsets.all(10),
-                  ),
-                ),
-              ),
-            ],
-          );
-
-          if (isWide) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: heading),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: actionButtons,
-                  ),
-                ),
-              ],
-            );
-          }
-
-          return Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              heading,
-              const SizedBox(height: 10),
-              actionButtons,
+              RichText(
+                text: TextSpan(
+                  style: MyFont.bold(24, color: MyColors.textMain),
+                  children: [
+                    const TextSpan(text: "Welcome back, "),
+                    TextSpan(
+                      text: "${widget.info?.dbName}!",
+                      style: MyFont.bold(24, color: MyColors.sidebarSelected),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Here's what's happening with your inventory today.",
+                style: MyFont.medium(14, color: MyColors.textSecondary),
+              ),
             ],
-          );
-        },
+          ),
+          if (pendingPayment != 0)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "Outstanding Balance",
+                  style: MyFont.medium(12, color: MyColors.textSecondary),
+                ),
+                Text(
+                  "${pendingPayment < 0 ? '-' : ''}Rs. ${NumberFormat.decimalPattern().format(pendingPayment.abs())}",
+                  style: MyFont.bold(20, color: pendingPayment > 0 ? MyColors.success : MyColors.error),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -643,6 +534,7 @@ class _DashboardState extends State<Dashboard> {
         }
       },
       child: PageView(
+        clipBehavior: Clip.none,
         controller: pageController,
         scrollDirection: Axis.horizontal,
         children: [lineChart(), pieBarCharts()],
@@ -652,108 +544,84 @@ class _DashboardState extends State<Dashboard> {
 
   Widget lineChart() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      margin: const EdgeInsets.only(top: 8,right: 8),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        boxShadow: UiHelper.myBoxShadow(),
-        border: UiHelper.myBorder(),
-        color: MyColors.translucent,
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      width: double.infinity,
-      // height: 400,
-      child: SizedBox(
-        child: Column(
-          crossAxisAlignment: .start,
-          mainAxisAlignment: .center,
-          children: [
-            Row(
-              children: [
-                Text(
-                  "Key Performance Visuals",
-                  style: MyFont.bold(24, color: MyColors.blue),
-                ),
-                SizedBox(
-                  height: 35,
-                  child: IconButton(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                      onPressed: (){
-                    setState(() {
-                      dailySales = !dailySales;
-                      _saveSettings();
-                      loadDashboard();
-                    });
-                  }, icon: Text("${dailySales ? "Daily" : "Monthly "} ${!current[0] ? 'Income' : 'Purchase'}",
-                    style: MyFont.bold(24, color: MyColors.blue),)),
-                )
-              ],
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: .start,
-              children: [
-                Text(
-                  "${!current[0] ? 'Income' : 'Purchase'} Trend Last $back ${dailySales ? "Days" : "Months "}",
-                  style: MyFont.bold(16, color: MyColors.blue),
-                ),
-                SizedBox(
-                  height: 25,
-                  child: IconButton(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "KEY PERFORMANCE VISUALS",
+                    style: MyFont.bold(12, color: MyColors.textSecondary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Income' : 'Purchase'} Trend",
+                    style: MyFont.bold(20, color: MyColors.textMain),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  IconButton(
                     onPressed: () {
                       if (back < 30) {
                         back++;
                         _saveSettings();
                         loadDashboard();
-                      }else{
-                        if(dailySales){
-                          dailySales = !dailySales;
-                          back = 5;
-                          _saveSettings();
-                          loadDashboard();
-                        }
+                      } else if (dailySales) {
+                        dailySales = false;
+                        back = 5;
+                        _saveSettings();
+                        loadDashboard();
                       }
                     },
-                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-                    icon: Icon(
-                      Icons.chevron_left_rounded,
-                      color: MyColors.blue,
-                    ),
+                    icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary),
                   ),
-                ),
-                SizedBox(
-                  height: 25,
-                  child: IconButton(
+                  Text(
+                    "Last $back ${dailySales ? "Days" : "Months"}",
+                    style: MyFont.medium(14, color: MyColors.textSecondary),
+                  ),
+                  IconButton(
                     onPressed: () {
                       if (back > 5) {
                         back--;
                         _saveSettings();
                         loadDashboard();
-                      }else{
-                        if(!dailySales){
-                          dailySales = !dailySales;
-                          back = 30;
-                          _saveSettings();
-                          loadDashboard();
-                        }
+                      } else if (!dailySales) {
+                        dailySales = true;
+                        back = 30;
+                        _saveSettings();
+                        loadDashboard();
                       }
                     },
-                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-                    icon: Icon(
-                      Icons.chevron_right_rounded,
-                      color: MyColors.blue,
-                    ),
+                    icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary),
                   ),
-                ),
-              ],
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: SalesTrendChart(data: salesData),
+                ],
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: SalesTrendChart(data: salesData),
+          ),
+        ],
       ),
     );
   }

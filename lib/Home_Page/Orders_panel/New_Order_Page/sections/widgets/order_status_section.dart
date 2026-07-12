@@ -61,7 +61,7 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
               key: const ValueKey('order_status'),
               options: const [
                 TwoValue(first: "Canceled", second: MyColors.error),
-                TwoValue(first: "Pending", second: MyColors.primary),
+                TwoValue(first: "Pending", second: MyColors.warning),
                 TwoValue(first: "Completed", second: MyColors.success),
               ],
               onChanged: (String value) {
@@ -102,7 +102,7 @@ class _OrderStatusSectionState extends State<OrderStatusSection> {
               key: const ValueKey('payment_status'),
               options: const [
                 TwoValue(first: "Overdue", second: MyColors.error),
-                TwoValue(first: "Pending", second: MyColors.primary),
+                TwoValue(first: "Pending", second: MyColors.warning),
                 TwoValue(first: "Paid", second: MyColors.success),
               ],
               onChanged: (String value) {

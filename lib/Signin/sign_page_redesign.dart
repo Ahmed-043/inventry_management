@@ -208,7 +208,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
                             Radius.circular(20),
                           ),
                           border: Border.all(
-                            color: MyColors.primary,
+                            color: MyColors.primary.withAlpha(100),
                             width: 2.0,
                             style: BorderStyle.solid,
                           ),

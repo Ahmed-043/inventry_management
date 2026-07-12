@@ -12,7 +12,7 @@ class NewOrder  {
       child: Hero(
         tag: sell ? 'sellOrderHero' : 'buyOrderHero',
         child: SizedBox(
-          height: double.infinity,
+          height: 30,
           width: 200,
          // margin: EdgeInsets.only(top:10,bottom: 5),
           child: ElevatedButton(onPressed: (){

@@ -531,7 +531,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
     context: context,
     builder: (context) => Dialog(
       insetPadding: EdgeInsets.all(10),
-
+      backgroundColor: MyColors.mainBg,
       child: SizedBox(
         width: 1200,
         height: 800,

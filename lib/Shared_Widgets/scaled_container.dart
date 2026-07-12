@@ -5,7 +5,8 @@ import '../Database/database.dart';
 
 class ScaledContainer extends StatefulWidget {
   final Widget child;
-  const ScaledContainer({super.key,required this.child});
+  final double scale;
+  const ScaledContainer({super.key,required this.child,this.scale = 1.05});
 
   @override
   State<ScaledContainer> createState() => _ScaledContainerState();
@@ -31,7 +32,7 @@ class _ScaledContainerState extends State<ScaledContainer> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()..scale(_isHovered ? 1.05 : 1.0),
+        transform: Matrix4.identity()..scale(_isHovered ? widget.scale : 1.0),
         transformAlignment: Alignment.center,
         child: Material(
           color: Colors.transparent,

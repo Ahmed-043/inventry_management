@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import '../../Database/Reports_Data/export_database.dart';
 import '../../Database/backup.dart';
 import '../../Database/database.dart';
 import '../../Database/db_info.dart';
@@ -134,7 +135,7 @@ class _DataBackupState extends State<DataBackup> {
                   child: Switch(
                     value: backupFrequency != 0,
                     activeThumbColor: MyColors.translucent,
-                    activeTrackColor: Colors.orange,
+                    activeTrackColor: MyColors.primary,
                     onChanged: (val) => updateBackupFrequency(val ? 1 : 0),
                   ),
                 ),
@@ -201,6 +202,8 @@ class _DataBackupState extends State<DataBackup> {
   }
     info = await getDBInfo(currentDB!);
     final success = await backupDatabase(currentDB!, info!);
+    await exportDatabaseToExcel(currentDB!, info!.backupDir, fileName: "${info!.dbName} Daily Backup");
+
     if (success) {
       info?.lastBackup = DateTime.now().millisecondsSinceEpoch;
       await updateDBBackupInfo(currentDB!, info!);

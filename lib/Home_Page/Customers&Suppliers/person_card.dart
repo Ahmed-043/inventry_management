@@ -39,6 +39,7 @@ class PersonCard extends StatefulWidget {
 class _PersonCardState extends State<PersonCard> {
   final TextEditingController payController = TextEditingController();
   final TextEditingController receiveController = TextEditingController();
+  bool _isHovered = false;
 
   @override
   void dispose() {
@@ -47,76 +48,110 @@ class _PersonCardState extends State<PersonCard> {
     super.dispose();
   }
 
+  String _getInitials(String name) {
+    if (name.isEmpty) return '';
+    final parts = name.trim().split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  String _formatAmount(double amount) {
+    if (amount >= 1000000) {
+      double val = amount / 1000000;
+      return 'Rs. ${val % 1 == 0 ? val.toInt() : val.toStringAsFixed(1)}M';
+    } else if (amount >= 1000) {
+      double val = amount / 1000;
+      return 'Rs. ${val % 1 == 0 ? val.toInt() : val.toStringAsFixed(1)}K';
+    }
+    return 'Rs. ${NumberFormat.decimalPattern().format(amount.toInt())}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final avatarColor = MyColors.palette[widget.num % MyColors.palette.length];
+    
+    // Determine Outstanding amount based on person type
+    // final double outstanding = widget.person.personType == 'customer'
+    //     ? widget.person.incoming
+    //     : widget.person.outgoing;
+
     return ScaledContainer(
       child: Container(
-        decoration: UiHelper.myDecoration(),
-        //color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          //onDoubleTap: widget.onDoubleTap,
-          onSecondaryTap: widget.onSecondaryTap,
-          onTapDown: (TapDownDetails details) async {
-            final tapPosition = details.globalPosition;
-            final screenSize = MediaQuery.of(context).size;
-            const double dialogWidth = 350;
-            const double dialogHeight = 180; // Estimated height of paymentOptions()
-
-            double left = (tapPosition.dx - 100).clamp(10.0, screenSize.width - dialogWidth - 10.0);
-            double top = tapPosition.dy;
-
-            // If it would overflow the bottom, show it above the tap point instead
-            if (top + dialogHeight > screenSize.height) {
-              top = tapPosition.dy - dialogHeight+50;
-            }
-            top = top.clamp(10.0, screenSize.height - dialogHeight - 10.0);
-
-            await showDialog(
-              context: context,
-              barrierColor: Colors.transparent,
-              builder: (_) => Stack(
-                children: [
-                  Positioned(
-                    left: left,
-                    top: top,
-                    child: Material(
-                      elevation: 6,
-                      borderRadius: BorderRadius.circular(25),
-                      child: paymentOptions(),
-                    ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            onSecondaryTap: widget.onSecondaryTap,
+            onTapDown: (TapDownDetails details) async {
+                final tapPosition = details.globalPosition;
+                final screenSize = MediaQuery.of(context).size;
+                const double dialogWidth = 350;
+                const double dialogHeight = 180;
+      
+                double left = (tapPosition.dx - 100).clamp(10.0, screenSize.width - dialogWidth - 10.0);
+                double top = tapPosition.dy;
+      
+                if (top + dialogHeight > screenSize.height) {
+                  top = tapPosition.dy - dialogHeight + 50;
+                }
+                top = top.clamp(10.0, screenSize.height - dialogHeight - 10.0);
+      
+                await showDialog(
+                  context: context,
+                  barrierColor: Colors.transparent,
+                  builder: (_) => Stack(
+                    children: [
+                      Positioned(
+                        left: left,
+                        top: top,
+                        child: Material(
+                          elevation: 6,
+                          borderRadius: BorderRadius.circular(25),
+                          child: paymentOptions(),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-            payController.clear();
-            receiveController.clear();
-          },
-
-          splashColor: widget.splashColor ?? MyColors.primary.withOpacity(0.1),
-          hoverColor: widget.hoverColor ?? MyColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(15),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              double width = (constraints.maxWidth / (3.5)).floorToDouble();
-              return Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Padding(
-                      padding: EdgeInsets.only(left: width * 0.1),
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: Tooltip(
-                            waitDuration: const Duration(seconds: 1),
-                            message: 'Address: ${widget.person.address}',
-                            child: Container(
+                );
+                payController.clear();
+                receiveController.clear();
+              },
+              splashColor: widget.splashColor ?? MyColors.primary.withOpacity(0.1),
+              hoverColor: widget.hoverColor ?? MyColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(15),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final h = constraints.maxHeight;
+                  final factor = (h / 167.0).clamp(0.6, 2.0);
+      
+                  return Padding(
+                    padding: EdgeInsets.all(15.0 * factor),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top Row: Avatar, Name, Phone
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 50 * factor,
+                              height: 50 * factor,
                               decoration: BoxDecoration(
+                                color: avatarColor.withOpacity(0.1),
                                 shape: BoxShape.circle,
-                                color: MyColors
-                                    .palette[widget.num % MyColors.palette.length]
-                                    .withAlpha(30),
                               ),
                               child: widget.person.image != null
                                   ? ClipOval(
@@ -125,157 +160,100 @@ class _PersonCardState extends State<PersonCard> {
                                         fit: BoxFit.cover,
                                       ),
                                     )
-                                  : Icon(
-                                      Icons.person,
-                                      size: width,
-                                      color: MyColors
-                                          .palette[widget.num % MyColors.palette.length]
-                                          .withAlpha(150),
+                                  : Center(
+                                      child: Text(
+                                        _getInitials(widget.person.name),
+                                        style: MyFont.bold(18 * factor, color: avatarColor),
+                                      ),
                                     ),
                             ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: EdgeInsets.only(left: width * 0.1),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: Container(),
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: Text(
-                              widget.person.name,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.left,
-                              style: MyFont.semiBold(
-                                width * 0.20,
-                                color: MyColors.darkBlue,
-                              ),
-                            ),
-                          ),
-                          if(widget.person.phone!.isNotEmpty)
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.phone,
-                                size: width * 0.15,
-                                color: MyColors.info,
-                              ),
-                              SizedBox(width: width * 0.05),
-                              Expanded(
-                                child: Text(
-                                  widget.person.phone != null && widget.person.phone!.length > 4
-                                      ? '${widget.person.phone!.substring(0, 4)}-${widget.person.phone!.substring(4)}'
-                                      : widget.person.phone ?? '',
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                  style: MyFont.semiBold(
-                                    width * 0.15,
-                                    color: MyColors.grey,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          if(widget.person.email!.isNotEmpty)
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.email,
-                                size: width * 0.15,
-                                color: MyColors.info,
-                              ),
-                              SizedBox(width: width * 0.05),
-                              Expanded(
-                                child: Tooltip(
-                                  waitDuration: const Duration(seconds: 1),
-                                  message: widget.person.email.toString(),
-                                  child: Text(
-                                    widget.person.email.toString(),
+                            SizedBox(width: 12 * factor),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.person.name,
+                                    style: MyFont.bold(16 * factor, color: MyColors.darkBlue),
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    style: MyFont.semiBold(
-                                      width * 0.12,
-                                      color: MyColors.grey,
+                                  ),
+                                  if (widget.person.phone != null && widget.person.phone!.isNotEmpty)
+                                    Text(
+                                      widget.person.phone!,
+                                      style: MyFont.normal(13 * factor, color: MyColors.grey),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: width * 0.05),
-                          Expanded(
-                            child: Row(
-                              mainAxisAlignment: .spaceEvenly,
-                              children: [
-                                Tooltip(
-                                  waitDuration: const Duration(seconds: 1),
-                                  message:'Receivable',
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        "Rs. ${NumberFormat.decimalPattern().format(widget.person.incoming)}",
-                                        textAlign: TextAlign.center,
-                                        style: MyFont.bold(
-                                          width * 0.15,
-                                          color: MyColors.success,
-                                        ),
-                                      ),
-                                      Icon(Icons.keyboard_double_arrow_up_rounded,
-                                        size: width * 0.15,
-                                        color: MyColors.success ,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                Tooltip(
-                                  waitDuration: const Duration(seconds: 1),
-                                  message: 'Payable',
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        "Rs. ${NumberFormat.decimalPattern().format(widget.person.outgoing)}",
-                                        textAlign: TextAlign.center,
-                                        style: MyFont.bold(
-                                          width * 0.15,
-                                          color: MyColors.error,
-                                        ),
-                                      ),
-
-                                      Icon(Icons.keyboard_double_arrow_down_rounded,
-                                        size: width * 0.15,
-                                        color: MyColors.error,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              ],
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 8 * factor),
+                        // Email
+                        if (widget.person.email != null && widget.person.email!.isNotEmpty)
+                          Text(
+                            widget.person.email!,
+                            style: MyFont.normal(13 * factor, color: MyColors.grey),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          Expanded(flex: 1, child: Container()),
-                        ],
-                      ),
+                        const Spacer(),
+                        // Bottom Info: Total Purchase & Outstanding
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'PENDING RECEIVABLE',
+                                    style: MyFont.bold(10 * factor, color: MyColors.textSecondary),
+                                  ),
+                                  SizedBox(height: 4 * factor),
+                                  Text(
+                                    NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.incoming),
+                                    style: MyFont.bold(15 * factor,
+                                        color: MyColors.success),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'PENDING PAYMENT',
+                                    style: MyFont.bold(10 * factor, color: MyColors.textSecondary),
+                                  ),
+                                  SizedBox(height: 4 * factor),
+                                  Text(
+                                    NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.outgoing),
+                                    style: MyFont.bold(15 * factor,
+                                      color:  MyColors.error),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
         ),
-      ),
     );
   }
+
   Widget paymentOptions() {
     return Container(
       width: 350,
@@ -295,9 +273,9 @@ class _PersonCardState extends State<PersonCard> {
                   child: UiHelper.myTextField(
                     label: "Receive",
                     controller: receiveController,
-                    onChange: (){
+                    onChange: () {
                       final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
-                      if(receiveAmount > widget.person.incoming){
+                      if (receiveAmount > widget.person.incoming) {
                         receiveController.text = widget.person.incoming.toString();
                       }
                     },
@@ -316,9 +294,9 @@ class _PersonCardState extends State<PersonCard> {
                   child: UiHelper.myTextField(
                     label: "Pay",
                     controller: payController,
-                    onChange: (){
+                    onChange: () {
                       final double payAmount = double.tryParse(payController.text) ?? 0.0;
-                      if(payAmount > widget.person.outgoing){
+                      if (payAmount > widget.person.outgoing) {
                         payController.text = widget.person.outgoing.toString();
                       }
                     },
@@ -335,26 +313,25 @@ class _PersonCardState extends State<PersonCard> {
           const SizedBox(height: 15),
           Row(
             children: [
-              if(widget.person.incoming > 0 && widget.person.outgoing > 0)
-                ...[
-                  Expanded(
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: UiHelper.myButton(
-                        title: "Auto Fill",
-                        filled: false,
-                        textSize: 16,
-                        color: MyColors.primary,
-                        callback: () {
-                          payController.text = widget.person.outgoing.clamp(0, widget.person.incoming).toString();
-                          receiveController.text = payController.text;
-                        },
-                      ),
+              if (widget.person.incoming > 0 && widget.person.outgoing > 0) ...[
+                Expanded(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 40,
+                    child: UiHelper.myButton(
+                      title: "Auto Fill",
+                      filled: false,
+                      textSize: 16,
+                      color: MyColors.primary,
+                      callback: () {
+                        payController.text = widget.person.outgoing.clamp(0, widget.person.incoming).toString();
+                        receiveController.text = payController.text;
+                      },
                     ),
                   ),
-                  const SizedBox(width: 10),
-                ],
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: SizedBox(
                   width: double.infinity,

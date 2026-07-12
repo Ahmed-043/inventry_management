@@ -5,6 +5,7 @@ import 'package:inventry_management/Home_Page/Customers&Suppliers/person_card.da
 import 'package:inventry_management/Home_Page/Customers&Suppliers/update_person_panel.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
@@ -136,7 +137,7 @@ class _PersonsPageState extends State<PersonsPage> {
                 automaticallyImplyLeading: false,
                 backgroundColor: Colors.transparent,
                 forceMaterialTransparency: true,
-                toolbarHeight: 50,
+                toolbarHeight: 120,
                 flexibleSpace: topBar(),
               ),
               if (persons.isEmpty)
@@ -156,7 +157,7 @@ class _PersonsPageState extends State<PersonsPage> {
                         (index) => Hero(
                           tag: "person_${persons[index].id}",
                           child: SizedBox(
-                            width: cSize * 2.5,
+                            width: (cSize * 2.5) - 50,
                             height: cSize,
                             child: PersonCard(
                               person: persons[index],
@@ -252,69 +253,122 @@ class _PersonsPageState extends State<PersonsPage> {
   }
 
   Widget topBar() {
-    return ReusableTopBar(
-      title: MediaQuery.of(context).size.width < 850
-          ? ""
-          : widget.isCustomer
-          ? "Customers"
-          : "Suppliers",
-      searchHint: 'Search (Name, Phone, Address)',
-      applyBlur: true,
-      actionButton: Align(
-        alignment: .topLeft,
-        child: AddNewPerson.addNew(
-          context: context,
-          isCustomer: widget.isCustomer,
-          action: AddNewPersonPanel(
-            isCustomer: widget.isCustomer,
-            callback: () {
-              setState(() {
-                _loadPersons();
-              });
-            },
+    return Container(
+      padding: const EdgeInsets.only(top: 12,right: 12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.isCustomer ? "Customers" : "Suppliers",
+                style: MyFont.bold(24, color: MyColors.textMain),
+              ),
+              Row(
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _filterChip('All', 0),
+                        const SizedBox(width: 8),
+                        _filterChip('Pending', 1),
+                        const SizedBox(width: 8),
+                        _filterChip('Major', 2),
+                        const SizedBox(width: 8),
+                        _filterChip('Local', 3),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AddNewPerson.addNew(
+                    context: context,
+                    isCustomer: widget.isCustomer,
+                    action: AddNewPersonPanel(
+                      isCustomer: widget.isCustomer,
+                      callback: () {
+                        setState(() {
+                          _loadPersons();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: MouseRegion(
+
+              onEnter: (_){
+                isTextCursor = true;
+              },
+              onExit: (_){
+                isTextCursor = false;
+              },
+              child: TextField(
+                controller: searchController,
+                onChanged: (_) {
+                  _searchTimer?.cancel();
+                  _searchTimer = Timer(const Duration(milliseconds: 500), () {
+                    _loadPersons();
+                  });
+                },
+                style: MyFont.medium(14, color: MyColors.textMain),
+                decoration: InputDecoration(
+                  hintText: 'Search (Name, Phone, Address)',
+                  hintStyle: MyFont.medium(14, color: MyColors.textSecondary),
+                  prefixIcon: const Icon(Icons.search, color: MyColors.textSecondary, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, int index) {
+    bool isSelected = selectType == index;
+    return ScaledContainer(
+      scale: 0.9,
+      child: InkWell(
+        hoverColor: MyColors.sidebarSelected.withOpacity(0.1),
+        splashColor: MyColors.sidebarSelected.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          setState(() {
+            selectType = index;
+          });
+          _loadPersons();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? MyColors.sidebarSelected.withOpacity(0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected ? Border.all(color: MyColors.sidebarSelected) : Border.all(color: MyColors.textSecondary.withOpacity(0.2)),
+          ),
+          child: Text(
+            label,
+            style: MyFont.bold(12, color: isSelected ? MyColors.sidebarSelected : MyColors.textSecondary),
           ),
         ),
       ),
-      searchController: searchController,
-      onSearch: () {
-        _searchTimer?.cancel();
-        _searchTimer = Timer(const Duration(milliseconds: 500), () {
-          _loadPersons();
-        });
-      },
-      onClear: () {
-        setState(() {
-          selectType = 0;
-          searchController.clear();
-        });
-        _loadPersons();
-      },
-      stockButtons: [
-        {'title': 'All', 'count': type['all'] ?? 0},
-        {'title': 'Pending', 'count': type['pending'] ?? 0},
-        {'title': 'Major', 'count': type['major'] ?? 0},
-        {'title': 'Local', 'count': type['local'] ?? 0},
-      ],
-      selectedIndex: selectType,
-      onButtonSelect: (i) {
-        setState(() {
-          selectType = i;
-          switch (i) {
-            case 1:
-              selectType = 1;
-              break;
-            case 2:
-              selectType = 2;
-              break;
-            case 3:
-              selectType = 3;
-              break;
-            default: // All
-              selectType = 0;
-          }
-        });
-        _loadPersons();
-      },
     );
   }
 

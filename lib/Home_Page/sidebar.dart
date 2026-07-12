@@ -4,9 +4,11 @@ import 'package:inventry_management/Home_Page/profile.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Database/db_info.dart';
 import '../Shared_Widgets/app_cursor_overlay.dart';
 
+bool collapseSideBar = false;
 
 class SidebarPanel extends StatefulWidget {
   final int selectedIndex;
@@ -55,130 +57,162 @@ class _SidebarPanelState extends State<SidebarPanel> {
       default: return false;
     }
   }
+  bool collapseButton = false;
 
   @override
   initState() {
     // TODO: implement initState
     super.initState();
   }
+  int selected = 0;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      width: double.infinity,
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        color: Colors.transparent,
-                        // shape: BoxShape.circle,
-                      ),
-                      child: widget.collaps ? Image.asset('assets/images/app_logo.png') : Image.asset('assets/images/odventory_logo.png')
-                  ),
-                  Column(
-                    children: [
-                      for (int index = 0; index < tiles.length; index++)
-                        if (!_isItemHidden(index))
-                          listTile(
-                            title: widget.collaps
-                                ? null
-                                : tiles[index]['title'] as String,
-                            icon: tiles[index]['icon'] as IconData,
-                            isSelected: widget.selectedIndex == index,
-                            callBack: () {
-                              widget.onItemSelected(index);
-                            },
-                          ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (!widget.vCollaps)
-          widget.info != null ?
-
-            InkWell(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => Dialog(
-
-                    backgroundColor: Colors.transparent,
-                    insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ProfileSettings(
-                      info: widget.info!, // Pass your DBInfo object here
-                      onSave: () {
-                        // Add your database update logic here
-                        Navigator.pop(context); // Close dialog after saving
-                        setState(() {});
+    return Container(
+      color: MyColors.sidebarBg,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    InkWell(
+                      onTap: () async {
+                        collapseSideBar = !collapseSideBar;
+                        final prefs = await SharedPreferences.getInstance();
+                        prefs.setBool('collapseSidebar', collapseSideBar);
+                        widget.onItemSelected(selected);
                       },
-                    ),
-                  ),
-                );
-              },
-              child: MouseRegion(
-                onEnter: (_)  {
-                  isClickable =true;
-                },
-                onExit: (_) {
-                  isClickable = false;
-                },
-                child: Container(
-                  height: 60,
-                 // width: double.infinity,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: MyColors.primary,
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(25)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-
-                      AspectRatio(
-                        aspectRatio: 1,
-                        child: ClipOval(
-                          child: widget.info!.image != null
-                              ? Image.memory(widget.info!.image!, fit: BoxFit.cover)
-                              : const Icon(Icons.person),
-                        ),
-                      ),
-                      if (!widget.collaps) const SizedBox(width: 10),
-                      if (!widget.collaps) Expanded(
-                        child: SizedBox(
-                          height: double.infinity,
-                          child: Center(
-                            child: Text(
-                              widget.info!.dbName,
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.fade,
-                              softWrap: true,
-                              maxLines: 2,
-                              style: MyFont.bold(16, color: MyColors.translucent),
+                      child: MouseRegion(
+                        onEnter: (_){
+                          setState(() {
+                            collapseButton = true;
+                          });
+                        },
+                        onExit: (_){
+                          setState(() {
+                            collapseButton = false;
+                          });
+                        },
+                        child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 18,vertical: 10),
+                            width: double.infinity,
+                             height: 60,
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
                             ),
-                          ),
+                            child: collapseButton
+                                ? Icon(collapseSideBar ? Icons.arrow_forward_ios_outlined : Icons.arrow_back_rounded,color: MyColors.translucent,)
+                                : Image.asset(widget.collaps ? 'assets/images/app_logo.png': 'assets/images/odventory_logo.png',
+                              color: MyColors.translucent.withOpacity(0.8), alignment: Alignment.center,)
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                   // const SizedBox(height: 20),
+                    Column(
+                      children: [
+                        for (int index = 0; index < tiles.length - 1; index++)
+                          if (!_isItemHidden(index))
+                            listTile(
+                              title: widget.collaps
+                                  ? null
+                                  : tiles[index]['title'] as String,
+                              icon: tiles[index]['icon'] as IconData,
+                              isSelected: widget.selectedIndex == index,
+                              callBack: () {
+                                selected = index;
+                                widget.onItemSelected(index);
+                              },
+                            ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            )
-         :
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: Icon(Icons.person, color: MyColors.translucent),
             ),
-        ],
+            Column(
+              children: [
+                listTile(
+                  title: widget.collaps ? null : 'Logout',
+                  icon: Icons.logout,
+                  isSelected: false,
+                  callBack: () {
+                    widget.onItemSelected(tiles.length - 1);
+                  },
+                ),
+                const SizedBox(height: 10),
+                if (!widget.vCollaps && widget.info != null)
+                  InkWell(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          backgroundColor: Colors.transparent,
+                          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: ProfileSettings(
+                            info: widget.info!,
+                            onSave: () {
+                              Navigator.pop(context);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.all(widget.collaps ? 4 : 8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: MyColors.translucent.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          if(widget.info!.image != null)
+                            Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: MemoryImage(widget.info!.image!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          if (!widget.collaps)
+                           ...[
+                             const SizedBox(width: 10),
+                             Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    widget.info!.dbName,
+                                    style: MyFont.bold(14, color: MyColors.translucent),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Pro Plan - Active',
+                                    style: MyFont.normal(12, color: MyColors.translucent.withOpacity(0.5)),
+                                  ),
+                                ],
+                              ),
+                            ),]
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -189,42 +223,52 @@ class _SidebarPanelState extends State<SidebarPanel> {
     required bool isSelected,
     required VoidCallback callBack,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      child: ScaledContainer(
-        child: ElevatedButton(
-          onPressed: callBack,
-          style: ElevatedButton.styleFrom(
-            elevation: isSelected ? 3 : 0,
-            overlayColor:  MyColors.primary,
-            backgroundColor: isSelected
-                ? MyColors.primary
-                : plainUi ? MyColors.lightestGrey :MyColors.light,
-            //shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            minimumSize: const Size(0, 40),
-          ),
-          child: SizedBox(
-            height: 40,
-            child: Row(
-
-              children: [
-                Icon(icon, color: isSelected ? Colors.white : MyColors.darkBlue,size: 20,),
-                if (title != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : MyColors.darkBlue,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+    return ScaledContainer(
+      scale: 1.1,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: widget.collaps ? 8 : 12, vertical: 6),
+        child: MouseRegion(
+          onEnter: (_) => isClickable = true,
+          onExit: (_) => isClickable = false,
+          child: InkWell(
+            onTap: callBack,
+            hoverColor: MyColors.translucent.withAlpha(20),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSelected ? MyColors.sidebarSelected : MyColors.translucent.withAlpha(0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child:
+              (title == null)
+               ? Center(
+                child: Icon(
+                  icon,
+                  color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
+                  size: 20,
+                ),
+              )
+              : Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
+                    size: 20,
                   ),
+                  if (title != null) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      title,
+                      style: MyFont.semiBold(
+                        14,
+                        color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

@@ -30,6 +30,48 @@ class _ProductCardState extends State<ProductCard> {
   final formatter = NumberFormat('#,##0');
   bool _isHovered = false;
 
+  Widget _statusPill(String text, Color bgColor, Color textColor,double factor) {
+    return Container(
+      padding:  EdgeInsets.symmetric(horizontal: (12 * factor), vertical: (4* factor) ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: MyFont.bold(12 * factor, color: textColor),
+      ),
+    );
+  }
+
+  Widget _stockPill(double factor) {
+    Color bgColor;
+    Color textColor;
+    String text;
+
+    final effectiveLowStock = widget.product.lowStock == -1 ? lowStockLimit : widget.product.lowStock;
+
+    if (widget.product.lowStock == widget.product.stock) {
+      text = "In Stock";
+      bgColor = const Color(0xFFE6FAF5);
+      textColor = const Color(0xFF01B574);
+    } else if (widget.product.stock < 1) {
+      text = "Out Of Stock";
+      bgColor = const Color(0xFFFEEFEF);
+      textColor = const Color(0xFFEE5D50);
+    } else if (widget.product.stock < effectiveLowStock) {
+      text = "Low Stock";
+      bgColor = const Color(0xFFFFF8ED);
+      textColor = const Color(0xFFFFB547);
+    } else {
+      text = "In Stock";
+      bgColor = const Color(0xFFE6FAF5);
+      textColor = const Color(0xFF01B574);
+    }
+
+    return _statusPill(text, bgColor, textColor,factor);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaledContainer(
@@ -37,130 +79,157 @@ class _ProductCardState extends State<ProductCard> {
         onTap: widget.onTap,
         onDoubleTap: widget.onDoubleTap,
         onSecondaryTap: widget.onSecondaryTap,
-
-        borderRadius: BorderRadius.circular(tileUi ? 12 : 16),
-        child: Container(
-          decoration: UiHelper.myDecoration(isHovered: _isHovered).copyWith(
-            borderRadius: tileUi ? BorderRadius.circular(12) : null,
-          ),
-          child: tileUi ? productTileCard() : productGridCard(),
+        onHover: (value) => setState(() => _isHovered = value),
+        borderRadius: BorderRadius.circular(tileUi ? 12 : 20),
+        child: Stack(
+          children: [
+            // Body Hero (Background)
+            Positioned.fill(
+              child: Hero(
+                tag: "product_${widget.product.id}",
+                child: Container(
+                  decoration: UiHelper.myDecoration(isHovered: _isHovered).copyWith(
+                    borderRadius: BorderRadius.circular(tileUi ? 12 : 20),
+                  ),
+                ),
+              ),
+            ),
+            // Content (including Image Hero)
+            tileUi ? productTileCard() : productGridCard(),
+          ],
         ),
       ),
     );
   }
+
   Widget productGridCard() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: widget.product.imageData != null
-                ? ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.memory(
-                widget.product.imageData!,
-                fit: BoxFit.cover,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight;
+        final w = constraints.maxWidth;
+        final factor = (h / 300).clamp(0.4, 1.5);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Section
+            Expanded(
+              flex: 6,
+              child: Container(
+                margin: EdgeInsets.all(12 * factor),
                 width: double.infinity,
-              ),
-            )
-                : Icon(Icons.image_not_supported, size: 50),
-          ),
-          Expanded(
-            flex: 1,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                double fontSize = constraints.maxHeight;
-                return Column(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9EDF7),
+                  borderRadius: BorderRadius.circular(16 * factor),
+                ),
+                child: Stack(
                   children: [
-                    Expanded(
-                      flex: 5,
-                      child: Text(
-                        widget.product.name.length > 20
-                            ? '${widget.product.name.substring(0, 20)}…'
-                            : widget.product.name,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: fontSize * 0.25,
-                          color: MyColors.darkBlue,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 5,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Rs. ${widget.product.totalPrice > 100000000 ? widget.product.totalPrice.toStringAsExponential(0) : formatter.format(widget.product.totalPrice)}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: fontSize * 0.2,
-                                color: MyColors.blue,
+                    Hero(
+                      tag: "product_${widget.product.id}_image",
+
+                      child: Center(
+                        child: widget.product.imageData != null
+                            ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16 * factor),
+                              child: Image.memory(
+                                widget.product.imageData!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
                               ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              '${widget.product.totalWeight > 1000000 ? widget.product.totalWeight.toStringAsExponential(2) : widget.product.totalWeight.toStringAsFixed(2)} Kg',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: fontSize * 0.18,
-                                color: MyColors.dark,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      flex: 4,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Tooltip(
-                            message: 'Sold: ${NumberFormat.decimalPattern().format(widget.product.sold)}',
-                            waitDuration: const Duration(milliseconds: 500),
-                            child: Text(
-                              'Sold: ${widget.product.sold > 1000000 ? widget.product.sold.toStringAsExponential(2) : NumberFormat.decimalPattern().format(widget.product.sold)}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: fontSize * 0.2,
-                                color: MyColors.primary,
-                              ),
-                            ),
-                          ),
-                          Tooltip(
-                            message: 'Stock: ${NumberFormat.decimalPattern().format(widget.product.stock)}',
-                            waitDuration: const Duration(milliseconds: 500),
-                            child: Text(
-                              'Stock: ${widget.product.stock > 10000000 ? widget.product.stock.toStringAsExponential(2) : NumberFormat.decimalPattern().format(widget.product.stock)}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: fontSize * 0.2,
-                                color: MyColors.success,
-                              ),
-                            ),
-                          ),
-                        ],
+                            )
+                            : Icon(Icons.inventory_2_outlined,
+                                size: 48 * factor,
+                                color: MyColors.textSecondary.withOpacity(0.5)),
                       ),
                     ),
                   ],
-                );
-              },
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
-        ],
-      ),
+            // Info Section
+            Padding(
+              padding: EdgeInsets.fromLTRB(16 * factor, 0, 16 * factor, 16 * factor),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      if (widget.product.categoryName != null && sortCategory == 0)
+                        ...[
+                          Hero(
+                            tag: "product_${widget.product.id}_category",
+                            child: _statusPill(
+                                widget.product.categoryName!,
+                                const Color(0xFFF4F7FE),
+                                MyColors.sidebarSelected,
+                                factor
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        ],
+
+                      _stockPill(factor),
+                    ],
+                  ),
+                  SizedBox(height: 12 * factor),
+                  Hero(
+                    tag: "product_${widget.product.id}_name",
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.product.name,
+                        style: MyFont.bold(16 * factor, color: MyColors.textMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  Hero(
+                    tag: "product_${widget.product.id}_sku",
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.product.sku ?? "No SKU",
+                        style: MyFont.medium(12 * factor, color: MyColors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16 * factor),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Hero(
+                        tag: "product_${widget.product.id}_price",
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            'Rs. ${formatter.format(widget.product.totalPrice)}',
+                            style: MyFont.bold(14 * factor, color: MyColors.textMain),
+                          ),
+                        ),
+                      ),
+                      Hero(
+                        tag: "product_${widget.product.id}_stock",
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            'Stk: ${widget.product.stock}',
+                            style: MyFont.bold(14 * factor, color: MyColors.textSecondary),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -168,123 +237,93 @@ class _ProductCardState extends State<ProductCard> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final h = constraints.maxHeight;
+        final factor = (h / 300).clamp(0.8, 2.0);
 
-        return Stack(
+        return Row(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: .topLeft,
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(11),
-                        child: widget.product.imageData != null
-                            ? Image.memory(widget.product.imageData!, fit: BoxFit.cover)
-                            : Container(
-                          color: MyColors.grey.withAlpha(30),
-                          child: const Icon(Icons.browser_not_supported_rounded),
-                        ),
-                      ),
+            // Image
+            Padding(
+              padding: EdgeInsets.all(8.0 * factor),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: MyColors.mainBg,
+                    borderRadius: BorderRadius.circular(12 * factor),
+                  ),
+                  child: Hero(
+                    tag: "product_${widget.product.id}_image",
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12 * factor),
+                      child: widget.product.imageData != null
+                          ? Image.memory(widget.product.imageData!,
+                              fit: BoxFit.cover)
+                          : Icon(Icons.inventory_2_outlined,
+                              size: h * 0.4, color: MyColors.textSecondary.withOpacity(0.5)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: Tooltip(
-                    waitDuration: const Duration(milliseconds: 500),
-                    message: "Name: ${widget.product.name}\nSKU: ${widget.product.sku ?? "No SKU"}\nSold: ${widget.product.sold}",
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            widget.product.name,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.start,
-                            style: MyFont.semiBold(
-                              h * 0.2,
-                              color: MyColors.darkBlue,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            'Stock: ${widget.product.stock} ',
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.start,
-                            style: MyFont.semiBold(
-                              h * 0.15,
-                              color: MyColors.darkBlue,
-                            ),
-                          ),
-                        ),
-                      ],
+              ),
+            ),
+            SizedBox(width: 8 * factor),
+            // Details
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(child: _stockPill(factor)),
+                    ],
+                  ),
+                  SizedBox(height: 4 * factor),
+                  Hero(
+                    tag: "product_${widget.product.id}_name",
+                    child: Text(
+                      widget.product.name,
+                      style: MyFont.bold(h * 0.18, color: MyColors.textMain),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
 
-                Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.all(5),
-                    child: Column(
-                      children: [
-                        const Expanded(child: SizedBox()),
-                        Expanded(
-                          flex: 2,
-                          child: Container(
-                            width: double.infinity,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(h * 0.1),
-                              color: widget.product.stock < 1
-                                  ? MyColors.error
-                                  : widget.product.stock < lowStockLimit
-                                  ? MyColors.primary
-                                  : MyColors.success,
-                            ),
-                            child: Text(
-                              widget.product.stock < 1
-                                  ? "Out of Stock"
-                                  : widget.product.stock < lowStockLimit
-                                  ? "Low Stock"
-                                  : "In Stock",
-                              style: MyFont.semiBold(
-                                h * 0.14,
-                                color: MyColors.translucent,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Center(
-                            child: Tooltip(
-                              waitDuration: const Duration(milliseconds: 500),
-                              message: "Price: ${NumberFormat.decimalPattern().format(widget.product.totalPrice)}",
-                              child: Text(
-                                "Rs.${widget.product.totalPrice > 9999999 ? "\n" : ''}${NumberFormat.decimalPattern().format(widget.product.totalPrice.floor())}",
-                                style: MyFont.semiBold(
-                                  h * 0.18,
-                                  color: MyColors.darkBlue,
-                                ).copyWith(height: 1.0),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  if(widget.product.sku != null)
+                  Hero(
+                    tag: "product_${widget.product.id}_sku",
+                    child: Text(
+                      widget.product.sku!,
+                      style: MyFont.medium(h * 0.16, color: MyColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            // Price & Stock
+            Padding(
+              padding: EdgeInsets.only(right: 16.0 * factor),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Hero(
+                    tag: "product_${widget.product.id}_price",
+                    child: Text(
+                      'Rs. ${formatter.format(widget.product.totalPrice)}',
+                      style: MyFont.bold(h * 0.22, color: MyColors.textMain),
+                    ),
+                  ),
+                  Hero(
+                    tag: "product_${widget.product.id}_stock",
+                    child: Text(
+                      'Stk: ${widget.product.stock}',
+                      style: MyFont.bold(h * 0.18, color: MyColors.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         );

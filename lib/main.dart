@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:inventry_management/Home_Page/sidebar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Database/database.dart';
 import 'package:window_manager/window_manager.dart';
@@ -139,12 +140,17 @@ Future<void> loadPreferences() async {
   if(prefs.getBool('plainUi') == null ) {
     await prefs.setBool('plainUi', false);
   }
-  plainUi = prefs.getBool('plainUi')!;
+  plainUi = false; //prefs.getBool('plainUi')!;
 
   if(prefs.getBool('tileUi') == null ) {
     await prefs.setBool('tileUi', false);
   }
   tileUi = prefs.getBool('tileUi')!;
+
+  if(prefs.getBool('collapseSidebar') == null ) {
+    await prefs.setBool('collapseSidebar', false);
+  }
+  collapseSideBar = prefs.getBool('collapseSidebar')!;
 
   if( prefs.getInt('backupFreq') == null ) {
     await prefs.setInt('backupFreq', 0);

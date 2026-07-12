@@ -53,8 +53,8 @@ class _DashboardChipsWidgetState extends State<DashboardChipsWidget> {
         children: List.generate(pairCount, (i) {
           final first = i * 2;
           final second = first + 1;
-
-          return _DashboardChip(
+          if(i>0) {
+            return _DashboardChip(
             primary: widget.chips[first],
             alternate: second < widget.chips.length
                 ? widget.chips[second]
@@ -77,6 +77,8 @@ class _DashboardChipsWidgetState extends State<DashboardChipsWidget> {
 
             },
           );
+          }
+          return SizedBox.shrink();
         }),
       ),
     );
@@ -111,38 +113,84 @@ class _DashboardChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = _active;
+    
+    IconData icon;
+    Color iconColor;
+    Color iconBgColor;
 
-    return ScaledContainer(
-      child: Container(
-        height: 120,
-        width: 270,
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: UiHelper.myDecoration(),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onToggle,
-            highlightColor: Colors.transparent,
-            splashColor: plainUi ? MyColors.lightGrey.withAlpha(150)  : MyColors.primary.withAlpha(50),
-            borderRadius: BorderRadius.circular(15),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Text(data.title,
-                      style: MyFont.semiBold(18, color: MyColors.grey)),
-                  Text(
-                    '${data.prefix}${_format(data.value)}',
-                    style: MyFont.bold(22, color: MyColors.dark),
+    if (data.title.toLowerCase().contains('purchase') || data.title.toLowerCase().contains('sales') || data.title.toLowerCase().contains('income')) {
+      icon = Icons.shopping_cart_outlined;
+      iconColor = const Color(0xFF4318FF);
+      iconBgColor = const Color(0xFFF4F7FE);
+    } else if (data.title.toLowerCase().contains('order')) {
+      icon = Icons.access_time_rounded;
+      iconColor = const Color(0xFFFFB547);
+      iconBgColor = const Color(0xFFFFF8ED);
+    } else {
+      icon = Icons.warning_amber_rounded;
+      iconColor = const Color(0xFF01B574);
+      iconBgColor = const Color(0xFFE6FAF5);
+    }
+
+    return Container(
+      height: 120,
+      width: 300,
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onToggle,
+          hoverColor: MyColors.primary.withOpacity(0.1),
+          splashColor: MyColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    shape: BoxShape.circle,
                   ),
-                  Text(
-                    data.trendText,
-                    style: MyFont.semiBold(12, color: MyColors.success),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        data.title,
+                        style: MyFont.medium(14, color: MyColors.textSecondary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${data.prefix}${_format(data.value)} ${data.title.contains('Items') || data.title.contains('Orders') ? (data.value == 1 ? (data.title.contains('Items') ? 'Item' : 'Order') : (data.title.contains('Items') ? 'Items' : 'Orders')) : ''}',
+                        style: MyFont.bold(20, color: MyColors.textMain),
+                      ),
+                      if (data.trendText.isNotEmpty)
+                        Text(
+                          data.trendText,
+                          style: MyFont.medium(12, color: MyColors.textSecondary),
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

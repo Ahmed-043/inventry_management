@@ -14,12 +14,14 @@ class Product {
   final String? sku;
   double basePrice;
   final int stock;
+  final int lowStock;
   final int sold;
   double weight; // in kg
   final String components;
   final Uint8List? imageData;
   final String? imageType;
   final int? category;
+  String? categoryName;
   // ✅ New fields
   double totalPrice;
   double totalWeight;
@@ -32,6 +34,7 @@ class Product {
     this.sku,
     required this.basePrice,
     required this.stock,
+    required this.lowStock,
     required this.sold,
     required this.weight,
     required this.components,
@@ -51,6 +54,7 @@ class Product {
       sku: map['sku'] as String?,
       basePrice: (map['base_price'] as num).toDouble(),
       stock: map['stock'] as int,
+      lowStock: map['low_stock'] as int? ?? -1,
       sold: map['sold'] as int,
       weight: (map['weight'] as num).toDouble(),
       components: map['components'] as String,
@@ -68,6 +72,7 @@ class Product {
       'sku': sku,
       'base_price': basePrice,
       'stock': stock,
+      'low_stock': lowStock,
       'sold': sold,
       'weight': weight,
       'components': components,
@@ -91,6 +96,9 @@ Future<List<Product>> getProductsPage(
       int categorySortMode = 0, // 0=no sort, 1=sequence ASC, 2=sequence DESC
       bool active = true,
       bool allProducts = false,
+      bool? isLowStock,
+      bool? isInStock,
+      int? globalLowStockLimit,
     }) async
 {
   final offset = page * pageSize;
@@ -121,7 +129,22 @@ Future<List<Product>> getProductsPage(
 
 
   // ---------------- STOCK FILTER ----------------
-  if (upperLimit != null) {
+  if (isLowStock != null && globalLowStockLimit != null) {
+    if (isLowStock) {
+      // Low stock: 0 < stock < effectiveLimit
+      whereClause += '${whereClause.isEmpty ? '' : ' AND '}'
+          'stock > 0 AND ((low_stock = -1 AND stock < ?) OR (low_stock >= 0 AND stock < low_stock))';
+      whereArgs.add(globalLowStockLimit);
+    } else {
+      // Out of stock: stock <= 0 AND stock != low_stock
+      whereClause += '${whereClause.isEmpty ? '' : ' AND '}stock <= 0 AND low_stock != stock';
+    }
+  } else if (isInStock == true && globalLowStockLimit != null) {
+    // In Stock: stock >= effectiveLimit OR stock == low_stock
+    whereClause += '${whereClause.isEmpty ? '' : ' AND '}'
+        '((low_stock = -1 AND stock >= ?) OR (low_stock >= 0 AND stock >= low_stock))';
+    whereArgs.add(globalLowStockLimit);
+  } else if (upperLimit != null) {
     whereClause +=
     '${whereClause.isEmpty ? '' : ' AND '}stock BETWEEN ? AND ?';
     whereArgs.addAll([lowerLimit, upperLimit]);
@@ -206,6 +229,7 @@ Future<List<Product>> getProductsPage(
       'sku',
       'base_price',
       'stock',
+      'low_stock',
       'sold',
       'weight',
       'components',
@@ -244,7 +268,7 @@ Future<Product?> getProductById(Database db, int id, {bool withoutImage = true})
   final result = await db.query(
     'products',
     columns: (withoutImage)
-        ? ['id', 'name', 'description', 'sku', 'base_price', 'stock', 'sold', 'weight', 'components']
+        ? ['id', 'name', 'description', 'sku', 'base_price', 'stock', 'low_stock', 'sold', 'weight', 'components']
         : null, // null = all columns, including image
     where: 'id = ?',
     whereArgs: [id],
@@ -272,7 +296,7 @@ Future<List<Product>> getProductsByIds(
   final result = await db.query(
     'products',
     columns: (withoutImage)
-        ? ['id', 'name', 'description', 'sku', 'base_price', 'stock', 'sold', 'weight', 'components']
+        ? ['id', 'name', 'description', 'sku', 'base_price', 'stock', 'low_stock', 'sold', 'weight', 'components']
         : null,
     where: 'id IN (${List.filled(ids.length, '?').join(', ')})',
     whereArgs: ids,
@@ -293,10 +317,15 @@ Future<List<Product>> getProductsByIds(
 }
 
 Future<Map<String, int>> getStockSummary(int lowLimit, Database db) async {
-  final all = await db.rawQuery('SELECT stock, active FROM products');
+  final all = await db.rawQuery('SELECT stock, active, low_stock FROM products');
 
   int getStock(Map<String, dynamic> p) =>
       (p['stock'] is int) ? p['stock'] as int : int.tryParse(p['stock'].toString()) ?? 0;
+
+  int getLowLimit(Map<String, dynamic> p) {
+    int ls = (p['low_stock'] is int) ? p['low_stock'] as int : int.tryParse(p['low_stock']?.toString() ?? '') ?? -1;
+    return ls == -1 ? lowLimit : ls;
+  }
 
   bool isActive(Map<String, dynamic> p) {
     final a = p['active'];
@@ -306,9 +335,9 @@ Future<Map<String, int>> getStockSummary(int lowLimit, Database db) async {
   }
 
   int total = all.length;
-  int inStock = all.where((p) => isActive(p) && getStock(p) > lowLimit).length;
-  int lowStock = all.where((p) => isActive(p) && getStock(p) > 0 && getStock(p) <= lowLimit).length;
-  int outOfStock = all.where((p) => isActive(p) && getStock(p) == 0).length;
+  int inStock = all.where((p) => isActive(p) && getStock(p) >= getLowLimit(p)).length;
+  int lowStock = all.where((p) => isActive(p) && getStock(p) > 0 && getStock(p) < getLowLimit(p)).length;
+  int outOfStock = all.where((p) => isActive(p) && getStock(p) <= 0 && getStock(p) != getLowLimit(p)).length;
   int inactive = all.where((p) => !isActive(p)).length;
 
   return {
@@ -415,6 +444,7 @@ Future<bool> insertProduct({
   String? description,
   String? sku,
   int stock = 0,
+  int lowStock = -1,
   int sold = 0,
   double weight = 0.0,
   Uint8List? image,
@@ -434,6 +464,7 @@ Future<bool> insertProduct({
           'sku': sku,
           'base_price': basePrice,
           'stock': stock,
+          'low_stock': lowStock,
           'sold': sold,
           'weight': weight,
           'components': components,

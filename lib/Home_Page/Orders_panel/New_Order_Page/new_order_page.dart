@@ -106,7 +106,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
     final showInvoice = !isCompact && selectedPerson != null;
 
     return Scaffold(
-      backgroundColor: MyColors.lightGrey,
+      backgroundColor: MyColors.mainBg.withAlpha(200),
       // appBar: AppBar(
       //   title: Text(
       //     widget.sell ? "Sell Order" : "Receive Order",

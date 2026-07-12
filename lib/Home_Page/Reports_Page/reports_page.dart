@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
+import '../../Database/Reports_Data/export_database.dart';
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
 import '../../Database/category.dart';
 import '../../Database/database.dart';
@@ -169,151 +172,147 @@ class _ReportsPageState extends State<ReportsPage> {
       },
     );
   }
+  double padding = 10;
 
   @override
   Widget build(BuildContext context) {
-    final maxWidth = MediaQuery.of(context).size.width;
-    print(maxWidth);
+    padding = 12.0;
+
     return Scaffold(
-      backgroundColor: MyColors.light,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: ReportsConstants.verticalSpacing),
-          SizedBox(
-            height: maxWidth < 1125 ? 75 : 35,
-            child: _searchbar()
-          ),
-          const SizedBox(height: ReportsConstants.verticalSpacing),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _matrix == null || _matrix!.isEmpty
-                ? const Center(child: Text('No data available'))
-                : ReportsTable(
-              matrix: _matrix!,
-              stockValues: _stockValues ?? [],
-              leftController: _leftController,
-              rightController: _rightController,
-                  db: currentDB,
-              onChange: (){
-                _loadData();
-              },
+      backgroundColor: MyColors.mainBg,
+      body: Padding(
+        padding: EdgeInsets.only(top:padding,right: padding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 24),
+            _searchbar(),
+            const SizedBox(height: 24),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _matrix == null || _matrix!.isEmpty
+                  ? const Center(child: Text('No data available'))
+                  : ReportsTable(
+                    matrix: _matrix!,
+                    stockValues: _stockValues ?? [],
+                    leftController: _leftController,
+                    rightController: _rightController,
+                    db: currentDB,
+                    onChange: () {
+                      _loadData();
+                    },
+                  ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   /// Build the header with title and export button
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ReportsConstants.horizontalPadding,
-      ),
-      height: 50,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Text(
-            'Reports',
-            style: MyFont.bold(30, color: MyColors.blue),
-          ),
-          const SizedBox(width: 15),
-          SizedBox(
-            width: 200,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 5),
-              child: UiHelper.myButton(
-                title: 'Export to Excel',
-                textSize: 15,
-                filled: true,
-                borderRadius: 10,
-                callback: () => ReportsUtils.exportToCSV(context, _matrix, _stockValues),
-                child: const Icon(Icons.download, color: MyColors.translucent),
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          "Reports",
+          style: MyFont.bold(24, color: MyColors.textMain),
+        ),
+        Row(
+          children: [
+            UiHelper.myButton(
+              callback: () {
+                ReportsUtils.exportToCSV(context, _matrix, _stockValues);
+              },
+              child: const Icon(Icons.download, color: Colors.white, size: 18),
+              title: "Export to Excel",
+              textSize: 14,
+              filled: true,
+              color: MyColors.sidebarSelected,
+              borderRadius: 10,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   Widget _searchbar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ReportsConstants.horizontalPadding,
-      ),
-      child: Wrap(
-        spacing: ReportsConstants.horizontalPadding,
-        runSpacing: ReportsConstants.horizontalPadding,
-        children: [
-          SizedBox(
-            height: 35,
-            width: 500 + ReportsConstants.horizontalPadding,
-            child: Row(
-              children: [
-                // Search TextField
-                SizedBox(
-                  width: 300,
-                  child: UiHelper.myTextField(
-                    controller: _searchController,
-                    hint: 'Search Product...',
-                    onChange: _onSearchChanged,
-                    borderRadius: 10,
-                    fontSize: 18,
-                    prefix: Padding(
-                      padding: const EdgeInsets.only(left: 10.0),
-                      child: Icon(Icons.search, color: MyColors.darkBlue),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  ),
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: MouseRegion(
+              onEnter: (_){
+                isTextCursor = true;
+              },
+              onExit: (_){
+                isTextCursor = false;
+              },
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => _onSearchChanged(),
+                style: MyFont.medium(14, color: MyColors.textMain),
+                decoration: InputDecoration(
+                  hintText: 'Search Product...',
+                  hintStyle: MyFont.medium(14, color: MyColors.textSecondary),
+                  prefixIcon: const Icon(Icons.search, color: MyColors.textSecondary, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                const SizedBox(width: ReportsConstants.horizontalPadding),
-                // Category Dropdown
-                SizedBox(
-                  width: 200,
-                  child: _buildCategoryDropdown(),
-                ),
-              ],
+              ),
             ),
           ),
-          SizedBox(
-            height: 35,
-            width: 405,
-            child: Row(
-              children: [
-                // From Date Button
-                _DateButton(
-                  label: 'From: ${DateFormat('dd MMM yyyy').format(_fromDate)}',
-                  onTap: _selectFromDate,
-                ),
-                const SizedBox(width: ReportsConstants.horizontalPadding),
-                // To Date Button
-                _DateButton(
-                  label: 'To: ${DateFormat('dd MMM yyyy').format(_toDate)}',
-                  onTap: _selectToDate,
-                ),
-                const SizedBox(width: ReportsConstants.horizontalPadding),
-                _DateButton(
-                  label: 'Reset Filters',
-                  onTap: (){
-                    setState(() {
-                      _searchController.text = '';
-                      _selectedCategoryId = null;
-                      _fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
-                      _toDate = DateTime.now();
-                    });
-                    _loadData();
-                  },
-                ),
-              ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 1,
+          child: _buildCategoryDropdown(),
+        ),
+        const SizedBox(width: 12),
+        _DateButton(
+          label: 'From: ${DateFormat('dd MMM yyyy').format(_fromDate)}',
+          onTap: _selectFromDate,
+        ),
+        const SizedBox(width: 8),
+        _DateButton(
+          label: 'To: ${DateFormat('dd MMM yyyy').format(_toDate)}',
+          onTap: _selectToDate,
+        ),
+        const SizedBox(width: 12),
+        ScaledContainer(
+          scale: 1.2,
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                _searchController.text = '';
+                _selectedCategoryId = null;
+                _fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+                _toDate = DateTime.now();
+              });
+              _loadData();
+            },
+            child: Text(
+              "Reset Filters",
+              style: MyFont.bold(14, color: MyColors.sidebarSelected),
             ),
-          )
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -321,57 +320,40 @@ class _ReportsPageState extends State<ReportsPage> {
   Widget _buildCategoryDropdown() {
     final categories = _categories ?? [];
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(width: 0.5, color: MyColors.darkBlue),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int?>(
-          padding: EdgeInsets.zero,
-          alignment: AlignmentDirectional.centerStart,
-          focusColor: Colors.transparent,
-          value: _selectedCategoryId,
-          hint: Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: Text(
-              'All Categories',
-              style: MyFont.semiBold(14, color: MyColors.darkBlue),
-            ),
-          ),
-          isExpanded: true,
-          icon: Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Icon(Icons.keyboard_arrow_down, color: MyColors.darkBlue),
-          ),
-          onChanged: _onCategorySelected,
-          style: MyFont.semiBold(14, color: MyColors.darkBlue),
-          dropdownColor: Colors.white,
+    return ScaledContainer(
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          items: [
-            const DropdownMenuItem<int?>(
-              value: null,
-              child: Text('ALL'),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<int?>(
+            dropdownColor: MyColors.translucent, // ✅ menu background color
+            borderRadius: BorderRadius.circular(12), // ✅ rounded corners for menu
+            value: _selectedCategoryId,
+            hint: Text(
+              'All Categories',
+              style: MyFont.medium(14, color: MyColors.textSecondary),
             ),
-            ...categories.map((category) {
-              return DropdownMenuItem<int?>(
-                value: category.id,
-                child: Text(category.name),
-              );
-            }),
-          ],
-          selectedItemBuilder: (BuildContext context) {
-            return [
-              const Text('ALL'),
-              ...categories.map((category) => Text(category.name)),
-            ].map((Widget item) {
-              return Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 10),
-                child: item,
-              );
-            }).toList();
-          },
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down, color: MyColors.textSecondary, size: 18),
+            onChanged: _onCategorySelected,
+            style: MyFont.medium(14, color: MyColors.textMain),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('ALL'),
+              ),
+              ...categories.map((category) {
+                return DropdownMenuItem<int?>(
+                  value: category.id,
+                  child: Text(category.name),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -389,15 +371,32 @@ class _DateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return UiHelper.myButton(
-      callback: onTap,
-      title: label,
-      textSize: 14,
-      borderRadius: 10,
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      color: MyColors.darkBlue,
-      backgroundColor: MyColors.light,
+    return ScaledContainer(
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: MyFont.medium(14, color: MyColors.textMain),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

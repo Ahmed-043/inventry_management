@@ -402,7 +402,7 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
     builder: (BuildContext context) {
       return Dialog(
         insetPadding: EdgeInsets.all(10),
-
+        backgroundColor: MyColors.mainBg,
         child: SizedBox(
           width: 800,
           height: 500,

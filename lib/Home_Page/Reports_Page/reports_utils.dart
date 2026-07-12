@@ -37,16 +37,18 @@ class ReportsConstants {
 /// Utility functions for the Reports module
 class ReportsUtils {
   /// Get background color based on stock level
-  static Color getStockColor(double stock, int limit) {
+  static Color getStockColor(double stock, int limit, int originalLowStock) {
+    if (stock == originalLowStock) return MyColors.success.withAlpha(50);
     if (stock <= 0) return MyColors.error.withAlpha(50);
-    if (stock <= limit) return MyColors.warning.withAlpha(50);
+    if (stock < limit) return MyColors.warning.withAlpha(50);
     return MyColors.success.withAlpha(50);
   }
 
   /// Get text color based on stock level
-  static Color getTextColor(double stock, int limit) {
+  static Color getTextColor(double stock, int limit, int originalLowStock) {
+    if (stock == originalLowStock) return MyColors.success;
     if (stock <= 0) return MyColors.error;
-    if (stock <= limit) return MyColors.warning;
+    if (stock < limit) return MyColors.warning;
     return MyColors.success;
   }
 

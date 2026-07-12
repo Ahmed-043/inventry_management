@@ -14,6 +14,7 @@ final Map<String, Map<String, String>> dbSchema = {
     'name': 'TEXT NOT NULL DEFAULT ""',
     'base_price': 'REAL DEFAULT 0 CHECK(base_price >= 0)',
     'stock': 'INTEGER DEFAULT 0 CHECK(stock >= 0)',
+    'low_stock': 'INTEGER DEFAULT -1 CHECK(low_stock >= -1)',
     'weight': 'REAL DEFAULT 0 CHECK(weight >= 0)',
     'sku': 'TEXT UNIQUE',
     'active': 'BOOL DEFAULT TRUE',

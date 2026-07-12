@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/sort_menu.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/product_card.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_stock.dart';
@@ -71,7 +72,7 @@ class _StockDashboardState extends State<StockDashboard> {
     setState(() {
       categories = result.map((row) => DBCategory.fromMap(row)).toList();
       _categoryNames = {
-        for (var row in result) row['id'] as int: row['name'] as String
+        for (var row in result) row['id'] as int: row['name'] as String,
       };
     });
   }
@@ -93,12 +94,19 @@ class _StockDashboardState extends State<StockDashboard> {
         pSize,
         false,
         search: searchController.text.trim(),
-        lowerLimit: lowerLimit,
-        upperLimit: upperLimit,
+        isLowStock: selectStock == 2 ? true : (selectStock == 3 ? false : null),
+        isInStock: selectStock == 1 ? true : null,
+        globalLowStockLimit: lowStockLimit,
         sortMode: sort,
         categorySortMode: sortCategory,
         active: active,
       );
+
+      for (var p in list) {
+        if (p.category != null && p.category != 0) {
+          p.categoryName = _categoryNames[p.category];
+        }
+      }
 
       setState(() => products = list);
     } catch (e, st) {
@@ -140,61 +148,69 @@ class _StockDashboardState extends State<StockDashboard> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   title,
-                  style: MyFont.bold(cSize >200 ? 24 :20, color: MyColors.blue),
+                  style: MyFont.bold(
+                    cSize > 200 ? 24 : 20,
+                    color: MyColors.blue,
+                  ),
                 ),
               ),
               // Use GridView.builder to lazily build category items while preserving
               // the same tile sizing and spacing as the original Wrap.
-              Builder(builder: (context) {
-                final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
-                final tileWidth = tileUi ? size * 1.5 : size * 0.85;
-                final tileHeight = tileUi ? size * 0.35 : size * 1.2;
-                final childAspect = tileWidth / tileHeight;
+              Builder(
+                builder: (context) {
+                  final size = (Platform.isAndroid || Platform.isIOS)
+                      ? cSize / 1.7
+                      : cSize;
+                  final tileWidth = tileUi ? size * 1.6 : size * 0.85;
+                  final tileHeight = tileUi ? size * 0.4 : size * 1.2;
+                  final childAspect = tileWidth / tileHeight;
 
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: tileWidth,
-                    mainAxisSpacing: 15,
-                    crossAxisSpacing: 15,
-                    childAspectRatio: childAspect,
-                  ),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final product = items[index];
-                    bool isHovered = false;
-                    return SizedBox(
-                      width: tileWidth,
-                      height: tileHeight,
-                      child: InkWell(
-                        child: Hero(
-                            tag: 'product_${product.id}',
-                            child: Material(
-                              color: Colors.transparent,
-                                child: MouseRegion(
-                                    onEnter: (_) => setState(() => isHovered = true),
-                                    onExit: (_) => setState(() => isHovered = false),
-                                    child: AnimatedContainer(
-
-                                        duration: const Duration(milliseconds: 200),
-                                        curve: Curves.easeOutCubic,
-                                        // The "Enlarge" effect
-                                        transform: Matrix4.identity()..scale(isHovered ? 1.03 : 1.0),
-                                        transformAlignment: Alignment.center,
-                                        child: ProductCard(product: product))
-                                )
-                            )
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: tileWidth,
+                      mainAxisSpacing: 15,
+                      crossAxisSpacing: 15,
+                      childAspectRatio: childAspect,
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final product = items[index];
+                      bool isHovered = false;
+                      return SizedBox(
+                        width: tileWidth,
+                        height: tileHeight,
+                        child: InkWell(
+                          hoverColor: Colors.transparent,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: MouseRegion(
+                              onEnter: (_) =>
+                                  setState(() => isHovered = true),
+                              onExit: (_) =>
+                                  setState(() => isHovered = false),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutCubic,
+                                // The "Enlarge" effect
+                                transform: Matrix4.identity()
+                                  ..scale(isHovered ? 1.03 : 1.0),
+                                transformAlignment: Alignment.center,
+                                child: ProductCard(product: product),
+                              ),
+                            ),
+                          ),
+                          onTap: () => stockUpdateDialog(product),
+                          onSecondaryTap: () => updateDialog(product),
+                          //onDoubleTap: () => updateDialog(product),
                         ),
-                        onTap: () => stockUpdateDialog(product),
-                        onSecondaryTap: () => updateDialog(product),
-                        //onDoubleTap: () => updateDialog(product),
-                      ),
-                    );
-                  },
-                );
-              }),
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         );
@@ -233,17 +249,20 @@ class _StockDashboardState extends State<StockDashboard> {
         children: [
           CustomScrollView(
             controller: scrollController,
-            physics: _isTopBarHovered ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
-            clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the Viewport
+            physics: _isTopBarHovered
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
+            clipBehavior:
+                Clip.none, // 🔑 Allows slivers to overflow the Viewport
             slivers: [
               SliverAppBar(
                 floating: true,
                 snap: true,
                 pinned: performanceMode,
                 automaticallyImplyLeading: false,
-                backgroundColor: Colors.transparent,
+                backgroundColor: MyColors.mainBg,
                 forceMaterialTransparency: true,
-                toolbarHeight: compress ? 100 : 50,
+                toolbarHeight: 120,
                 flexibleSpace: MouseRegion(
                   onEnter: (_) => setState(() => _isTopBarHovered = true),
                   onExit: (_) => setState(() => _isTopBarHovered = false),
@@ -251,54 +270,64 @@ class _StockDashboardState extends State<StockDashboard> {
                 ),
               ),
               if (products.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: emptyState(),
-                ),
+                SliverFillRemaining(hasScrollBody: false, child: emptyState()),
               SliverToBoxAdapter(
                 child: Container(
-                  clipBehavior: Clip.none, // 🔑 Allows internal GridView contents to overflow
+                  clipBehavior: Clip
+                      .none, // 🔑 Allows internal GridView contents to overflow
                   width: double.infinity,
                   child: Center(
                     child: sortCategory == 1 || sortCategory == 2
                         ? _buildCategorySections()
-                        : Builder(builder: (context) {
-                      final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
-                      final tileWidth = tileUi ? size * 1.5 : size * 0.85;
-                      final tileHeight = tileUi ? size * 0.35 : size * 1.2;
-                      final childAspect = tileWidth / tileHeight;
+                        : Builder(
+                            builder: (context) {
+                              final size =
+                                  (Platform.isAndroid || Platform.isIOS)
+                                  ? cSize / 1.7
+                                  : cSize;
+                              final tileWidth = tileUi
+                                  ? size * 1.5
+                                  : size * 0.85;
+                              final tileHeight = tileUi
+                                  ? size * 0.4
+                                  : size * 1.2;
+                              final childAspect = tileWidth / tileHeight;
 
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        clipBehavior: Clip.none, // 🔑 Allows cards to overflow
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: tileWidth,
-                          mainAxisSpacing: cSize / 17,
-                          crossAxisSpacing: cSize / 17,
-                          childAspectRatio: childAspect,
-                        ),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          final product = products[index];
-                          return SizedBox(
-                            width: tileWidth,
-                            height: tileHeight,
-                            child: InkWell(
-                              child: Hero(
-                                  tag: 'product_${product.id}',
-                                  child: Material(
-                                      color: Colors.transparent,
-                                      child: ProductCard(product: product))),
-                              onTap: () => stockUpdateDialog(product),
-                              onSecondaryTap: () => updateDialog(product),
-                              //onDoubleTap: () => updateDialog(product),
-                            ),
-                          );
-                        },
-                      );
-                    }),
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: EdgeInsets.zero,
+                                clipBehavior:
+                                    Clip.none, // 🔑 Allows cards to overflow
+                                gridDelegate:
+                                    SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: tileWidth,
+                                      mainAxisSpacing: cSize / 17,
+                                      crossAxisSpacing: cSize / 17,
+                                      childAspectRatio: childAspect,
+                                    ),
+                                itemCount: products.length,
+                                itemBuilder: (context, index) {
+                                  final product = products[index];
+                                  return SizedBox(
+                                    width: tileWidth,
+                                    height: tileHeight,
+                                    child: InkWell(
+                                      hoverColor: Colors.transparent,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: ProductCard(product: product),
+                                      ),
+                                      onTap: () => stockUpdateDialog(product),
+                                      onSecondaryTap: () =>
+                                          updateDialog(product),
+                                      //onDoubleTap: () => updateDialog(product),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                   ),
                 ),
               ),
@@ -310,8 +339,8 @@ class _StockDashboardState extends State<StockDashboard> {
             right: 10,
             child: Builder(
               builder: (context) => MouseRegion(
-                onEnter: (_)  {
-                  isClickable =true;
+                onEnter: (_) {
+                  isClickable = true;
                 },
                 onExit: (_) {
                   isClickable = false;
@@ -346,8 +375,9 @@ class _StockDashboardState extends State<StockDashboard> {
                                     right: 4 - dragX,
                                     bottom: 4 - dragY,
                                     child: GestureDetector(
-                                      onPanStart: (_) =>
-                                          setStateDialog(() => isDragging = true),
+                                      onPanStart: (_) => setStateDialog(
+                                        () => isDragging = true,
+                                      ),
                                       onPanUpdate: (details) {
                                         setStateDialog(() {
                                           dragX += details.delta.dx;
@@ -357,11 +387,21 @@ class _StockDashboardState extends State<StockDashboard> {
                                         });
                                       },
                                       onPanEnd: (details) {
-                                        setStateDialog(() => isDragging = false);
+                                        setStateDialog(
+                                          () => isDragging = false,
+                                        );
                                         if (dragX > 120 ||
                                             dragY > 120 ||
-                                            details.velocity.pixelsPerSecond.dx > 500 ||
-                                            details.velocity.pixelsPerSecond.dy > 500) {
+                                            details
+                                                    .velocity
+                                                    .pixelsPerSecond
+                                                    .dx >
+                                                500 ||
+                                            details
+                                                    .velocity
+                                                    .pixelsPerSecond
+                                                    .dy >
+                                                500) {
                                           Navigator.of(context).pop();
                                         } else {
                                           setStateDialog(() {
@@ -383,25 +423,44 @@ class _StockDashboardState extends State<StockDashboard> {
                                               cSize += 50;
                                               if (cSize > 400) cSize = 150;
                                               cardSize = cSize;
-                                              SharedPreferences.getInstance().then(
-                                                (prefs) => prefs.setDouble('cardSize', cSize),
-                                              );
+                                              SharedPreferences.getInstance()
+                                                  .then(
+                                                    (prefs) => prefs.setDouble(
+                                                      'cardSize',
+                                                      cSize,
+                                                    ),
+                                                  );
                                             });
                                           },
-                                          onApply: (newCategory, newSort, updatedCategories) async {
-                                            categories = updatedCategories;
-                                            await updateAllSequences(currentDB!, categories);
+                                          onApply:
+                                              (
+                                                newCategory,
+                                                newSort,
+                                                updatedCategories,
+                                              ) async {
+                                                categories = updatedCategories;
+                                                await updateAllSequences(
+                                                  currentDB!,
+                                                  categories,
+                                                );
 
-                                            setState(() {
-                                              sortCategory = newCategory;
-                                              sort = newSort;
-                                              SharedPreferences.getInstance().then((prefs) {
-                                                prefs.setInt('sortCategory', sortCategory);
-                                                prefs.setInt('sort', sort);
-                                              });
-                                              _loadProducts();
-                                            });
-                                          },
+                                                setState(() {
+                                                  sortCategory = newCategory;
+                                                  sort = newSort;
+                                                  SharedPreferences.getInstance()
+                                                      .then((prefs) {
+                                                        prefs.setInt(
+                                                          'sortCategory',
+                                                          sortCategory,
+                                                        );
+                                                        prefs.setInt(
+                                                          'sort',
+                                                          sort,
+                                                        );
+                                                      });
+                                                  _loadProducts();
+                                                });
+                                              },
                                         ),
                                       ),
                                     ),
@@ -411,21 +470,25 @@ class _StockDashboardState extends State<StockDashboard> {
                             },
                           );
                         },
-                        transitionBuilder: (context, animation, secondaryAnimation, child) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
-                            )),
-                            child: ScaleTransition(
-                              scale: animation,
-                              child: child,
-                            ),
-                          );
-                        },
+                        transitionBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                              return SlideTransition(
+                                position:
+                                    Tween<Offset>(
+                                      begin: const Offset(1, 0),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOut,
+                                      ),
+                                    ),
+                                child: ScaleTransition(
+                                  scale: animation,
+                                  child: child,
+                                ),
+                              );
+                            },
                       );
                     }
                   },
@@ -458,77 +521,171 @@ class _StockDashboardState extends State<StockDashboard> {
   }
 
   Widget topBar() {
-    return ReusableTopBar(
-      title: MediaQuery.of(context).size.width < 850 ? "" : "Products",
-      searchHint: 'Search (Name, SKU, Description)',
-      applyBlur: !performanceMode,
-      actionButton: Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(
-          width: 200,
-          child: AddNewProduct.addNew(
-            context: context,
-            action: InputNewProduct(onSave: (){
-              _loadProducts();
-              _loadCategoryNames();
-            }),
+    return Container(
+      color: MyColors.mainBg,
+      padding: const EdgeInsets.only(top: 12,right: 12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Products",
+                style: MyFont.bold(24, color: MyColors.textMain),
+              ),
+              Row(
+                children: [
+                  AddNewProduct.addNew(
+                    context: context,
+                    action: InputNewProduct(onSave: (){
+                      _loadProducts();
+                      _loadCategoryNames();
+                    }),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.notifications_none_rounded,
+                      color: MyColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: MouseRegion(
+                    onEnter: (_){
+                      isTextCursor = true;
+                    },
+                    onExit: (_){
+                      isTextCursor = false;
+                    },
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (_) {
+                        _searchTimer?.cancel();
+                        _searchTimer = Timer(
+                          const Duration(milliseconds: 500),
+                          () {
+                            _loadProducts();
+                          },
+                        );
+                      },
+                      style: MyFont.medium(14, color: MyColors.textMain),
+                      decoration: InputDecoration(
+                        hintText: 'Search (Name, SKU, Description)',
+                        hintStyle: MyFont.medium(
+                          14,
+                          color: MyColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: MyColors.textSecondary,
+                          size: 20,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _statusFilterChip('All', 0),
+                    _statusFilterChip('In Stock', 1),
+                    _statusFilterChip('Low Stock', 2),
+                    _statusFilterChip('Out of Stock', 3),
+                    _statusFilterChip('Inactive', 4),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusFilterChip(String label, int index) {
+    bool isSelected = selectStock == index;
+    return Padding(
+      padding: MediaQuery.of(context).size.width > 800
+          ? const EdgeInsets.symmetric(horizontal: 4.0)
+          : const EdgeInsets.symmetric(horizontal: 0.0),
+      child: ScaledContainer(
+        scale: 0.9,
+        child: InkWell(
+          hoverColor: Colors.transparent,
+          splashColor: MyColors.sidebarSelected.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            setState(() {
+              selectStock = index;
+              switch (index) {
+                case 1:
+                  upperLimit = null;
+                  lowerLimit = lowStockLimit;
+                  active = true;
+                  break;
+                case 2:
+                  upperLimit = lowStockLimit - 1;
+                  lowerLimit = 1;
+                  active = true;
+                  break;
+                case 3:
+                  upperLimit = 0;
+                  lowerLimit = 0;
+                  active = true;
+                  break;
+                case 4:
+                  upperLimit = null;
+                  lowerLimit = 0;
+                  active = false;
+                  break;
+                default:
+                  upperLimit = null;
+                  lowerLimit = 0;
+                  active = true;
+                  searchController.text = '';
+              }
+            });
+            _loadProducts();
+          },
+          child: Container(
+
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? MyColors.sidebarSelected : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: isSelected
+                  ? null
+                  : Border.all(color: MyColors.textSecondary.withOpacity(0.2)),
+            ),
+            child: Text(
+              label,
+              style: MyFont.bold(
+                14,
+                color: isSelected ? Colors.white : MyColors.textSecondary,
+              ),
+            ),
           ),
         ),
       ),
-      searchController: searchController,
-      onSearch: () {
-        _searchTimer?.cancel();
-        _searchTimer = Timer(const Duration(milliseconds: 500), () {
-          _loadProducts();
-        });
-      },
-      onClear: () {
-        setState(() {
-          selectStock = 0;
-          upperLimit = null;
-          lowerLimit = 0;
-          searchController.clear();
-        });
-        _loadProducts();
-      },
-      stockButtons: [
-        {'title': 'All', 'count': stocks['all'] ?? 0},
-        {'title': 'In Stock', 'count': stocks['inStock'] ?? 0},
-        {'title': 'Low Stock', 'count': stocks['lowStock'] ?? 0},
-        {'title': 'Out Of Stock', 'count': stocks['outOfStock'] ?? 0},
-        {'title': 'Inactive', 'count': stocks['inactive'] ?? 0},
-      ],
-      selectedIndex: selectStock,
-      onButtonSelect: (i) {
-        setState(() {
-          selectStock = i;
-          switch (i) {
-            case 1:
-              upperLimit = null;
-              lowerLimit = lowStockLimit;
-              active = true;
-              break;
-            case 2:
-              upperLimit = lowStockLimit - 1;
-              lowerLimit = 1;
-              active = true;
-              break;
-            case 3:
-              upperLimit = 0;
-              lowerLimit = 0;
-              active = true;
-              break;
-            case 4:
-              active = false;
-              break;
-            default:
-              upperLimit = null;
-              lowerLimit = 0;
-              active = true;
-          }
-        });
-        _loadProducts();
-      },
     );
   }
 
@@ -548,35 +705,37 @@ class _StockDashboardState extends State<StockDashboard> {
     );
   }
 
-
   updateDialog(Product product) {
     UiHelper.pushPage(
-        context: context,
-        opaque: false,
-        barrierColor: Colors.black54,
-        barrierDismissible: true,
+      context: context,
+      opaque: false,
+      barrierColor: Colors.black54,
+      barrierDismissible: true,
 
-        page: UpdateProductDialog(product: product, callBack: () {
+      page: UpdateProductDialog(
+        product: product,
+        callBack: () {
           _loadProducts();
           _loadCategoryNames();
-        },));
+        },
+      ),
+    );
   }
 
   stockUpdateDialog(Product product) {
     UiHelper.pushPage(
-        context: context,
-        opaque: false,
-        barrierColor: Colors.black54,
-        barrierDismissible: true,
+      context: context,
+      opaque: false,
+      barrierColor: Colors.black54,
+      barrierDismissible: true,
 
-        page:  UpdateProductStock(
-          id: product.id,
-          onSave: () {
-            _loadProducts();
-            setState(() {});
-          },
-        ),
+      page: UpdateProductStock(
+        id: product.id,
+        onSave: () {
+          _loadProducts();
+          setState(() {});
+        },
+      ),
     );
   }
 }
-

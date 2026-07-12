@@ -15,6 +15,7 @@ Future<void> updateProduct({
   required String description,
   required int category,
   required bool active,
+  int lowStock = -1,
   String? components,
   Uint8List? image,
 }) async {
@@ -28,6 +29,7 @@ Future<void> updateProduct({
         'name': name,
         'base_price': price,
         'stock': stock,
+        'low_stock': lowStock,
         'weight': weight,
         'description': description,
         'image': image,

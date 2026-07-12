@@ -49,13 +49,13 @@ class _PaginationBarState extends State<PaginationBar> {
         onExit: (_) => setState(() => _hover = false),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
-          opacity: _hover ? 1.0 : 0.2,
+          opacity: _hover ? 1.0 : 0.4,
           child: Container(
             margin: const EdgeInsets.only(bottom: 5),
             width: 160,
             height: 40,
             decoration: BoxDecoration(
-              color: plainUi ? MyColors.lightestGrey : MyColors.light,
+              color: plainUi ? MyColors.lightestGrey : MyColors.mainBg,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

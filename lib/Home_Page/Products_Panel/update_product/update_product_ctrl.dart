@@ -14,6 +14,7 @@ class UpdateProductController extends ChangeNotifier {
   late final TextEditingController name;
   late final TextEditingController price;
   late final TextEditingController stock;
+  late final TextEditingController lowStock;
   late final TextEditingController weight;
   late final TextEditingController desc;
   final categoryController = TextEditingController();
@@ -34,8 +35,11 @@ class UpdateProductController extends ChangeNotifier {
     name = TextEditingController(text: product.name);
     price = TextEditingController(text: product.basePrice.toStringAsFixed(2));
     stock = TextEditingController(text: product.stock.toString());
+    lowStock = TextEditingController(text: product.lowStock.toString());
     weight = TextEditingController(text: product.weight.toStringAsFixed(2));
     desc = TextEditingController(text: product.description ?? '');
+
+    if(int.tryParse(lowStock.text) == null || int.parse(lowStock.text) < -1) lowStock.text = '-1';
 
     image = product.imageData;
     selectedCategoryId = product.category == 0 ? null : product.category;
@@ -52,7 +56,7 @@ class UpdateProductController extends ChangeNotifier {
   }
   @override
   void dispose() {
-    [name, price, stock, weight, desc, categoryController, componentSearchController].forEach((c) => c.dispose());
+    [name, price, stock, lowStock, weight, desc, categoryController, componentSearchController].forEach((c) => c.dispose());
     super.dispose();
   }
 
@@ -234,6 +238,8 @@ class UpdateProductController extends ChangeNotifier {
     });
     String componentsStr = componentIds.join(',');
 
+    if(int.tryParse(lowStock.text) == null || int.parse(lowStock.text) < -1) lowStock.text = '-1';
+
     // Update product in DB
     await updateProduct(
         db: currentDB!,
@@ -241,6 +247,7 @@ class UpdateProductController extends ChangeNotifier {
         name: name.text,
         price: _roundToTwoDecimals(double.tryParse(price.text) ?? 0.0),
         stock: int.tryParse(stock.text) ?? 0,
+        lowStock: int.tryParse(lowStock.text) ?? -1,
         weight: _roundToTwoDecimals(double.tryParse(weight.text) ?? 0.0),
         description: desc.text,
         image: image,

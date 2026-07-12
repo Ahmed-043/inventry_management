@@ -756,31 +756,30 @@ class UiHelper {
   static BoxBorder myBorder(){
     return BoxBorder.all(color: plainUi ? MyColors.lightGrey : Colors.transparent, width: plainUi ? 1.5 : 0);
   }
-  static List<BoxShadow> myBoxShadow(){
+  static List<BoxShadow> myBoxShadow() {
     return [
-    if(!plainUi)
-    BoxShadow(
-    color: Colors.grey.withAlpha(100),
-    spreadRadius: 0.5,
-    blurRadius: 3,
-    offset: const Offset(-1, 1),
-    ),
+      BoxShadow(
+        color: Colors.black.withOpacity(0.05),
+        spreadRadius: 0,
+        blurRadius: 20,
+        offset: const Offset(0, 5),
+      ),
     ];
   }
-  static BoxDecoration myDecoration({bool isHovered = false}) {
+
+  static BoxDecoration myDecoration({bool isHovered = false, BoxBorder? border}) {
     return BoxDecoration(
-      border: myBorder(),
+      border: border,
       boxShadow: [
-        if (!plainUi)
-          BoxShadow(
-            color: Colors.grey.withAlpha(isHovered ? 150 : 100),
-            spreadRadius: isHovered ? 1.0 : 0.5,
-            blurRadius: isHovered ? 6 : 4,
-            offset: const Offset(-1, 1),
-          ),
+        BoxShadow(
+          color: Colors.black.withOpacity(isHovered ? 0.1 : 0.05),
+          spreadRadius: 0,
+          blurRadius: isHovered ? 30 : 20,
+          offset: isHovered ? const Offset(0, 10) : const Offset(0, 5),
+        ),
       ],
-      borderRadius: BorderRadius.circular(16),
-      color: MyColors.translucent,
+      borderRadius: BorderRadius.circular(20),
+      color: Colors.white,
     );
   }
   static Future<T?> pushPage<T>({required BuildContext context, required Widget page, bool opaque = true, Color barrierColor = Colors.black54, bool barrierDismissible = false}){

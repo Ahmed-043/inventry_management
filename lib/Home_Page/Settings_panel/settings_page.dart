@@ -29,43 +29,46 @@ class _SettingsPanelState extends State<SettingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        _topbar(),
-        Expanded(
+        Align(
+            alignment: Alignment.topLeft,
+            child: _topbar()),
+        Positioned.fill(
           child: SingleChildScrollView(
-            child: SizedBox(
-              width: 1050,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Wrap(
-                  spacing: 20,
-                  runSpacing: 20,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Column(
+            child: Column(
+              children: [SizedBox(height: 50,),
+                SizedBox(
+                  width: 1050,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Wrap(
+                      spacing: 20,
+                      runSpacing: 20,
+                      alignment: WrapAlignment.center,
                       children: [
-                        ThemeSelector(update: widget.update,refresh: () => setState(() {}),),
-                        SizedBox(height: 20,),
-                        PaginationSettingsWidget(),
-                        SizedBox(height: 20,),
-
-                        SidebarSettings(update: widget.update, refresh: () => setState(() {})),
+                        Column(
+                          children: [
+                            // ThemeSelector(update: widget.update,refresh: () => setState(() {}),),
+                            // SizedBox(height: 20,),
+                            PaginationSettingsWidget(),
+                            SizedBox(height: 20,),
+                            SidebarSettings(update: widget.update, refresh: () => setState(() {})),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            PerformanceSettings(),
+                            SizedBox(height: 20,),
+                            DataBackup(),
+                          ],
+                        )
 
                       ],
                     ),
-                    Column(
-                      children: [
-                        PerformanceSettings(),
-                        SizedBox(height: 20,),
-                        SizedBox(height: 20,),
-                        DataBackup(),
-                      ],
-                    )
-
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         )

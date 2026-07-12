@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../colors.dart';
 
@@ -15,7 +16,23 @@ class SidebarSettings extends StatefulWidget {
 
 class _SidebarSettingsState extends State<SidebarSettings> {
 
-  bool _sidebarExpanded = true;
+  bool _sidebarExpanded = false;
+  final LocalAuthentication auth = LocalAuthentication();
+
+  Future<bool> _authenticate() async {
+    try {
+      return true;
+      final bool didAuthenticate = await auth.authenticate(
+        localizedReason: 'Please authenticate to access Sidebar Settings',
+        persistAcrossBackgrounding: true,
+        biometricOnly: false,
+      );
+      return didAuthenticate;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedSize(
@@ -59,10 +76,19 @@ class _SidebarSettingsState extends State<SidebarSettings> {
                     duration: const Duration(milliseconds: 250),
                     child: const Icon(Icons.keyboard_arrow_up_rounded),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _sidebarExpanded = !_sidebarExpanded;
-                    });
+                  onPressed: () async {
+                    if (!_sidebarExpanded) {
+                      bool authenticated = await _authenticate();
+                      if (authenticated) {
+                        setState(() {
+                          _sidebarExpanded = true;
+                        });
+                      }
+                    } else {
+                      setState(() {
+                        _sidebarExpanded = false;
+                      });
+                    }
                   },
                 ),
               ],

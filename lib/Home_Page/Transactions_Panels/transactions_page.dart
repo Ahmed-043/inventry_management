@@ -8,6 +8,7 @@ import 'package:inventry_management/Home_Page/Transactions_Panels/transactions_c
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../../Database/database.dart';
 import '../../Database/person.dart';
@@ -125,90 +126,103 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     compress = MediaQuery.of(context).size.width < 1000;
-    padding = MediaQuery.of(context).size.width / 50;
+    padding = 12.0;
 
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          height: 50,
-          width: 420,
-          child: Row(
-            mainAxisAlignment: .start,
+    return Padding(
+      padding: EdgeInsets.only(top:padding,right: padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 "Transactions",
-                style: MyFont.bold(30, color: MyColors.blue),
+                style: MyFont.bold(24, color: MyColors.textMain),
               ),
-              const SizedBox(width: 15),
-              Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 5),
-                child: AddNewTransaction.addNew(
-                  context: context,
-                  action: NewTransactionDialog(
-                    onSave: () => _loadTransactions(),
+              Row(
+                children: [
+                  Hero(
+                    tag: 'newTransaction',
+                    child: UiHelper.myButton(
+                      callback: () {
+                        UiHelper.pushPage(
+                          context: context,
+                          opaque: false,
+                          barrierColor: Colors.black54,
+                          page: AddNewTransactionDialog(
+                            action: NewTransactionDialog(
+                              onSave: () => _loadTransactions(),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Icon(Icons.add, color: Colors.white, size: 18),
+                      title: "Add Transaction",
+                      textSize: 14,
+                      filled: true,
+                      color: MyColors.sidebarSelected,
+                      borderRadius: 10,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        Divider(height: 10),
-        searchBar(),
-        Expanded(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Column(
+          const SizedBox(height: 24),
+          searchBar(),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(child: Column(
                   children: [
+                    const SizedBox(height: 24),
                     Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: padding,
-                          right: padding,
-                          top: 5,
-                        ),
-                        child: TransactionsCards(
-                          transactions: transactions,
-                          persons: persons,
-                          onSave: () => _loadTransactions(),
-                        ),
+                      child: TransactionsCards(
+                        transactions: transactions,
+                        persons: persons,
+                        onSave: () => _loadTransactions(),
                       ),
                     ),
-                    SizedBox(
-                      height: 20,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Total Transactions: $transactionCount, Page: ${pageNo + 1}, Page Sze: $pageSize',
-                            style: MyFont.semiBold(12, color: MyColors.grey)),
-                          SizedBox(width: 30,),
-
-                        ],
-                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Page: ${pageNo+1} Transactions: $transactionCount  Total: Rs. ${NumberFormat.decimalPattern().format(transactions.fold(0.0, (sum, item) => sum + item.amount.abs()))}',
+                          style: MyFont.bold(14, color: MyColors.textSecondary),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
                   ],
+                )
                 ),
-              ),
-              PaginationBar(
-                page: pageNo,
-                pageSize: pageSize,
-                itemCount: transactions.length,
-                onNext: () {
-                  pageNo++;
-                  _loadTransactions();
-                },
-                onPrevious: () {
-                  pageNo--;
-                  _loadTransactions();
-                },
-              ),
-            ],
+                PaginationBar(
+                  page: pageNo,
+                  pageSize: pageSize,
+                  itemCount: transactions.length,
+                  onNext: () {
+                    pageNo++;
+                    _loadTransactions();
+                  },
+                  onPrevious: () {
+                    pageNo--;
+                    _loadTransactions();
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+
+        ],
+      ),
     );
   }
 
@@ -217,9 +231,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   Widget searchBar() {
     String formatEpoch(int ms) {
       if (ms == 0) return "Not set";
-      return DateFormat(
-        'dd-MMM-yyy',
-      ).format(DateTime.fromMillisecondsSinceEpoch(ms));
+      return DateFormat('dd MMM yyyy').format(DateTime.fromMillisecondsSinceEpoch(ms));
     }
 
     final List<List<String>> filters = [
@@ -228,200 +240,147 @@ class _TransactionsPageState extends State<TransactionsPage> {
       ["Start: ${formatEpoch(startDate)}", "End: ${formatEpoch(endDate)}"],
     ];
 
-    final List<String> buttonNames = [
-      'Status: ',
-      'Type: ',
-      'Date: ',
-      'Reset Filters',
-    ];
+    return Row(
+      children: [
+        // Search field
+        Expanded(
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: MouseRegion(
 
-    final double filterButtonWidth = compress ? 90 : 150;
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 5),
-      child: SizedBox(
-        height: 35,
-        child: Row(
-          children: [
-            // Search field
-            Expanded(
-              flex: 1,
-              child: SizedBox(
-                child: UiHelper.myTextField(
-                  controller: searchController,
-                  hint: 'Search transactions...',
-                  onChange: () {
-                    _debounce?.cancel();
-                    _debounce = Timer(const Duration(milliseconds: 500), () {
-                      if (!mounted) return;
-                      _loadTransactions();
-                      _debounce = null;
-                    });
-                  },
-                  borderRadius: 10,
-                  fontSize: 18,
-                  prefix: Padding(
-                    padding: const EdgeInsets.only(left: 10.0),
-                    child: Icon(Icons.search, color: MyColors.darkBlue),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+              onEnter: (_){
+                isTextCursor = true;
+              },
+              onExit: (_){
+                isTextCursor = false;
+              },
+              child: TextField(
+                controller: searchController,
+                onChanged: (_) {
+                  _debounce?.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    if (!mounted) return;
+                    _loadTransactions();
+                  });
+                },
+                style: MyFont.medium(14, color: MyColors.textMain),
+                decoration: InputDecoration(
+                  hintText: 'Search transactions...',
+                  hintStyle: MyFont.medium(14, color: MyColors.textSecondary),
+                  prefixIcon: const Icon(Icons.search, color: MyColors.textSecondary, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
-            SizedBox(width: compress ? 6 : 10),
-            // Filter buttons
-            Expanded(
-              flex: compress ? 1 : 2,
-              child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(buttonNames.length, (i) {
-                    String title = i == 0
-                        ? '${buttonNames[i]}${filters[0][status]}'
-                        : i == 1
-                        ? '${buttonNames[i]}${filters[1][type]}'
-                        : buttonNames[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: MouseRegion(
-                        onEnter: (_)  {
-                          isClickable =true;
-                        },
-                        onExit: (_) {
-                          isClickable = false;
-                        },
-                        child: Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          child: InkWell(
-                            splashColor: MyColors.blue.withAlpha(50),
-                            onHover: (a) {
-                              if (a && i < 3) {
-                                isHover = i;
-                              } else {
-                                isHover = -1;
-                              }
-                              setState(() {});
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            onTapDown: (TapDownDetails details) async {
-                              if (i == 3) {
-                                // Reset button
-                                status = type = startDate = endDate = dueStart =
-                                    dueEnd = 0;
-                                searchController.clear();
-                                _loadTransactions();
-                                return;
-                              }
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Filters
+        _filterButton('Status: ${filters[0][status]}', 0, filters[0]),
+        const SizedBox(width: 12),
+        _filterButton('Type: ${filters[1][type]}', 1, filters[1]),
+        const SizedBox(width: 12),
+        _filterButton('Date', 2, filters[2]),
+        const SizedBox(width: 12),
+        ScaledContainer(
+          scale: 1.2,
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                status = type = startDate = endDate = dueStart = dueEnd = 0;
+                searchController.clear();
+                _loadTransactions();
+              });
+            },
+            child: Text(
+              "Reset Filters",
+              style: MyFont.bold(14, color: MyColors.sidebarSelected),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-                              // Status / Type menu
-                              final tapPosition = details.globalPosition;
-                              List<String> options = filters[i];
-
-                              showDialog(
-                                context: context,
-                                barrierColor: Colors.transparent,
-                                builder: (_) => Stack(
-                                  children: [
-                                    // Tap outside to close
-                                    Positioned.fill(
-                                      child: GestureDetector(
-                                        onTap: () => Navigator.of(context).pop(),
-                                        behavior: HitTestBehavior.translucent,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      left: tapPosition.dx - 10,
-                                      top: tapPosition.dy + 5,
-                                      child: Material(
-                                        elevation: 6,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: SizedBox(
-                                          width: i == 2 ? 170 : 150,
-                                          child: ListView.builder(
-                                            shrinkWrap: true,
-                                            padding: EdgeInsets.zero,
-                                            itemCount: options.length,
-                                            itemBuilder: (context, idx) {
-                                              final e = options[idx];
-                                              return ListTile(
-                                                title: Text(e),
-                                                contentPadding: EdgeInsets.only(
-                                                  left: 10,
-                                                ),
-                                                onTap: () async {
-                                                  if (i == 0) {
-                                                    status = idx;
-                                                  }
-                                                  if (i == 1) {
-                                                    type = idx;
-                                                  }
-                                                  if (i == 2) {
-                                                    final sel = e[0] == 'S' ? 0 : 1;
-                                                    await date(i: sel);
-                                                  }
-                                                  _loadTransactions();
-                                                  Navigator.of(context).pop();
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
+  Widget _filterButton(String title, int filterIndex, List<String> options) {
+    return ScaledContainer(
+      child: GestureDetector(
+        onTapDown: (details) {
+          final tapPosition = details.globalPosition;
+          showDialog(
+            context: context,
+            barrierColor: Colors.transparent,
+            builder: (_) => Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    behavior: HitTestBehavior.translucent,
+                  ),
+                ),
+                Positioned(
+                  left: tapPosition.dx - 10,
+                  top: tapPosition.dy + 5,
+                  child: Material(
+                    elevation: 6,
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    child: Container(
+                      width: filterIndex == 2 ? 180 : 150,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(options.length, (idx) {
+                          return InkWell(
+                            onTap: () async {
+                              if (filterIndex == 0) status = idx;
+                              if (filterIndex == 1) type = idx;
+                              if (filterIndex == 2) {
+                                await date(i: idx);
+                              }
+                              _loadTransactions();
+                              if (mounted) Navigator.of(context).pop();
                             },
                             child: Container(
-                              width: filterButtonWidth,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                // color: MyColors.grey.withAlpha(30),
-                                border: Border.all(
-                                  width: 2,
-                                  color: MyColors.lightGrey,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      title,
-                                      style: MyFont.semiBold(
-                                        compress ? 12 : 15,
-                                        color: MyColors.darkBlue,
-                                      ),
-                                    ),
-                                  ),
-                                  if (i == 2)
-                                    Icon(
-                                      Icons.edit_calendar_rounded,
-                                      size: 20,
-                                      color: (startDate > 0 || endDate > 0)
-                                          ? MyColors.success
-                                          : MyColors.darkBlue,
-                                    ),
-
-                                  if (isHover == i)
-                                    Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: MyColors.darkBlue,
-                                    ),
-                                ],
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Text(
+                                options[idx],
+                                style: MyFont.medium(14, color: MyColors.textMain),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          );
+        },
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: MyFont.medium(14, color: MyColors.textMain),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.keyboard_arrow_down, color: MyColors.textSecondary, size: 18),
+            ],
+          ),
         ),
       ),
     );
