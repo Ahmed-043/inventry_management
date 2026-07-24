@@ -2,6 +2,14 @@
 
 A robust, feature-rich Flutter application designed for businesses to manage their stock, sales, purchases, and customer/supplier relationships efficiently. This application is optimized for desktop and provides a comprehensive suite of tools for inventory tracking and financial reporting.
 
+
+
+<div align="center">
+
+## [Download for Windows](https://github.com/Ahmed-043/inventry_management/releases/tag/windows)
+
+</div>
+
 ## 🚀 Features
 
 ### 📦 Product Management
