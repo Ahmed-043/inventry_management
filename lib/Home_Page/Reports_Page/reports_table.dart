@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/reports_utils.dart';
+import 'package:inventry_management/Home_Page/Reports_Page/stock_movements.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
 import '../../Shared_Widgets/app_cursor_overlay.dart';
@@ -551,14 +552,28 @@ class ReportsCellBuilder {
       child: InkWell(
         onTap: db == null
             ? null
-            : () => _showDayMovementDialog(
-                  context: context,
-                  db: db,
-                  productId: productId,
-                  productName: productName,
-                  date: date,
-                  onChange: onChange,
-                ),
+            : () {
+          getProductMovementsForDate(
+            db,
+            productId: productId,
+            date: date,
+          ).then((value){
+            if (!context.mounted) return;
+            UiHelper.pushPage(
+              context: context,
+              opaque: false,
+              barrierDismissible: true,
+              instantOpen: true,
+              page: StockMovements(
+                movements: value,
+                productId: productId,
+                productName: productName,
+                date: date,
+                onChange: onChange,
+              ),
+            );
+          });
+        },
         child: MouseRegion(
           cursor: db == null ? MouseCursor.defer : SystemMouseCursors.click,
           onEnter: (_){
@@ -621,165 +636,6 @@ class ReportsCellBuilder {
           ),
         ),
       ),
-    );
-  }
-
-  static Future<void> _showDayMovementDialog({
-    required BuildContext context,
-    required Database db,
-    required int productId,
-    required String productName,
-    required DateTime date,
-    required VoidCallback onChange,
-  }) async {
-    final movements = await getProductMovementsForDate(
-      db,
-      productId: productId,
-      date: date,
-    );
-
-    if (!context.mounted) return;
-
-    final title = '${DateFormat('dd MMM yyyy').format(date)} • $productName';
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: MyColors.mainBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          title: Text(
-            title,
-            style: MyFont.semiBold(18, color: MyColors.darkBlue),
-          ),
-          content: SizedBox(
-            width: 700,
-            child: movements.isEmpty
-                ? Text(
-                    'No stock movements found for this day.',
-                    style: MyFont.normal(14, color: MyColors.darkBlue),
-                  )
-                : SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: MyColors.blue.withAlpha(20),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(flex: 2, child: Text('Time', style: MyFont.semiBold(13, color: MyColors.darkBlue))),
-                              Expanded(flex: 2, child: Text('Type', style: MyFont.semiBold(13, color: MyColors.darkBlue))),
-                              Expanded(flex: 1, child: Text('Before', style: MyFont.semiBold(13, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                              Expanded(flex: 1, child: Text('Change', style: MyFont.semiBold(13, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                              Expanded(flex: 1, child: Text('After', style: MyFont.semiBold(13, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        ...movements.map((movement) {
-                          final time = DateFormat('hh:mm a').format(
-                            DateTime.fromMillisecondsSinceEpoch(movement.timestamp),
-                          );
-                          final changeText = movement.quantityChange > 0
-                              ? '+${movement.quantityChange}'
-                              : movement.quantityChange.toString();
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: movement.quantityChange == 0
-                                  ? MyColors.translucent
-                                  : movement.quantityChange > 0
-                                  ? MyColors.success.withAlpha(50)
-                                  : MyColors.error.withAlpha(50),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: MyColors.lightGrey, width: 0.8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(flex: 2, child: Text(time, style: MyFont.normal(15, color: MyColors.darkBlue))),
-                                    Expanded(flex: 2, child: Text(movement.movementType, style: MyFont.semiBold(15, color: MyColors.darkBlue))),
-                                    Expanded(flex: 1, child: Text(movement.stockBefore.toString(), style: MyFont.normal(15, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                                    Expanded(flex: 1, child: Text(changeText, style: MyFont.semiBold(13, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                                    Expanded(flex: 1, child: Text(movement.stockAfter.toString(), style: MyFont.normal(15, color: MyColors.darkBlue), textAlign: TextAlign.center)),
-                                  ],
-                                ),
-                                if ((movement.remark ?? '').trim().isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${movement.remark}',
-                                    style: MyFont.normal(13, color: MyColors.black),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-          ),
-          actions: [
-            SizedBox(
-              width: 110,
-              child: UiHelper.myButton(
-                callback: () => Navigator.of(dialogContext).pop(),
-                title: 'Close',
-                textSize: 15,
-                borderRadius: 10,
-                elevation: 0,
-              ),
-            ),
-            if(DateFormat('dd MMM yyyy').format(date) == DateFormat('dd MMM yyyy').format(DateTime.now()))
-            SizedBox(
-              width: 110,
-              child: UiHelper.myButton(
-                callback: (){
-                  UiHelper.pushPage(
-                    context: context,
-                    opaque: false,
-                    barrierColor: Colors.black54,
-                    barrierDismissible: true,
-
-                    page:  UpdateProductStock(
-                      id: productId,
-                      onSave: () {
-                        Navigator.of(dialogContext).pop();
-                        _showDayMovementDialog(
-                          context: context,
-                          db: db,
-                          productId: productId,
-                          productName: productName,
-                          date: date,
-                          onChange: onChange,
-                        );
-                        onChange();
-                      },
-                    ),
-                  );
-                },
-                filled: true,
-                title: 'Update Stock',
-                textSize: 15,
-                borderRadius: 10,
-                elevation: 0,
-              ),
-            ),
-
-          ],
-        );
-      },
     );
   }
 

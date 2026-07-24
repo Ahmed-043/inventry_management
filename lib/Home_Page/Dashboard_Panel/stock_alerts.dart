@@ -31,6 +31,7 @@ class StockAlerts extends StatelessWidget {
 
     return HorizontalScroll(
       speed: 1.5,
+      physics: const BouncingScrollPhysics(),
       enableOuterScroll: false,
       controller: controller ,
       child: SizedBox(

@@ -224,10 +224,11 @@ Future<void> handleProductUpdates(
 /// Return Orders List from DB
 Future<List<Order>> fetchFilteredOrders(
     Database db, {
+      int? personId,
       String? searchValue,
       int selectedIndex = 0,
-      DateTime? fromDate,
-      DateTime? toDate,
+      DateTime? startDate,
+      DateTime? endDate,
       int pageNo = 1,
       int pageSize = 20,
       int orderType = 0,
@@ -236,6 +237,12 @@ Future<List<Order>> fetchFilteredOrders(
 
   final where = <String>[];
   final args = <dynamic>[];
+
+  // --- Person Filter ---
+  if (personId != null && personId != 0) {
+    where.add('o.person_id = ?');
+    args.add(personId);
+  }
 
   // --- Search ---
   if (searchValue != null && searchValue.trim().isNotEmpty) {
@@ -259,6 +266,9 @@ Future<List<Order>> fetchFilteredOrders(
       where.add("(o.order_status = 'Pending' OR o.payment_status = 'Pending')");
       break;
     case 3:
+      where.add("o.order_status = 'Overdue' OR o.payment_status = 'Overdue'");
+      break;
+    case 4:
       where.add("o.order_status = 'Canceled'");
       break;
   }
@@ -271,13 +281,13 @@ Future<List<Order>> fetchFilteredOrders(
   }
 
   // --- Date range ---
-  if (fromDate != null && fromDate.millisecondsSinceEpoch > 0) {
+  if (startDate != null && startDate.millisecondsSinceEpoch > 0) {
     where.add('o.order_timestamp >= ?');
-    args.add(fromDate.millisecondsSinceEpoch);
+    args.add(startDate.millisecondsSinceEpoch);
   }
-  if (toDate != null && toDate.millisecondsSinceEpoch > 0) {
+  if (endDate != null && endDate.millisecondsSinceEpoch > 0) {
     where.add('o.order_timestamp <= ?');
-    args.add(toDate.millisecondsSinceEpoch);
+    args.add(endDate.millisecondsSinceEpoch);
   }
 
   final whereSQL = where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}';

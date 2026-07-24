@@ -465,27 +465,33 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
           decoration: UiHelper.myDecoration(),
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: .spaceBetween,
-                children: [
-                  Text('Low Stock Limit', style: MyFont.bold(16, color: MyColors.dark)),
-                  Transform.scale(
-                    scale: 0.85,
-                    child: Switch(
-                      value: (int.parse(controller.lowStock.text) > -1),
-                      activeTrackColor: MyColors.primary,
-                      activeColor: MyColors.translucent,
-                      onChanged: (e){
-                        print(e);
-                        if(e){
-                          setState(() => controller.lowStock.text = '$lowStockLimit');
-                        }else{
-                          setState(() => controller.lowStock.text = '-1');
-                        }
-                      },
-                    ),
+              Hero(
+                tag: "product_${widget.product.id}_low_stock",
+                child: Material(
+                  color: Colors.transparent,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Low Stock Limit', style: MyFont.bold(16, color: MyColors.dark)),
+                      Transform.scale(
+                        scale: 0.85,
+                        child: Switch(
+                          value: (int.parse(controller.lowStock.text) > -1),
+                          activeTrackColor: MyColors.primary,
+                          activeColor: MyColors.translucent,
+                          onChanged: (e){
+                            print(e);
+                            if(e){
+                              setState(() => controller.lowStock.text = '$lowStockLimit');
+                            }else{
+                              setState(() => controller.lowStock.text = '-1');
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               SizedBox(height: 6),
               if((int.parse(controller.lowStock.text) > -1))

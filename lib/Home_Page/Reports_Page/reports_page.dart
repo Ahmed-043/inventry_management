@@ -178,6 +178,23 @@ class _ReportsPageState extends State<ReportsPage> {
   Widget build(BuildContext context) {
     padding = 12.0;
 
+    Widget emptyState() {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.bar_chart_outlined, size: 100, color: MyColors.grey),
+            const SizedBox(height: 10),
+            Text(
+              _isLoading
+                  ? "Loading Data..."
+                  : "No data available",
+              style: MyFont.semiBold(20, color: MyColors.grey),
+            ),
+          ],
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: MyColors.mainBg,
       body: Padding(
@@ -191,9 +208,7 @@ class _ReportsPageState extends State<ReportsPage> {
             const SizedBox(height: 24),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _matrix == null || _matrix!.isEmpty
-                  ? const Center(child: Text('No data available'))
+                  ? emptyState()
                   : ReportsTable(
                     matrix: _matrix!,
                     stockValues: _stockValues ?? [],

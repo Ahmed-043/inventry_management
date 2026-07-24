@@ -13,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'utils/linux_dependencies.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final ValueNotifier<double> uiScaleNotifier = ValueNotifier<double>(1.0);
+final ValueNotifier<bool> performanceModeNotifier = ValueNotifier<bool>(false);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,24 +78,62 @@ class MyApp extends StatelessWidget {
     return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'ODVENTORY',
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-      builder: (context, child) {
-        if (!_supportsCustomCursor || child == null) {
-          return child ?? const SizedBox.shrink();
-        }
-        return AppCursorOverlay(
-          assetPath: 'assets/images/app_cursor.png',
-          clickCursorAssetPath: 'assets/images/hand_cursor.png',
-          textCursorAssetPath: 'assets/images/text_cursor.png',
-          size: 35.0,
-          child: child,
+    return ValueListenableBuilder<double>(
+      valueListenable: uiScaleNotifier,
+      builder: (context, scale, _) {
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'ODVENTORY',
+          debugShowCheckedModeBanner: false,
+          home: SplashScreen(),
+          builder: (context, child) {
+            if (child == null) return const SizedBox.shrink();
+
+            final mediaQuery = MediaQuery.of(context);
+            final realSize = mediaQuery.size;
+
+            Widget scaledApp = SizedBox(
+              width: realSize.width,
+              height: realSize.height,
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: realSize.width / scale,
+                maxWidth: realSize.width / scale,
+                minHeight: realSize.height / scale,
+                maxHeight: realSize.height / scale,
+                child: Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.topLeft,
+                  child: MediaQuery(
+                    data: mediaQuery.copyWith(
+                      size: realSize / scale,
+                      devicePixelRatio: mediaQuery.devicePixelRatio * scale,
+                    ),
+                    child: child,
+                  ),
+                ),
+              ),
+            );
+
+            if (!_supportsCustomCursor) {
+              return scaledApp;
+            }
+
+            return ValueListenableBuilder<bool>(
+              valueListenable: performanceModeNotifier,
+              builder: (context, perfMode, _) {
+                return AppCursorOverlay(
+                  assetPath: 'assets/images/app_cursor.png',
+                  clickCursorAssetPath: 'assets/images/hand_cursor.png',
+                  textCursorAssetPath: 'assets/images/text_cursor.png',
+                  size: 35.0,
+                  child: scaledApp,
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -136,6 +176,7 @@ Future<void> loadPreferences() async {
     await prefs.setBool('performanceMode', false);
   }
   performanceMode = prefs.getBool('performanceMode')!;
+  performanceModeNotifier.value = performanceMode;
 
   if(prefs.getBool('plainUi') == null ) {
     await prefs.setBool('plainUi', false);
@@ -179,6 +220,9 @@ Future<void> loadPreferences() async {
   hideTransactions = prefs.getBool('hideTransactions') ?? false;
   hideReports = prefs.getBool('hideReports') ?? false;
   hideSettings = false;
+
+  uiScale = prefs.getDouble('uiScale') ?? 1;
+  uiScaleNotifier.value = uiScale;
 
   debugPrint("Loaded preferences: pageSize=$productsPerPage, cardSize=$cardSize, PersonCardSize=$personCardSize");
 }

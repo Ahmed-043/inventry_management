@@ -7,6 +7,7 @@ import 'package:inventry_management/Home_Page/Settings_panel/pagination_settings
 import 'package:inventry_management/Home_Page/Settings_panel/performance_settings.dart';
 import 'package:inventry_management/Home_Page/Settings_panel/sidebar_settings.dart';
 import 'package:inventry_management/Home_Page/Settings_panel/theme_settings.dart';
+import 'package:inventry_management/Home_Page/Settings_panel/scalling_settings.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
 
@@ -51,14 +52,16 @@ class _SettingsPanelState extends State<SettingsPanel> {
                           children: [
                             // ThemeSelector(update: widget.update,refresh: () => setState(() {}),),
                             // SizedBox(height: 20,),
-                            PaginationSettingsWidget(),
+                            ScalingSettings(),
+                            SizedBox(height: 20,),
+                            PerformanceSettings(),
                             SizedBox(height: 20,),
                             SidebarSettings(update: widget.update, refresh: () => setState(() {})),
                           ],
                         ),
                         Column(
                           children: [
-                            PerformanceSettings(),
+                            PaginationSettingsWidget(),
                             SizedBox(height: 20,),
                             DataBackup(),
                           ],

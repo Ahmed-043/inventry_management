@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import '../Database/orders.dart';
 import '../colors.dart';
 import 'app_cursor_overlay.dart';
@@ -31,19 +32,21 @@ class StatusSegmentedControl extends StatelessWidget {
       onExit: (_) {
         isClickable = false;
       },
-      child: CupertinoSlidingSegmentedControl<String>(
-        backgroundColor: Colors.white,
-        thumbColor: selectedOption.second is Color
-            ? selectedOption.second
-            : Colors.grey.shade300,
-        groupValue: selected,
-        children: {
-          for (var option in options)
-            option.first: _buildSegmentChild(option, selected == option.first),
-        },
-        onValueChanged: (String? value) {
-          if (value != null) onChanged(value);
-        },
+      child: ScaledContainer(
+        child: CupertinoSlidingSegmentedControl<String>(
+          backgroundColor: Colors.white,
+          thumbColor: selectedOption.second is Color
+              ? selectedOption.second
+              : Colors.grey.shade300,
+          groupValue: selected,
+          children: {
+            for (var option in options)
+              option.first: _buildSegmentChild(option, selected == option.first),
+          },
+          onValueChanged: (String? value) {
+            if (value != null) onChanged(value);
+          },
+        ),
       ),
     );
   }

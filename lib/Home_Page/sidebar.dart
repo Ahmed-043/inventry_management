@@ -68,7 +68,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
       color: MyColors.sidebarBg,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 0),
@@ -86,6 +86,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
                         prefs.setBool('collapseSidebar', collapseSideBar);
                         widget.onItemSelected(selected);
                       },
+                      hoverColor: MyColors.translucent.withAlpha(20),
                       child: MouseRegion(
                         onEnter: (_){
                           setState(() {
@@ -145,68 +146,71 @@ class _SidebarPanelState extends State<SidebarPanel> {
                 ),
                 const SizedBox(height: 10),
                 if (!widget.vCollaps && widget.info != null)
-                  InkWell(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => Dialog(
-                          backgroundColor: Colors.transparent,
-                          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ProfileSettings(
-                            info: widget.info!,
-                            onSave: () {
-                              Navigator.pop(context);
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: EdgeInsets.all(widget.collaps ? 4 : 8),
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: MyColors.translucent.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          if(widget.info!.image != null)
-                            Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: MemoryImage(widget.info!.image!),
-                                fit: BoxFit.cover,
-                              ),
+                  Padding(
+                    padding: EdgeInsets.all(widget.collaps ? 4 : 8),
+                    child: ScaledContainer(child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: ProfileSettings(
+                              info: widget.info!,
+                              onSave: () {
+                                Navigator.pop(context);
+                                setState(() {});
+                              },
                             ),
                           ),
-                          if (!widget.collaps)
-                           ...[
-                             const SizedBox(width: 10),
-                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    widget.info!.dbName,
-                                    style: MyFont.bold(14, color: MyColors.translucent),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    'Pro Plan - Active',
-                                    style: MyFont.normal(12, color: MyColors.translucent.withOpacity(0.5)),
-                                  ),
-                                ],
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Ink(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: MyColors.translucent.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            if(widget.info!.image != null)
+                              Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: MemoryImage(widget.info!.image!),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            ),]
-                        ],
+                            ),
+                            if (!widget.collaps)
+                             ...[
+                               const SizedBox(width: 10),
+                               Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      widget.info!.dbName,
+                                      style: MyFont.bold(14, color: MyColors.translucent),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Pro Plan - Active',
+                                      style: MyFont.normal(12, color: MyColors.translucent.withOpacity(0.5)),
+                                    ),
+                                  ],
+                                ),
+                              ),]
+                          ],
+                        ),
                       ),
-                    ),
+                    )),
                   ),
                 const SizedBox(height: 10),
               ],
@@ -234,10 +238,10 @@ class _SidebarPanelState extends State<SidebarPanel> {
             onTap: callBack,
             hoverColor: MyColors.translucent.withAlpha(20),
             borderRadius: BorderRadius.circular(12),
-            child: Container(
+            child: Ink(
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected ? MyColors.sidebarSelected : MyColors.translucent.withAlpha(0),
+                color: isSelected ? MyColors.sidebarSelected : MyColors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),

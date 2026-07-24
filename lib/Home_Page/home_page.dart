@@ -6,6 +6,7 @@ import 'package:inventry_management/Signin/sign_page_redesign.dart';
 import 'package:inventry_management/colors.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
+import '../Database/person.dart';
 import 'Customers&Suppliers/persons_page.dart';
 import 'Orders_panel/orders_page.dart';
 import 'Reports_Page/reports_page.dart';
@@ -21,12 +22,24 @@ class HomePage extends StatefulWidget {
 
   const HomePage({super.key, required this.path,this.info,});
 
+  static HomePageState? of(BuildContext context) =>
+      context.findAncestorStateOfType<HomePageState>();
+
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
+  Person? filterPerson;
+
+  void navigateTo(int index, {Person? person}) {
+    setState(() {
+      selectedIndex = index;
+      filterPerson = person;
+    });
+  }
+
   int selectedIndex = !hideDashboard
       ? 0
       : !hideProducts
@@ -45,32 +58,45 @@ class _HomePageState extends State<HomePage> {
 
     final FocusNode _focusNode = FocusNode();
 
-  late final pages = [
-    Dashboard(info: widget.info,),
-    //Center(child: Text("Stock Page")),
-    StockDashboard(),
-    //Center(child: Text("Customers Page")),
-    PersonsPage(key: ValueKey("customer"),isCustomer: true),
-    //Center(child: Text("Suppliers Page")),
-    PersonsPage(key: ValueKey("supplier"),isCustomer: false),
-    //Center(child: Text("Orders")),
-    OrdersPage(),
-    //Center(child: Text("Transactions")),
-    TransactionsPage(),
-    ReportsPage(),
-   // Center(child: Text("Reports Page")),
-   // Center(child: Text("Settings Page")),
-    Builder(
-      builder: (context) => SettingsPanel(
-        update: () {
-          print("Updated");
-          setState(() {}); // rebuild HomePage
-        },
-      ),
-    ),
-    //Center(child: Text("Logout Page")),
-    LogoutPanel(),
-  ];
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0:
+        return Dashboard(info: widget.info);
+      case 1:
+        return StockDashboard();
+      case 2:
+        return PersonsPage(key: const ValueKey("customer"), isCustomer: true);
+      case 3:
+        return PersonsPage(key: const ValueKey("supplier"), isCustomer: false);
+      case 4:
+        return OrdersPage(
+          key: ValueKey("orders_${filterPerson?.id ?? 'all'}"),
+          initialPerson: filterPerson,
+        );
+      case 5:
+        return TransactionsPage(
+          key: ValueKey("transactions_${filterPerson?.id ?? 'all'}"),
+          initialPerson: filterPerson,
+        );
+      case 6:
+        return ReportsPage();
+      case 7:
+        return Builder(
+          builder: (context) => SettingsPanel(
+            update: () {
+              print("Updated");
+              setState(() {}); // rebuild HomePage
+            },
+          ),
+        );
+      case 8:
+        return LogoutPanel();
+      default:
+        return const Center(child: Text("Page Not Found"));
+    }
+  }
+
+  int get pagesCount => 9;
 
 
 
@@ -110,7 +136,7 @@ class _HomePageState extends State<HomePage> {
 
               final key = event.logicalKey.keyLabel; // "1", "2", "3", ...
               final index = int.tryParse(key);
-              if (index != null && index > 0 && index <= pages.length) {
+              if (index != null && index > 0 && index <= pagesCount) {
                 setState(() => selectedIndex = index - 1);
               }
             }
@@ -135,14 +161,17 @@ class _HomePageState extends State<HomePage> {
                             selectedIndex: selectedIndex,
                             info: widget.info,
                             onItemSelected: (index) {
-                              if(index == pages.length-1){
+                              if(index == pagesCount-1){
                                 //Navigator.pop(context);
                                  Navigator.of(context).pushAndRemoveUntil(
                                    MaterialPageRoute(builder: (_) => SigninPageRedsign()),
                                        (route) => false,
                                  );
                               }else {
-                                setState(() => selectedIndex = index% pages.length); // to avoid overflow
+                                setState(() {
+                                  selectedIndex = index % pagesCount;
+                                  filterPerson = null; // reset filter on manual switch
+                                });
                               }
                             },
                             vCollaps: vCollapse,
@@ -155,7 +184,7 @@ class _HomePageState extends State<HomePage> {
                         top: 0,
                         right: 0,
                         bottom: 0,
-                        child: pages[selectedIndex],
+                        child: _getPage(selectedIndex),
                       ),
                     ],
                   ),
@@ -166,10 +195,13 @@ class _HomePageState extends State<HomePage> {
                   selectedIndex: selectedIndex,
                   info: widget.info,
                   onItemSelected: (index) {
-                    if(index == pages.length-1){
+                    if(index == pagesCount-1){
                       Navigator.pop(context);
                     }else {
-                      setState(() => selectedIndex = index% pages.length); // to avoid overflow
+                      setState(() {
+                        selectedIndex = index % pagesCount;
+                        filterPerson = null; // reset filter on manual switch
+                      });
                     }
                   },
                   //vCollaps: vCollapse,

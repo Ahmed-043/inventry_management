@@ -31,15 +31,21 @@ class _ProductCardState extends State<ProductCard> {
   bool _isHovered = false;
 
   Widget _statusPill(String text, Color bgColor, Color textColor,double factor) {
-    return Container(
-      padding:  EdgeInsets.symmetric(horizontal: (12 * factor), vertical: (4* factor) ),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: MyFont.bold(12 * factor, color: textColor),
+    return Hero(
+      tag: "product_${widget.product.id}_low_stock",
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding:  EdgeInsets.symmetric(horizontal: (12 * factor), vertical: (4* factor) ),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            text,
+            style: MyFont.bold(12 * factor, color: textColor),
+          ),
+        ),
       ),
     );
   }
@@ -280,22 +286,28 @@ class _ProductCardState extends State<ProductCard> {
                   SizedBox(height: 4 * factor),
                   Hero(
                     tag: "product_${widget.product.id}_name",
-                    child: Text(
-                      widget.product.name,
-                      style: MyFont.bold(h * 0.18, color: MyColors.textMain),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.product.name,
+                        style: MyFont.bold(h * 0.18, color: MyColors.textMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
 
                   if(widget.product.sku != null)
                   Hero(
                     tag: "product_${widget.product.id}_sku",
-                    child: Text(
-                      widget.product.sku!,
-                      style: MyFont.medium(h * 0.16, color: MyColors.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.product.sku!,
+                        style: MyFont.medium(h * 0.16, color: MyColors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],
@@ -310,16 +322,22 @@ class _ProductCardState extends State<ProductCard> {
                 children: [
                   Hero(
                     tag: "product_${widget.product.id}_price",
-                    child: Text(
-                      'Rs. ${formatter.format(widget.product.totalPrice)}',
-                      style: MyFont.bold(h * 0.22, color: MyColors.textMain),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        'Rs. ${formatter.format(widget.product.totalPrice)}',
+                        style: MyFont.bold(h * 0.22, color: MyColors.textMain),
+                      ),
                     ),
                   ),
                   Hero(
                     tag: "product_${widget.product.id}_stock",
-                    child: Text(
-                      'Stk: ${widget.product.stock}',
-                      style: MyFont.bold(h * 0.18, color: MyColors.textSecondary),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        'Stk: ${widget.product.stock}',
+                        style: MyFont.bold(h * 0.18, color: MyColors.textSecondary),
+                      ),
                     ),
                   ),
                 ],

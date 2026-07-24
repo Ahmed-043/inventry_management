@@ -13,7 +13,6 @@ import '../../Database/database.dart';
 import '../../Database/person.dart';
 import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/fonts.dart';
-import '../../Shared_Widgets/topbar.dart';
 import '../../colors.dart';
 import 'add_new_person_panel.dart';
 import 'addnew_person_button.dart';

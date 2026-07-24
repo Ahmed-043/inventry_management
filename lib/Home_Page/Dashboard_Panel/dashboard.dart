@@ -545,7 +545,7 @@ class _DashboardState extends State<Dashboard> {
   Widget lineChart() {
     return Container(
       margin: const EdgeInsets.only(top: 8,right: 8),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24,vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -572,47 +572,70 @@ class _DashboardState extends State<Dashboard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Income' : 'Purchase'} Trend",
+                    "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Sales' : 'Purchase'} Trend",
                     style: MyFont.bold(20, color: MyColors.textMain),
                   ),
                 ],
               ),
-              Row(
+              Column(
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      if (back < 30) {
-                        back++;
-                        _saveSettings();
-                        loadDashboard();
-                      } else if (dailySales) {
-                        dailySales = false;
-                        back = 5;
-                        _saveSettings();
-                        loadDashboard();
-                      }
-                    },
-                    icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (back < 30) {
+                            back++;
+                            _saveSettings();
+                            loadDashboard();
+                          } else if (dailySales) {
+                            dailySales = false;
+                            back = 5;
+                            _saveSettings();
+                            loadDashboard();
+                          }
+                        },
+                        icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary),
+                      ),
+                      Text(
+                        "Last $back ${dailySales ? "Days" : "Months"}",
+                        style: MyFont.medium(14, color: MyColors.textSecondary),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          if (back > 5) {
+                            back--;
+                            _saveSettings();
+                            loadDashboard();
+                          } else if (!dailySales) {
+                            dailySales = true;
+                            back = 30;
+                            _saveSettings();
+                            loadDashboard();
+                          }
+                        },
+                        icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary),
+                      ),
+                    ],
                   ),
-                  Text(
-                    "Last $back ${dailySales ? "Days" : "Months"}",
-                    style: MyFont.medium(14, color: MyColors.textSecondary),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      if (back > 5) {
-                        back--;
-                        _saveSettings();
-                        loadDashboard();
-                      } else if (!dailySales) {
-                        dailySales = true;
-                        back = 30;
-                        _saveSettings();
-                        loadDashboard();
-                      }
-                    },
-                    icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary),
-                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      hoverColor: MyColors.textSecondary.withOpacity(0.1),
+                      onTap: () {
+                        setState(() {
+                          current[0] = !current[0];
+                          _saveSettings();
+                          loadDashboard();
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('Switch to ${current[0] ? 'Sales' : 'Purchase'} Data',
+                            style: MyFont.medium(14, color: MyColors.textSecondary)),
+                      ),
+                    ),
+                  )
                 ],
               ),
             ],

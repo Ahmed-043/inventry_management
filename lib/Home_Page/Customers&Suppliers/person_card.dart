@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Database/payment_transactions.dart';
+import 'package:inventry_management/Home_Page/home_page.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
@@ -365,6 +366,44 @@ class _PersonCardState extends State<PersonCard> {
                           UiHelper.showToast(context, "Please enter an amount", type: 2);
                         }
                       }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: UiHelper.myButton(
+                    title: "Order History",
+                    filled: false,
+                    textSize: 14,
+                    color: MyColors.darkBlue,
+                    callback: () {
+                      Navigator.pop(context);
+                      HomePage.of(context)?.navigateTo(4, person: widget.person);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: UiHelper.myButton(
+                    title: "Transaction History",
+                    filled: false,
+                    textSize: 14,
+                    color: MyColors.darkBlue,
+                    callback: () {
+                      Navigator.pop(context);
+                      HomePage.of(context)?.navigateTo(5, person: widget.person);
                     },
                   ),
                 ),

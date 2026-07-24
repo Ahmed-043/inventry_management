@@ -321,15 +321,25 @@ Future<List<PaymentTransaction>> getTransactions({
   int pageNo = 0,
   int pageSize = 0,
   String? search,
+  int? personId,
 }) async
 {
   final whereClauses = <String>[];
   final whereArgs = <dynamic>[];
 
+  // --- Person Filter ---
+  if (personId != null && personId != 0) {
+    whereClauses.add("person_id = ?");
+    whereArgs.add(personId);
+  }
+
   // --- Status Filter ---
   switch (status) {
     case 1: whereClauses.add("payment_status = ?"); whereArgs.add("Paid"); break;
-    case 2: whereClauses.add("payment_status = ?"); whereArgs.add("Pending"); break;
+    case 2: 
+      whereClauses.add("payment_status IN (?, ?)"); 
+      whereArgs.addAll(["Pending", "Overdue"]); 
+      break;
     case 3: whereClauses.add("payment_status = ?"); whereArgs.add("Overdue"); break;
   }
 
@@ -412,15 +422,25 @@ Future<int> getTransactionsCount({
   int dueStart = 0,
   int dueEnd = 0,
   String? search,
+  int? personId,
 }) async
 {
   final whereClauses = <String>[];
   final whereArgs = <dynamic>[];
 
+  // --- Person Filter ---
+  if (personId != null && personId != 0) {
+    whereClauses.add("person_id = ?");
+    whereArgs.add(personId);
+  }
+
   // --- Status Filter ---
   switch (status) {
     case 1: whereClauses.add("payment_status = ?"); whereArgs.add("Paid"); break;
-    case 2: whereClauses.add("payment_status = ?"); whereArgs.add("Pending"); break;
+    case 2: 
+      whereClauses.add("payment_status IN (?, ?)"); 
+      whereArgs.addAll(["Pending", "Overdue"]); 
+      break;
     case 3: whereClauses.add("payment_status = ?"); whereArgs.add("Overdue"); break;
   }
 

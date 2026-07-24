@@ -237,7 +237,7 @@ class _TrailPainter extends CustomPainter {
       final age = now.difference(p.createdAt).inMilliseconds;
       final opacity = (1.0 - age / 400.0).clamp(0.0, 1.0);
 
-      // Grained effect: multiple small dots with slightly random positions
+      // Grained effect: multiple small shapes with slightly random positions
       for (int j = 0; j < 3; j++) {
         final offset = Offset(
           (random.nextDouble() - 0.5) * 10,
@@ -245,7 +245,23 @@ class _TrailPainter extends CustomPainter {
         );
         final grainOpacity = opacity * (random.nextDouble() * 0.2 + 0.1);
         paint.color = MyColors.sidebarSelected.withOpacity(grainOpacity);
-        canvas.drawCircle(p.position + offset, random.nextDouble() * 2.5, paint);
+
+        final grainSize = random.nextDouble() * 2.0;
+        final shapePos = p.position + offset;
+        final shapeType = random.nextInt(3);
+
+        if (shapeType == 0) {
+          canvas.drawCircle(shapePos, grainSize, paint);
+        } else if (shapeType == 1) {
+          canvas.drawRect(Rect.fromCenter(center: shapePos, width: grainSize * 2, height: grainSize * 2), paint);
+        } else {
+          // A tiny diamond/rotated square
+          canvas.save();
+          canvas.translate(shapePos.dx, shapePos.dy);
+          canvas.rotate(math.pi / 4);
+          canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: grainSize * 1.5, height: grainSize * 1.5), paint);
+          canvas.restore();
+        }
       }
     }
   }
@@ -264,18 +280,15 @@ class _ClickPainter extends CustomPainter {
       final progress = click.controller.value;
       // Explosive but soft easing
       final curvedProgress = Curves.easeOutQuart.transform(progress);
-      final opacity = (1.0 - progress).clamp(0.0, 1.0);
+      final opacity = (1.0 - progress).clamp(0.0, 0.6);
       
-      final random = math.Random(click.position.hashCode);
+      final random = math.Random(click.position.hashCode + click.controller.hashCode);
       final paint = Paint()..strokeCap = StrokeCap.round;
 
-      // Draw a "burst" of grains similar to the trail style
-      // We use more dots to form a clear circular cluster
-      for (int i = 0; i < 40; i++) {
-        // Random polar coordinates for the grain
+      // Draw a "burst" of grains with varying shapes
+      for (int i = 0; i < 30; i++) {
         final angle = random.nextDouble() * 2 * math.pi;
-        // The grains expand from the center to a max radius of ~40
-        final maxRadius = 40.0 * curvedProgress;
+        final maxRadius = 30.0 * curvedProgress;
         final distance = random.nextDouble() * maxRadius;
         
         final grainOffset = Offset(
@@ -283,25 +296,46 @@ class _ClickPainter extends CustomPainter {
           math.sin(angle) * distance,
         );
         
-        // Varied opacity for that "textured" look
         final grainOpacity = opacity * (random.nextDouble() * 0.6 + 0.2);
         paint.color = MyColors.primary.withOpacity(grainOpacity);
-        
-        // Random size similar to trail dots
-        final grainSize = random.nextDouble() * 3.0;
-        
-        canvas.drawCircle(click.position + grainOffset, grainSize, paint);
+
+        final grainSize = random.nextDouble() * 2.7;
+        final shapePos = click.position + grainOffset;
+        final shapeType = random.nextInt(4);
+
+        if (shapeType == 0) {
+          canvas.drawCircle(shapePos, grainSize, paint);
+        } else if (shapeType == 1) {
+          canvas.drawRect(Rect.fromCenter(center: shapePos, width: grainSize * 2, height: grainSize * 2), paint);
+        } else if (shapeType == 2) {
+          // A small cross
+          final sw = grainSize * 0.7;
+          final p = Paint()
+            ..color = paint.color
+            ..strokeCap = StrokeCap.round
+            ..strokeWidth = sw;
+          canvas.drawLine(Offset(shapePos.dx - grainSize, shapePos.dy), Offset(shapePos.dx + grainSize, shapePos.dy), p);
+          canvas.drawLine(Offset(shapePos.dx, shapePos.dy - grainSize), Offset(shapePos.dx, shapePos.dy + grainSize), p);
+        } else {
+          // A small triangle
+          final path = Path();
+          path.moveTo(shapePos.dx, shapePos.dy - grainSize);
+          path.lineTo(shapePos.dx + grainSize, shapePos.dy + grainSize);
+          path.lineTo(shapePos.dx - grainSize, shapePos.dy + grainSize);
+          path.close();
+          canvas.drawPath(path, paint);
+        }
       }
 
-      // Optional: A tiny central "core" grain cluster for focus
-      for (int i = 0; i < 5; i++) {
-        final coreOffset = Offset(
-          (random.nextDouble() - 0.5) * 10 * (1 - curvedProgress),
-          (random.nextDouble() - 0.5) * 10 * (1 - curvedProgress),
-        );
-        paint.color = MyColors.primary.withOpacity(opacity * 0.8);
-        canvas.drawCircle(click.position + coreOffset, 1.5, paint);
-      }
+      // Central core remains as subtle dots for focus
+      // for (int i = 0; i < 5; i++) {
+      //   final coreOffset = Offset(
+      //     (random.nextDouble() - 0.5) * 10 * (1 - curvedProgress),
+      //     (random.nextDouble() - 0.5) * 10 * (1 - curvedProgress),
+      //   );
+      //   paint.color = MyColors.primary.withOpacity(opacity * 0.8);
+      //   canvas.drawCircle(click.position + coreOffset, 5, paint);
+      // }
     }
   }
 

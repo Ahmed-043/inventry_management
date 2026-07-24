@@ -126,95 +126,95 @@ class _StockDashboardState extends State<StockDashboard> {
     return grouped;
   }
 
-  Widget _buildCategorySections() {
+  List<Widget> _buildCategorySections() {
     final grouped = _groupProductsByCategory(products);
+    final List<Widget> slivers = [];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: grouped.entries.map((entry) {
-        final catId = entry.key;
-        final items = entry.value;
+    for (var entry in grouped.entries) {
+      final catId = entry.key;
+      final items = entry.value;
 
-        final title = catId == null
-            ? "Other"
-            : _categoryNames[catId] ?? "Category $catId";
+      final title = catId == null
+          ? "Other"
+          : _categoryNames[catId] ?? "Category $catId";
 
-        return Container(
-          padding: const EdgeInsets.only(bottom: 25),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  title,
-                  style: MyFont.bold(
-                    cSize > 200 ? 24 : 20,
-                    color: MyColors.blue,
-                  ),
-                ),
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              title,
+              style: MyFont.bold(
+                cSize > 200 ? 24 : 20,
+                color: MyColors.blue,
               ),
-              // Use GridView.builder to lazily build category items while preserving
-              // the same tile sizing and spacing as the original Wrap.
-              Builder(
-                builder: (context) {
-                  final size = (Platform.isAndroid || Platform.isIOS)
-                      ? cSize / 1.7
-                      : cSize;
-                  final tileWidth = tileUi ? size * 1.6 : size * 0.85;
-                  final tileHeight = tileUi ? size * 0.4 : size * 1.2;
-                  final childAspect = tileWidth / tileHeight;
-
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: tileWidth,
-                      mainAxisSpacing: 15,
-                      crossAxisSpacing: 15,
-                      childAspectRatio: childAspect,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final product = items[index];
-                      bool isHovered = false;
-                      return SizedBox(
-                        width: tileWidth,
-                        height: tileHeight,
-                        child: InkWell(
-                          hoverColor: Colors.transparent,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: MouseRegion(
-                              onEnter: (_) =>
-                                  setState(() => isHovered = true),
-                              onExit: (_) =>
-                                  setState(() => isHovered = false),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeOutCubic,
-                                // The "Enlarge" effect
-                                transform: Matrix4.identity()
-                                  ..scale(isHovered ? 1.03 : 1.0),
-                                transformAlignment: Alignment.center,
-                                child: ProductCard(product: product),
-                              ),
-                            ),
-                          ),
-                          onTap: () => stockUpdateDialog(product),
-                          onSecondaryTap: () => updateDialog(product),
-                          //onDoubleTap: () => updateDialog(product),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
+            ),
           ),
-        );
-      }).toList(),
+        ),
+      );
+
+      final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
+      final tileWidth = tileUi ? size * 1.6 : size * 0.85;
+      final tileHeight = tileUi ? size * 0.4 : size * 1.2;
+      final childAspect = tileWidth / tileHeight;
+
+      slivers.add(
+        SliverGrid(
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: tileWidth,
+            mainAxisSpacing: 15,
+            crossAxisSpacing: 15,
+            childAspectRatio: childAspect,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final product = items[index];
+              return _ProductGridItem(
+                product: product,
+                tileWidth: tileWidth,
+                tileHeight: tileHeight,
+                onTap: () => stockUpdateDialog(product),
+                onSecondaryTap: () => updateDialog(product),
+                showHoverEffect: true,
+              );
+            },
+            childCount: items.length,
+          ),
+        ),
+      );
+
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 25)));
+    }
+    return slivers;
+  }
+
+  Widget _buildSliverGrid() {
+    final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
+    final tileWidth = tileUi ? size * 1.5 : size * 0.85;
+    final tileHeight = tileUi ? size * 0.4 : size * 1.2;
+    final childAspect = tileWidth / tileHeight;
+
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: tileWidth,
+        mainAxisSpacing: cSize / 17,
+        crossAxisSpacing: cSize / 17,
+        childAspectRatio: childAspect,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final product = products[index];
+          return _ProductGridItem(
+            product: product,
+            tileWidth: tileWidth,
+            tileHeight: tileHeight,
+            onTap: () => stockUpdateDialog(product),
+            onSecondaryTap: () => updateDialog(product),
+            showHoverEffect: false,
+          );
+        },
+        childCount: products.length,
+      ),
     );
   }
 
@@ -271,66 +271,10 @@ class _StockDashboardState extends State<StockDashboard> {
               ),
               if (products.isEmpty)
                 SliverFillRemaining(hasScrollBody: false, child: emptyState()),
-              SliverToBoxAdapter(
-                child: Container(
-                  clipBehavior: Clip
-                      .none, // 🔑 Allows internal GridView contents to overflow
-                  width: double.infinity,
-                  child: Center(
-                    child: sortCategory == 1 || sortCategory == 2
-                        ? _buildCategorySections()
-                        : Builder(
-                            builder: (context) {
-                              final size =
-                                  (Platform.isAndroid || Platform.isIOS)
-                                  ? cSize / 1.7
-                                  : cSize;
-                              final tileWidth = tileUi
-                                  ? size * 1.5
-                                  : size * 0.85;
-                              final tileHeight = tileUi
-                                  ? size * 0.4
-                                  : size * 1.2;
-                              final childAspect = tileWidth / tileHeight;
-
-                              return GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: EdgeInsets.zero,
-                                clipBehavior:
-                                    Clip.none, // 🔑 Allows cards to overflow
-                                gridDelegate:
-                                    SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: tileWidth,
-                                      mainAxisSpacing: cSize / 17,
-                                      crossAxisSpacing: cSize / 17,
-                                      childAspectRatio: childAspect,
-                                    ),
-                                itemCount: products.length,
-                                itemBuilder: (context, index) {
-                                  final product = products[index];
-                                  return SizedBox(
-                                    width: tileWidth,
-                                    height: tileHeight,
-                                    child: InkWell(
-                                      hoverColor: Colors.transparent,
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: ProductCard(product: product),
-                                      ),
-                                      onTap: () => stockUpdateDialog(product),
-                                      onSecondaryTap: () =>
-                                          updateDialog(product),
-                                      //onDoubleTap: () => updateDialog(product),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ),
-              ),
+              if (sortCategory == 1 || sortCategory == 2)
+                ..._buildCategorySections()
+              else
+                _buildSliverGrid(),
               const SliverToBoxAdapter(child: SizedBox(height: 45)),
             ],
           ),
@@ -735,6 +679,64 @@ class _StockDashboardState extends State<StockDashboard> {
           _loadProducts();
           setState(() {});
         },
+      ),
+    );
+  }
+}
+
+class _ProductGridItem extends StatefulWidget {
+  final Product product;
+  final double tileWidth;
+  final double tileHeight;
+  final VoidCallback onTap;
+  final VoidCallback onSecondaryTap;
+  final bool showHoverEffect;
+
+  const _ProductGridItem({
+    required this.product,
+    required this.tileWidth,
+    required this.tileHeight,
+    required this.onTap,
+    required this.onSecondaryTap,
+    this.showHoverEffect = false,
+  });
+
+  @override
+  State<_ProductGridItem> createState() => _ProductGridItemState();
+}
+
+class _ProductGridItemState extends State<_ProductGridItem> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget card = ProductCard(product: widget.product);
+
+    if (widget.showHoverEffect) {
+      card = MouseRegion(
+        onEnter: (_) => setState(() => isHovered = true),
+        onExit: (_) => setState(() => isHovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()..scale(isHovered ? 1.03 : 1.0),
+          transformAlignment: Alignment.center,
+          child: card,
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: widget.tileWidth,
+      height: widget.tileHeight,
+      child: InkWell(
+        hoverColor: Colors.transparent,
+        onTap: widget.onTap,
+        onSecondaryTap: widget.onSecondaryTap,
+        child: Material(
+          color: Colors.transparent,
+          child: card,
+        ),
       ),
     );
   }

@@ -782,8 +782,15 @@ class UiHelper {
       color: Colors.white,
     );
   }
-  static Future<T?> pushPage<T>({required BuildContext context, required Widget page, bool opaque = true, Color barrierColor = Colors.black54, bool barrierDismissible = false}){
-    if(performanceMode){
+  static Future<T?> pushPage<T>({
+    required BuildContext context,
+    required Widget page,
+    bool instantOpen = false,
+    bool opaque = true,
+    Color barrierColor = Colors.black54,
+    bool barrierDismissible = false
+  }){
+    if(performanceMode || instantOpen){
       return Navigator.of(context).push<T>(
         PageRouteBuilder(
           barrierDismissible: barrierDismissible,

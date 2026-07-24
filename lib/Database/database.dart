@@ -23,6 +23,7 @@ bool hideDashboard = false,
     hideReports = false,
     hideSettings = false;
 int lowStockLimit = 50, sortCategory = 0,sort = 9;
+double uiScale = 0.5;
 
 Future<bool> createDatabase({required String dbName, Directory? path, Uint8List? image}) async {
   await initDatabaseFactory();

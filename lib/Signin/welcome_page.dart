@@ -83,6 +83,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       int i = await pushCurrentStockAsOpeningStock(currentDB!);
       debugPrint("Daily Opening Stock Noted: $i");
+      startDailyOpeningStockScheduler(currentDB!);
 
       gotoHomePage(path, info);
       return true;

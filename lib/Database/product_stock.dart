@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -254,6 +255,7 @@ Future<int> pushCurrentStockAsOpeningStock(Database db) async {
 
     if (existingToday.isNotEmpty) {
       // Already pushed opening stock for today; do nothing.
+      debugPrint("Already pushed opening stock for today");
       return 0;
     }
 
@@ -291,6 +293,28 @@ Future<int> pushCurrentStockAsOpeningStock(Database db) async {
     }
 
     return insertedCount;
+  });
+}
+
+Timer? _dailyStockTimer;
+
+/// Starts a periodic timer that checks every minute if the opening stock
+/// for the current day has been pushed. This handles the case where the
+/// app remains open across midnight.
+void startDailyOpeningStockScheduler(Database db) {
+  _dailyStockTimer?.cancel();
+  _dailyStockTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+    try {
+      if (db.isOpen) {
+        debugPrint("SCHEDULER CHECKING");
+        await pushCurrentStockAsOpeningStock(db);
+      } else {
+        timer.cancel();
+        _dailyStockTimer = null;
+      }
+    } catch (e) {
+      debugPrint("Error in DailyOpeningStockScheduler: $e");
+    }
   });
 }
 

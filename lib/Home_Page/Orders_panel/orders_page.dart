@@ -1,21 +1,26 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Database/orders.dart';
+import 'package:inventry_management/Database/person.dart';
+import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/new_order_button.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/order_card.dart';
-import 'package:inventry_management/Shared_Widgets/horizontal_scroll.dart';
+import 'package:inventry_management/Shared_Widgets/date_time.dart';
+import 'package:inventry_management/Shared_Widgets/filter_button.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
-import 'package:inventry_management/Shared_Widgets/topbar.dart';
 import 'package:inventry_management/colors.dart';
 
 import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/fonts.dart';
+import '../../Shared_Widgets/main_ui_helper.dart';
 import '../../Shared_Widgets/pagination_bar.dart';
 
 class OrdersPage extends StatefulWidget {
-  const OrdersPage({super.key});
+  final Person? initialPerson;
+  const OrdersPage({super.key, this.initialPerson});
 
   @override
   State<OrdersPage> createState() => _OrdersPageState();
@@ -29,6 +34,8 @@ class _OrdersPageState extends State<OrdersPage> {
   bool isLoading = false;
   int pageNo = 1;
   int pageSize = ordersPerPage ?? 50;
+  DateTime? startDate, endDate;
+  Person? selectedPerson;
   List<Order> sellingOrders = [];
   List<Order> buyingOrders = [];
   bool compress = false;
@@ -38,6 +45,7 @@ class _OrdersPageState extends State<OrdersPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    selectedPerson = widget.initialPerson;
     _loadOrders();
   }
 
@@ -63,6 +71,9 @@ class _OrdersPageState extends State<OrdersPage> {
           pageNo: pageNo,
           pageSize: pageSize,
           orderType: 1,
+          startDate: startDate,
+          endDate: endDate,
+          personId: selectedPerson?.id,
         );
         buyingOrders = await fetchFilteredOrders(
           currentDB!,
@@ -71,6 +82,9 @@ class _OrdersPageState extends State<OrdersPage> {
           pageNo: pageNo,
           pageSize: pageSize,
           orderType: 2,
+          startDate: startDate,
+          endDate: endDate,
+          personId: selectedPerson?.id,
         );
         if (mounted) {
           setState(() {
@@ -138,35 +152,19 @@ class _OrdersPageState extends State<OrdersPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text(
+                "Orders",
+                style: MyFont.bold(24, color: MyColors.textMain),
+              ),
               Row(
                 children: [
-                  Text(
-                    "Orders",
-                    style: MyFont.bold(24, color: MyColors.textMain),
-                  ),
-                  const SizedBox(width: 24),
                   actionButtons(),
-                ],
-              ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: HorizontalScroll(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: .end,
-                      children: [
-                        _filterChip(' All ', 0),
-                        const SizedBox(width: 8),
-                        _filterChip('Completed', 1),
-                        const SizedBox(width: 8),
-                        _filterChip('Pending', 2),
-                        const SizedBox(width: 8),
-                        _filterChip('Cancelled', 3),
-                      ],
-                    ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -209,11 +207,136 @@ class _OrdersPageState extends State<OrdersPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              _typeFilterChip('All', 0),
-              const SizedBox(width: 8),
-              _typeFilterChip('Sell', 1),
-              const SizedBox(width: 8),
-              _typeFilterChip('Buy', 2),
+
+              /// Person Selector Button
+              if (selectedPerson != null)
+                ScaledContainer(
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        selectedPerson = null;
+                        _loadOrders();
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: MyColors.sidebarSelected.withAlpha(125)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (selectedPerson!.image != null)
+                            ClipOval(
+                              child: Image.memory(
+                                selectedPerson!.image!,
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          else
+                            const Icon(Icons.person, size: 28, color: MyColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Text(
+                            selectedPerson!.name,
+                            style: MyFont.medium(14, color: MyColors.textMain),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.close, size: 16, color: MyColors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ScaledContainer(
+                  child: InkWell(
+                    onTap: _choosePerson,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_add_alt_1, size: 20, color: MyColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Select Person",
+                            style: MyFont.medium(14, color: MyColors.textMain),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 12),
+
+              ///Filter Buttons
+              FilterButton(
+                title: 'Status: ${['All', 'Completed', 'Pending', 'Overdue', 'Cancelled'][selectedIndex]}',
+                options: const ['All', 'Completed', 'Pending', 'Overdue', 'Cancelled'],
+                onSelected: (index) async {
+                  setState(() {
+                    selectedIndex = index;
+                    _loadOrders();
+                  });
+                },
+              ),
+              const SizedBox(width: 12),
+              FilterButton(
+                title: 'Type: ${['All', 'Sell', 'Buy'][selected]}',
+                options: const ['All', 'Selling', 'Buying'],
+                onSelected: (index) async {
+                  setState(() {
+                    selected = index;
+                    _loadOrders();
+                  });
+                },
+              ),
+              const SizedBox(width: 12),
+              FilterButton(
+                title: 'Date',
+                width: 180,
+                options: [
+                  "Start: ${startDate == null ? 'Not set' : DateFormat('dd MMM yyyy').format(startDate!)}",
+                  "End: ${endDate == null ? 'Not set' : DateFormat('dd MMM yyyy').format(endDate!)}",
+                ],
+                onSelected: (index) async {
+                  await _pickDate(index);
+                  _loadOrders();
+                },
+              ),
+              const SizedBox(width: 12),
+              ScaledContainer(
+                scale: 1.2,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedIndex = 0;
+                      startDate = null;
+                      endDate = null;
+                      selectedPerson = null;
+                      searchController.clear();
+                      _loadOrders();
+                    });
+                  },
+                  child: Text(
+                    "Reset Filters",
+                    style: MyFont.bold(14, color: MyColors.sidebarSelected),
+                  ),
+                ),
+              ),
+
             ],
           ),
           const SizedBox(height: 24),
@@ -291,61 +414,61 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  Widget _filterChip(String label, int index) {
-    bool isSelected = selectedIndex == index;
-    return ScaledContainer(
-      scale: 0.9,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          setState(() {
-            selectedIndex = index;
-            _loadOrders();
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? MyColors.sidebarSelected.withOpacity(0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: isSelected ? Border.all(color: MyColors.sidebarSelected) : Border.all(color: MyColors.textSecondary.withOpacity(0.2)),
-          ),
-          child: Text(
-            label,
-            style: MyFont.bold(14, color: isSelected ? MyColors.sidebarSelected : MyColors.textSecondary),
+  Future<void> _choosePerson() async {
+    final person = await UiHelper.pushPage<Person?>(
+      context: context,
+      opaque: false,
+      barrierDismissible: true,
+      page: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Hero(
+            tag: "person_card",
+            child: Container(
+              width: 400,
+              height: 600,
+              decoration: UiHelper.myDecoration(),
+              child: ChoosePerson(
+                filter: selected == 1 ? 1 : (selected == 2 ? 2 : 0),
+                person: selectedPerson,
+              ),
+            ),
           ),
         ),
       ),
     );
+
+    if (person != null) {
+      setState(() {
+        selectedPerson = person;
+        _loadOrders();
+      });
+    }
   }
 
-  Widget _typeFilterChip(String label, int index) {
-    bool isSelected = selected == index;
-    return ScaledContainer(
-      scale: 0.9,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          setState(() {
-            selected = index;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 8),
+  Future<void> _pickDate(int index) async {
+    DateTime initial = (index == 0 ? startDate : endDate) ?? DateTime.now();
+    DateTime first = index == 1 && startDate != null ? startDate! : DateTime(1900);
+    DateTime last = index == 0 && endDate != null ? endDate! : DateTime(2100);
 
-          decoration: BoxDecoration(
-            color: isSelected ? MyColors.sidebarSelected : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: isSelected ? null : Border.all(color: MyColors.textSecondary.withOpacity(0.2)),
-          ),
-          child: Text(
-            label,
-            style: MyFont.bold(14, color: isSelected ? Colors.white : MyColors.textSecondary),
-          ),
-        ),
-      ),
+    DateTime? picked = await pickDate(
+      context,
+      initial,
+      firstDate: first,
+      lastDate: last,
     );
+
+    if (picked != null) {
+      setState(() {
+        if (index == 0) {
+          startDate = DateTime(picked.year, picked.month, picked.day, 0, 0, 0);
+        } else {
+          endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+        }
+      });
+    }
   }
+
 
   Widget viewOrders({bool sell = true}) {
     return sell
@@ -379,46 +502,11 @@ class _OrdersPageState extends State<OrdersPage> {
               );
   }
 
-  Widget topBar() {
-    return ReusableTopBar(
-      title: MediaQuery.of(context).size.width < 1100 ? "" : "Orders",
-
-      searchHint: "Search (Person, OrderID, Remarks)",
-      applyBlur: false,
-      actionButton: actionButtons(),
-      searchController: searchController,
-      onSearch: () {
-        _searchTimer?.cancel();
-        _searchTimer = Timer(const Duration(milliseconds: 500), () {
-          _loadOrders();
-        });
-      },
-      onClear: () {
-        searchController.clear();
-        selectedIndex = 0;
-        _loadOrders();
-      },
-      stockButtons: [
-        {'title': 'All', 'count': type['All'] ?? 0},
-        {'title': 'Completed', 'count': type['Completed'] ?? 0},
-        {'title': 'Pending', 'count': type['Pending'] ?? 0},
-        {'title': 'Canceled', 'count': type['Canceled'] ?? 0},
-      ],
-      selectedIndex: selectedIndex,
-      onButtonSelect: (i) {
-        setState(() {
-          selectedIndex = i;
-          _loadOrders();
-        });
-      },
-    );
-  }
-
   Widget actionButtons() {
     return Align(
       alignment: Alignment.topLeft,
       child: Padding(
-        padding: const EdgeInsets.only(top: 5),
+        padding: const EdgeInsets.only(top: 0),
         child: SizedBox(
           width: 300,
           height: 40,

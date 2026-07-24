@@ -57,7 +57,7 @@ class OrderCard extends StatelessWidget {
         break;
     }
     double percent = payment > 0 ? (1 - (order.paidAmount.abs() / payment)) : 0.0;
-    print(percent);
+
     return ScaledContainer(
       child: Hero(
         tag: "${order.id}",
@@ -105,25 +105,15 @@ class OrderCard extends StatelessWidget {
                             '#${order.id}',
                             style: MyFont.medium(12, color: MyColors.textSecondary),
                           ),
-                          InkWell(
-                            onTap: () async {
-                              Order? oldOrder = await getOrderById(currentDB!, order.id ?? 0);
-                              if (oldOrder == null) return;
-                              oldOrder.editable = false;
-                              oldOrder.totalAmount = oldOrder.totalAmount.abs();
-                              oldOrder.paidAmount = oldOrder.paidAmount.abs();
-                              viewOrder(oldOrder);
-                            },
-                            child: Row(
-                              children: [
-                                Icon(Icons.visibility_outlined, size: 14, color: MyColors.sidebarSelected),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "View",
-                                  style: MyFont.bold(12, color: MyColors.sidebarSelected),
-                                ),
-                              ],
-                            ),
+                          Row(
+                            children: [
+                              Icon(Icons.visibility_outlined, size: 14, color: MyColors.sidebarSelected),
+                              const SizedBox(width: 4),
+                              Text(
+                                "View",
+                                style: MyFont.bold(12, color: MyColors.sidebarSelected),
+                              ),
+                            ],
                           ),
                         ],
                       ),

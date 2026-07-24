@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../colors.dart';
 import 'fonts.dart';
@@ -235,24 +236,26 @@ class _AdderRemoverValueState extends State<AdderRemoverValue> {
   }
 
   Widget addBox(int value, int op) {
-    return Container(
-      decoration: BoxDecoration(
-        color: op == 0
-            ? MyColors.info.withAlpha(20)
-            : MyColors.darkRed.withAlpha(20),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color:
-          op == 0 ? MyColors.blue.withAlpha(50) : MyColors.darkRed.withAlpha(50),
-          width: 2,
+    return ScaledContainer(
+      child: Container(
+        decoration: BoxDecoration(
+          color: op == 0
+              ? MyColors.info.withAlpha(20)
+              : MyColors.darkRed.withAlpha(20),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color:
+            op == 0 ? MyColors.blue.withAlpha(50) : MyColors.darkRed.withAlpha(50),
+            width: 2,
+          ),
         ),
-      ),
-      child: Center(
-        child: Text(
-          "${op == 0 ? '+' : '-'}${NumberFormat.decimalPattern().format(value)}",
-          style: MyFiraFont.semiBold(
-            20,
-            color: op == 0 ? MyColors.blue : MyColors.darkRed,
+        child: Center(
+          child: Text(
+            "${op == 0 ? '+' : '-'}${NumberFormat.decimalPattern().format(value)}",
+            style: MyFiraFont.semiBold(
+              20,
+              color: op == 0 ? MyColors.blue : MyColors.darkRed,
+            ),
           ),
         ),
       ),

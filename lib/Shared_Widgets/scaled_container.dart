@@ -18,7 +18,10 @@ class _ScaledContainerState extends State<ScaledContainer> {
   @override
   Widget build(BuildContext context) {
     if(performanceMode) {
-      return widget.child;
+      return Material(
+        color: Colors.transparent,
+        child: widget.child,
+      );
     }
     return MouseRegion(
       onEnter: (_) => setState(() {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:inventry_management/main.dart';
+
 import '../../Shared_Widgets/fonts.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
 import '../../colors.dart';
@@ -59,6 +61,7 @@ class _PerformanceSettingsState extends State<PerformanceSettings> {
         value: performanceMode,
         onChanged: (val) {
           performanceMode = val;
+          performanceModeNotifier.value = val;
           SharedPreferences.getInstance().then((prefs) {
             prefs.setBool('performanceMode', performanceMode);
           });

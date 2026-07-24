@@ -148,7 +148,11 @@ class _TransactionsCardsState extends State<TransactionsCards> {
         statusColor = MyColors.success;
         break;
       case 'Overdue':
-        statusColor = MyColors.error;
+        if(transaction.dueDate < DateTime.now().millisecondsSinceEpoch) {
+          statusColor = MyColors.error;
+        } else {
+          statusColor = MyColors.warning;
+        }
         break;
       case 'Pending':
       default:

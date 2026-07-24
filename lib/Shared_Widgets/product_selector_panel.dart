@@ -2,10 +2,12 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import 'package:flutter/cupertino.dart';
+import "package:flutter/rendering.dart";
 import "package:intl/intl.dart";
 import "package:inventry_management/Shared_Widgets/main_ui_helper.dart";
 import "package:inventry_management/Shared_Widgets/pagination_bar.dart";
 import 'package:flutter/services.dart';
+import "package:inventry_management/Shared_Widgets/scaled_container.dart";
 
 import "../Database/database.dart";
 import "../Database/order_items.dart";
@@ -206,182 +208,180 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
           ),
           isRegistered
               ? Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      children: [
-                       if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
-                          height: 50,
-                          child: TextField(
-                            focusNode: _searchFocus,
-                            autofocus: true,
-                            controller: searchController,
-                            onChanged: (e) {
-                              _searchTimer?.cancel();
-                              _searchTimer = Timer(
-                                const Duration(milliseconds: 500),
-                                () {
-                                  _loadProducts();
-                                },
-                              );
-                            },
-                            style: MyFont.semiBold(
-                              20,
+                  child: Column(
+                    children: [
+                     if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
+                        height: 50,
+                        child: TextField(
+                          focusNode: _searchFocus,
+                          autofocus: true,
+                          controller: searchController,
+                          onChanged: (e) {
+                            _searchTimer?.cancel();
+                            _searchTimer = Timer(
+                              const Duration(milliseconds: 500),
+                              () {
+                                _loadProducts();
+                              },
+                            );
+                          },
+                          style: MyFont.semiBold(
+                            20,
+                            color: MyColors.darkBlue,
+                          ),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
                               color: MyColors.darkBlue,
                             ),
-                            decoration: InputDecoration(
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                width: 2,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                width: 2,
                                 color: MyColors.darkBlue,
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: Colors.grey,
-                                ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide(
+                                width: 2,
+                                color: MyColors.darkBlue,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: MyColors.darkBlue,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: MyColors.darkBlue,
-                                ),
-                              ),
-                              labelStyle: MyFont.semiBold(
-                                20,
-                                color: MyColors.darkBlue.withAlpha(230),
-                              ),
-                              hint: Text(
-                                "Search (Name, SKU, Description)",
-                                style: MyFont.normal(20, color: MyColors.grey),
-                              ),
+                            ),
+                            labelStyle: MyFont.semiBold(
+                              20,
+                              color: MyColors.darkBlue.withAlpha(230),
+                            ),
+                            hint: Text(
+                              "Search (Name, SKU, Description)",
+                              style: MyFont.normal(20, color: MyColors.grey),
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 25,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Product Details", style: MyFont.normal(15)),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'In Stock only',
-                                    style: MyFont.normal(12),
-                                  ),
-                                  Checkbox(
-                                    overlayColor: WidgetStateProperty.all(
-                                      Colors.transparent,
-                                    ), // no hover effect
-                                    value: inStock, // bool variable (true/false)
-                                    onChanged: (bool? value) {
-                                      // callback when user taps
-                                      setState(() {
-                                        inStock = value!;
-                                        _loadProducts();
-                                      });
-                                    },
-                                    activeColor: Colors
-                                        .blue, // (optional) color when checked
-                                    checkColor:
-                                        Colors.white, // (optional) tick color
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 25,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Product Details", style: MyFont.normal(15)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'In Stock only',
+                                  style: MyFont.normal(12),
+                                ),
+                                Checkbox(
+                                  overlayColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ), // no hover effect
+                                  value: inStock, // bool variable (true/false)
+                                  onChanged: (bool? value) {
+                                    // callback when user taps
+                                    setState(() {
+                                      inStock = value!;
+                                      _loadProducts();
+                                    });
+                                  },
+                                  activeColor: Colors
+                                      .blue, // (optional) color when checked
+                                  checkColor:
+                                      Colors.white, // (optional) tick color
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.topCenter,
-                                child: isLoading
-                                    ? CircularProgressIndicator()
-                                    : products.isEmpty
-                                    ? emptyState()
-                                    : GridView.builder(
-                                        padding: EdgeInsets.zero,
-                                        physics: const BouncingScrollPhysics(),
-                                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                          maxCrossAxisExtent: 400,
-                                          mainAxisSpacing: 10,
-                                          crossAxisSpacing: 10,
-                                          childAspectRatio: 380 / 80,
-                                        ),
-                                        itemCount: products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).length,
-                                        itemBuilder: (context, index) {
-                                          final visible = products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).toList();
-                                          final p = visible[index];
-                                          return InkWell(
-                                            onTap: () {
-                                              toggleSelection(p);
-                                              debugPrint(
-                                                "Selected Products: ${widget.products.map((e) => e.id).toList()}",
-                                              );
-                                              debugPrint(
-                                                "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
-                                              );
-                                              debugPrint(
-                                                "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
-                                              );
-                                            },
-                                            child: productCard(p),
-                                          );
-                                        },
+                      ),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Align(
+                              alignment: Alignment.topCenter,
+                              child: isLoading
+                                  ? CircularProgressIndicator()
+                                  : products.isEmpty
+                                  ? emptyState()
+                                  : GridView.builder(
+                                      clipBehavior: Clip.none,
+                                      padding: EdgeInsets.zero,
+                                      physics: const BouncingScrollPhysics(),
+                                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                        maxCrossAxisExtent: 400,
+                                        mainAxisSpacing: 10,
+                                        crossAxisSpacing: 10,
+                                        childAspectRatio: 380 / 80,
                                       ),
-                              ),
-                              if (!(page==0 && products.length < pSize))
-                              PaginationBar(
-                                page: page,
-                                pageSize: pSize,
-                                itemCount: products.length,
-                                onPrevious: () {
-                                  setState(() {
-                                    page--;
-                                    _loadProducts();
-                                  });
-                                },
-                                onNext: () {
-                                  setState(() {
-                                    page++;
-                                    _loadProducts();
-                                  });
-                                },
-                              ),
-                              if( !(widget.select == 's' ||widget.select == 'S' ))
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: SizedBox(
-                                  width: 170,
-                                  height: 50,
-                                  child: UiHelper.myButton(
-                                    callback: () {
-                                      Navigator.pop(context, widget.products);
-                                    },
-                                    filled: true,
-                                    borderRadius: 25,
-                                    title:
-                                        "Add Products",
-                                  ),
+                                      itemCount: products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).length,
+                                      itemBuilder: (context, index) {
+                                        final visible = products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).toList();
+                                        final p = visible[index];
+                                        return InkWell(
+                                          onTap: () {
+                                            toggleSelection(p);
+                                            debugPrint(
+                                              "Selected Products: ${widget.products.map((e) => e.id).toList()}",
+                                            );
+                                            debugPrint(
+                                              "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
+                                            );
+                                            debugPrint(
+                                              "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
+                                            );
+                                          },
+                                          child: productCard(p),
+                                        );
+                                      },
+                                    ),
+                            ),
+                            if (!(page==0 && products.length < pSize))
+                            PaginationBar(
+                              page: page,
+                              pageSize: pSize,
+                              itemCount: products.length,
+                              onPrevious: () {
+                                setState(() {
+                                  page--;
+                                  _loadProducts();
+                                });
+                              },
+                              onNext: () {
+                                setState(() {
+                                  page++;
+                                  _loadProducts();
+                                });
+                              },
+                            ),
+                            if( !(widget.select == 's' ||widget.select == 'S' ))
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: SizedBox(
+                                width: 170,
+                                height: 50,
+                                child: UiHelper.myButton(
+                                  callback: () {
+                                    Navigator.pop(context, widget.products);
+                                  },
+                                  filled: true,
+                                  borderRadius: 25,
+                                  title:
+                                      "Add Products",
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 )
               : Placeholder(),
@@ -409,147 +409,149 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
       }
     }
 
-    return Container(
-      height: 80,
-      width: 380,
-      decoration: BoxDecoration(
-        color: MyColors.translucent,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: MyColors.grey.withAlpha(50),
-            blurRadius: 3,
-            offset: Offset(0, 2),
-            spreadRadius: 0.5,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-
-          if(highlight)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Container(color: MyColors.success.withAlpha(100)),
+    return ScaledContainer(
+      child: Container(
+        height: 80,
+        width: 380,
+        decoration: BoxDecoration(
+          color: MyColors.translucent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: MyColors.grey.withAlpha(50),
+              blurRadius: 3,
+              offset: Offset(0, 2),
+              spreadRadius: 0.5,
             ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: product.imageData != null
-                      ? Image.memory(product.imageData!, fit: BoxFit.cover)
-                      : Container(
-                          color: MyColors.grey.withAlpha(30),
-                          child: Icon(Icons.browser_not_supported_rounded),
-                        ),
-                ),
+          ],
+        ),
+        child: Stack(
+          children: [
+      
+            if(highlight)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(color: MyColors.success.withAlpha(100)),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: Tooltip(
-                  waitDuration: Duration(milliseconds: 500),
-                  message:
-                      "Name: ${product.name}\nSKU: ${product.sku ?? " No SKU"}\nStock: ${product.stock}",
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          product.name,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.start,
-                          style: MyFont.semiBold(20, color: MyColors.darkBlue),
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: Text(
-                          'SKU: ${product.sku ?? " No SKU"} ',
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.start,
-                          style: MyFont.semiBold(12, color: MyColors.darkBlue),
-                        ),
-                      ),
-                    ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: product.imageData != null
+                        ? Image.memory(product.imageData!, fit: BoxFit.cover)
+                        : Container(
+                            color: MyColors.grey.withAlpha(30),
+                            child: Icon(Icons.browser_not_supported_rounded),
+                          ),
                   ),
                 ),
-              ),
-              SizedBox(
-                //color: Colors.grey,
-                width: 100,
-                child: Padding(
-                  padding: EdgeInsets.all(5),
-                  child: Column(
-                    children: [
-                      Expanded(child: SizedBox()),
-                      Expanded(
-                        flex: 2,
-                        child: Builder(
-                          builder: (context) {
-                            final effectiveLowStock = product.lowStock == -1 ? lowStockLimit : product.lowStock;
-                            String text;
-                            Color color;
-
-                            if (product.lowStock == product.stock) {
-                              text = "In Stock";
-                              color = MyColors.success;
-                            } else if (product.stock < 1) {
-                              text = "Out of Stock";
-                              color = MyColors.error;
-                            } else if (product.stock < effectiveLowStock) {
-                              text = "Low Stock";
-                              color = MyColors.warning;
-                            } else {
-                              text = "In Stock";
-                              color = MyColors.success;
-                            }
-
-                            return UiHelper.myButton(
-                              callback: () {
-                                stockUpdateDialog(product);
-                              },
-                              title: text,
-                              filled: true,
-                              color: color,
-                              textSize: 14,
-                              borderRadius: 5,
-                            );
-                          }
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: Tooltip(
+                    waitDuration: Duration(milliseconds: 500),
+                    message:
+                        "Name: ${product.name}\nSKU: ${product.sku ?? " No SKU"}\nStock: ${product.stock}",
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            product.name,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: MyFont.semiBold(20, color: MyColors.darkBlue),
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Center(
-                          child: Tooltip(
-                            waitDuration: Duration(milliseconds: 500),
-                            message:
-                                "Price: ${NumberFormat.decimalPattern().format(product.totalPrice)}",
-                            child: Text(
-                              (widget.select == 's' || widget.select == 'S')
-                                  ?"Req ${stock[product.id]}"
-                                  :"Rs.${product.totalPrice > 9999999 ? "\n" : ''}${NumberFormat.decimalPattern().format(product.totalPrice.floor())}",
-                              style: MyFont.semiBold(
-                                16,
-                                color: MyColors.darkBlue,
-                              ).copyWith(height: 1.0),
-                              overflow: TextOverflow.ellipsis,
+                        SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            'SKU: ${product.sku ?? " No SKU"} ',
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: MyFont.semiBold(12, color: MyColors.darkBlue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  //color: Colors.grey,
+                  width: 100,
+                  child: Padding(
+                    padding: EdgeInsets.all(5),
+                    child: Column(
+                      children: [
+                        Expanded(child: SizedBox()),
+                        Expanded(
+                          flex: 2,
+                          child: Builder(
+                            builder: (context) {
+                              final effectiveLowStock = product.lowStock == -1 ? lowStockLimit : product.lowStock;
+                              String text;
+                              Color color;
+      
+                              if (product.lowStock == product.stock) {
+                                text = "In Stock";
+                                color = MyColors.success;
+                              } else if (product.stock < 1) {
+                                text = "Out of Stock";
+                                color = MyColors.error;
+                              } else if (product.stock < effectiveLowStock) {
+                                text = "Low Stock";
+                                color = MyColors.warning;
+                              } else {
+                                text = "In Stock";
+                                color = MyColors.success;
+                              }
+      
+                              return UiHelper.myButton(
+                                callback: () {
+                                  stockUpdateDialog(product);
+                                },
+                                title: text,
+                                filled: true,
+                                color: color,
+                                textSize: 14,
+                                borderRadius: 5,
+                              );
+                            }
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Center(
+                            child: Tooltip(
+                              waitDuration: Duration(milliseconds: 500),
+                              message:
+                                  "Price: ${NumberFormat.decimalPattern().format(product.totalPrice)}",
+                              child: Text(
+                                (widget.select == 's' || widget.select == 'S')
+                                    ?"Req ${stock[product.id]}"
+                                    :"Rs.${product.totalPrice > 9999999 ? "\n" : ''}${NumberFormat.decimalPattern().format(product.totalPrice.floor())}",
+                                style: MyFont.semiBold(
+                                  16,
+                                  color: MyColors.darkBlue,
+                                ).copyWith(height: 1.0),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

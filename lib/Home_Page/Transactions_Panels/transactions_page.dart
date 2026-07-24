@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/payment_transactions.dart';
+import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'package:inventry_management/Home_Page/Transactions_Panels/new_transaction_button.dart';
 import 'package:inventry_management/Home_Page/Transactions_Panels/transactions_cards.dart';
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
+import 'package:inventry_management/Shared_Widgets/filter_button.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
@@ -18,7 +20,8 @@ import '../../colors.dart';
 import 'new_transaction_page.dart';
 
 class TransactionsPage extends StatefulWidget {
-  const TransactionsPage({super.key});
+  final Person? initialPerson;
+  const TransactionsPage({super.key, this.initialPerson});
 
   @override
   State<TransactionsPage> createState() => _TransactionsPageState();
@@ -28,6 +31,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   TextEditingController searchController = TextEditingController();
   List<PaymentTransaction> transactions = [];
   List<Map<String, dynamic>> persons = [];
+  Person? selectedPerson;
 
   int status = 0; // ( 0: All, 1: Paid, 2: Pending, 3: Overdue)
   int type = 0; // ( 0: All, 1: Cash, 2: Digital, 3: Bank, 4: Other)
@@ -46,6 +50,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    selectedPerson = widget.initialPerson;
     _loadPersons();
     _loadTransactions();
   }
@@ -79,6 +84,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
           endDate: endDate,
           dueStart: dueStart,
           dueEnd: dueEnd,
+          personId: selectedPerson?.id,
         );
         updateTransactionNames();
         transactionCount = await getTransactionsCount(
@@ -90,6 +96,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
           endDate: endDate,
           dueStart: dueStart,
           dueEnd: dueEnd,
+          personId: selectedPerson?.id,
         );
         print(transactionCount);
       } catch (e) {
@@ -228,6 +235,37 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   int isHover = -1;
 
+  Future<void> _choosePerson() async {
+    final person = await UiHelper.pushPage<Person?>(
+      context: context,
+      opaque: false,
+      barrierDismissible: true,
+      page: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Hero(
+            tag: "person_card",
+            child: Container(
+              width: 400,
+              height: 600,
+              decoration: UiHelper.myDecoration(),
+              child: const ChoosePerson(
+                filter: 0,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (person != null) {
+      setState(() {
+        selectedPerson = person;
+        _loadTransactions();
+      });
+    }
+  }
+
   Widget searchBar() {
     String formatEpoch(int ms) {
       if (ms == 0) return "Not set";
@@ -280,12 +318,108 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ),
         ),
         const SizedBox(width: 12),
+
+        // Person Selector Button
+        if (selectedPerson != null)
+          ScaledContainer(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  selectedPerson = null;
+                  _loadTransactions();
+                });
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: MyColors.sidebarSelected.withOpacity(0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (selectedPerson!.image != null)
+                      ClipOval(
+                        child: Image.memory(
+                          selectedPerson!.image!,
+                          width: 28,
+                          height: 28,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      const Icon(Icons.person, size: 28, color: MyColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      selectedPerson!.name,
+                      style: MyFont.medium(14, color: MyColors.textMain),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.close, size: 16, color: MyColors.textSecondary),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          ScaledContainer(
+            child: InkWell(
+              onTap: _choosePerson,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person_add_alt_1, size: 20, color: MyColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Select Person",
+                      style: MyFont.medium(14, color: MyColors.textMain),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(width: 12),
+
         // Filters
-        _filterButton('Status: ${filters[0][status]}', 0, filters[0]),
+        FilterButton(
+          title: 'Status: ${filters[0][status]}',
+          options: filters[0],
+          onSelected: (idx) async {
+            status = idx;
+            _loadTransactions();
+          },
+        ),
         const SizedBox(width: 12),
-        _filterButton('Type: ${filters[1][type]}', 1, filters[1]),
+        FilterButton(
+          title: 'Type: ${filters[1][type]}',
+          options: filters[1],
+          onSelected: (idx) async {
+            type = idx;
+            _loadTransactions();
+          },
+        ),
         const SizedBox(width: 12),
-        _filterButton('Date', 2, filters[2]),
+        FilterButton(
+          title: 'Date',
+          options: filters[2],
+          width: 180,
+          onSelected: (idx) async {
+            await date(i: idx);
+            _loadTransactions();
+          },
+        ),
         const SizedBox(width: 12),
         ScaledContainer(
           scale: 1.2,
@@ -293,6 +427,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             onPressed: () {
               setState(() {
                 status = type = startDate = endDate = dueStart = dueEnd = 0;
+                selectedPerson = null;
                 searchController.clear();
                 _loadTransactions();
               });
@@ -304,85 +439,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _filterButton(String title, int filterIndex, List<String> options) {
-    return ScaledContainer(
-      child: GestureDetector(
-        onTapDown: (details) {
-          final tapPosition = details.globalPosition;
-          showDialog(
-            context: context,
-            barrierColor: Colors.transparent,
-            builder: (_) => Stack(
-              children: [
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    behavior: HitTestBehavior.translucent,
-                  ),
-                ),
-                Positioned(
-                  left: tapPosition.dx - 10,
-                  top: tapPosition.dy + 5,
-                  child: Material(
-                    elevation: 6,
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    child: Container(
-                      width: filterIndex == 2 ? 180 : 150,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(options.length, (idx) {
-                          return InkWell(
-                            onTap: () async {
-                              if (filterIndex == 0) status = idx;
-                              if (filterIndex == 1) type = idx;
-                              if (filterIndex == 2) {
-                                await date(i: idx);
-                              }
-                              _loadTransactions();
-                              if (mounted) Navigator.of(context).pop();
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Text(
-                                options[idx],
-                                style: MyFont.medium(14, color: MyColors.textMain),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        child: Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Text(
-                title,
-                style: MyFont.medium(14, color: MyColors.textMain),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.keyboard_arrow_down, color: MyColors.textSecondary, size: 18),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

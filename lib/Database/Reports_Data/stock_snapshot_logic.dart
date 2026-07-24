@@ -236,7 +236,8 @@ Future<List<InventoryMovement>> getProductMovementsForDate(
   Database db, {
   required int productId,
   required DateTime date,
-}) async {
+})
+async {
   final start = DateTime(date.year, date.month, date.day);
   final end = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
 
