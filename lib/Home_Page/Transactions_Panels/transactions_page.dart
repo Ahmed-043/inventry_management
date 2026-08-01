@@ -44,7 +44,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   bool isLoading = false, compress = false;
   Timer? _debounce;
-  double padding = 10;
+  double padding = 10, spacing = 12;
   int transactionCount = 0;
   @override
   void initState() {
@@ -134,6 +134,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   Widget build(BuildContext context) {
     compress = MediaQuery.of(context).size.width < 1000;
     padding = 12.0;
+    spacing = compress ? 6 : 12;
 
     return Padding(
       padding: EdgeInsets.only(top:padding,right: padding),
@@ -182,7 +183,45 @@ class _TransactionsPageState extends State<TransactionsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: spacing),
+          if(compress)
+            ...[
+              Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: MouseRegion(
+
+                  onEnter: (_){
+                    isTextCursor = true;
+                  },
+                  onExit: (_){
+                    isTextCursor = false;
+                  },
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (_) {
+                      _debounce?.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        if (!mounted) return;
+                        _loadTransactions();
+                      });
+                    },
+                    style: MyFont.medium(14, color: MyColors.textMain),
+                    decoration: InputDecoration(
+                      hintText: 'Search transactions...',
+                      hintStyle: MyFont.medium(14, color: MyColors.textSecondary),
+                      prefixIcon: const Icon(Icons.search, color: MyColors.textSecondary, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: spacing),
+            ],
           searchBar(),
           Expanded(
             child: Stack(
@@ -202,7 +241,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          'Page: ${pageNo+1} Transactions: $transactionCount  Total: Rs. ${NumberFormat.decimalPattern().format(transactions.fold(0.0, (sum, item) => sum + item.amount.abs()))}',
+                          'Page: ${pageNo+1}, Total Transactions: $transactionCount',
                           style: MyFont.bold(14, color: MyColors.textSecondary),
                         ),
                       ],
@@ -281,6 +320,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     return Row(
       children: [
         // Search field
+        if(!compress)
         Expanded(
           child: Container(
             height: 40,
@@ -317,7 +357,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
 
         // Person Selector Button
         if (selectedPerson != null)
@@ -390,7 +430,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
               ),
             ),
           ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
 
         // Filters
         FilterButton(
@@ -401,7 +441,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             _loadTransactions();
           },
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
         FilterButton(
           title: 'Type: ${filters[1][type]}',
           options: filters[1],
@@ -410,7 +450,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             _loadTransactions();
           },
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
         FilterButton(
           title: 'Date',
           options: filters[2],
@@ -420,7 +460,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             _loadTransactions();
           },
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
         ScaledContainer(
           scale: 1.2,
           child: TextButton(

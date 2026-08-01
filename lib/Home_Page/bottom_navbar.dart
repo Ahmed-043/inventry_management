@@ -56,7 +56,7 @@ class _BottomNavPanelState extends State<BottomNavPanel> {
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
-        color: MyColors.light,
+        color: MyColors.mainBg,
         boxShadow: [
           BoxShadow(
             blurRadius: 8,

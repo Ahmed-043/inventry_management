@@ -100,7 +100,7 @@ Future<List<ChipData>> loadDashboardChipData(
       trendText: '${formatLargeNumber(incomePeriod.abs())} $msg',
     ),
     ChipData(
-      title: 'Total Purchase',
+      title: 'Total Spending',
       prefix: 'Rs. ',
       value: outAll.abs(),
       trend: outPeriod.abs(),

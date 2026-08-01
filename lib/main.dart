@@ -143,7 +143,7 @@ class MyApp extends StatelessWidget {
 Future<void> loadPreferences() async {
   final prefs = await SharedPreferences.getInstance();
   if( prefs.getInt('productsPerPage') == null ) {
-    await prefs.setInt('productsPerPage', 50);
+    await prefs.setInt('productsPerPage', 1000);
   }
   productsPerPage = prefs.getInt('productsPerPage');
 

@@ -144,6 +144,7 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   Widget build(BuildContext context) {
     compress = MediaQuery.of(context).size.width < 1000;
+    double spacing = compress ? 6 : 12;
     return Padding(
       padding: EdgeInsets.only(top:12 ,right: 12),
       child: Column(
@@ -168,9 +169,47 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          if(compress)
+            ...[
+              SizedBox(height: spacing),
+              Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: MouseRegion(
+
+                  onEnter: (_){
+                    isTextCursor = true;
+                  },
+                  onExit: (_){
+                    isTextCursor = false;
+                  },
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (_) {
+                      _searchTimer?.cancel();
+                      _searchTimer = Timer(const Duration(milliseconds: 500), () {
+                        _loadOrders();
+                      });
+                    },
+                    style: MyFont.medium(14, color: MyColors.textMain),
+                    decoration: InputDecoration(
+                      hintText: 'Search (Order ID, Person, Remarks)',
+                      hintStyle: MyFont.medium(14, color: MyColors.textSecondary),
+                      prefixIcon: const Icon(Icons.search, color: MyColors.textSecondary, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          SizedBox(height: spacing),
           Row(
             children: [
+             if(!compress)
               Expanded(
                 child: Container(
                   height: 40,
@@ -206,7 +245,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing),
 
               /// Person Selector Button
               if (selectedPerson != null)
@@ -279,7 +318,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     ),
                   ),
                 ),
-              const SizedBox(width: 12),
+               SizedBox(width: spacing),
 
               ///Filter Buttons
               FilterButton(
@@ -292,7 +331,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   });
                 },
               ),
-              const SizedBox(width: 12),
+               SizedBox(width: spacing),
               FilterButton(
                 title: 'Type: ${['All', 'Sell', 'Buy'][selected]}',
                 options: const ['All', 'Selling', 'Buying'],
@@ -303,7 +342,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   });
                 },
               ),
-              const SizedBox(width: 12),
+               SizedBox(width: spacing),
               FilterButton(
                 title: 'Date',
                 width: 180,
@@ -316,7 +355,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   _loadOrders();
                 },
               ),
-              const SizedBox(width: 12),
+               SizedBox(width: spacing),
               ScaledContainer(
                 scale: 1.2,
                 child: TextButton(

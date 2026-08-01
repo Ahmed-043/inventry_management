@@ -89,6 +89,103 @@ class _SortMenuState extends State<SortMenu> {
     return 9; // Default fallback
   }
 
+  void _showCategoryDialog({DBCategory? category}) {
+    final controller = TextEditingController(text: category?.name ?? '');
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          title: Text(
+            category == null ? 'Add Category' : 'Edit Category',
+            style: MyFont.bold(20, color: MyColors.dark),
+          ),
+          content: UiHelper.myTextField(
+            controller: controller,
+            label: 'Category Name',
+            autofocus: true,
+          ),
+          actions: [
+           SizedBox(
+             height: 40,
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.end,
+               children: [
+                 Expanded(
+
+                   child: UiHelper.myButton(
+                     callback: () => Navigator.pop(context),
+                     borderRadius: 12,
+                     textSize: 14,
+                     title: "Cancel",
+                   ),
+                 ),
+                 SizedBox(width: 12),
+                 Expanded(
+                   child: UiHelper.myButton(
+                     title: category == null ? 'Add' : 'Update',
+                     filled: true,
+                     borderRadius: 12,
+                     textSize: 14,
+                     callback: () async {
+                       final newName = controller.text.trim();
+                       if (newName.isEmpty) return;
+
+                       final db = currentDB;
+                       if (db == null) return;
+
+                       if (category == null) {
+                         // Add to DB
+                         final newId = await db.insert('categories', {
+                           'name': newName,
+                           'sequence': tempCategories.length + 1,
+                         });
+                         setState(() {
+                           tempCategories.add(DBCategory(
+                             id: newId,
+                             name: newName,
+                             sequence: tempCategories.length + 1,
+                           ));
+                         });
+                       } else {
+                         // Update DB
+                         await db.update(
+                           'categories',
+                           {'name': newName},
+                           where: 'id = ?',
+                           whereArgs: [category.id],
+                         );
+                         setState(() {
+                           final index =
+                           tempCategories.indexWhere((c) => c.id == category.id);
+                           if (index != -1) {
+                             tempCategories[index] = DBCategory(
+                               id: category.id,
+                               name: newName,
+                               sequence: category.sequence,
+                             );
+                           }
+                         });
+                       }
+                       widget.onApply(
+                         tempSortCategory,
+                         tempSortType,
+                         tempCategories,
+                       );
+                       Navigator.pop(context);
+                     },
+                   ),
+                 ),
+               ]
+             ),
+           )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -112,12 +209,23 @@ class _SortMenuState extends State<SortMenu> {
                 children: [
                   // const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Customize sequence',
                         style: MyFont.semiBold(14, color: MyColors.dark),
                       ),
+                      const Spacer(),
+                      if (tempSortCategory == 1)
+                        IconButton(
+                          onPressed: () => _showCategoryDialog(),
+                          tooltip: 'Add Category',
+                          icon: const Icon(
+                            Icons.add,
+                            color: MyColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                      const SizedBox(width: 12),
                       _buildToggleSwitch(
                         value: tempSortCategory == 1,
                         onChanged: (v) {
@@ -177,16 +285,14 @@ class _SortMenuState extends State<SortMenu> {
                         itemBuilder: (context, index) {
                           final cat = tempCategories[index];
                           return ListTile(
-                            contentPadding: EdgeInsets.only(left: 8,right: 24),
+                            contentPadding: const EdgeInsets.only(left: 8, right: 32),
                             key: ValueKey(cat.id),
                             title: Text(
                               cat.name,
                               style: MyFont.normal(14, color: MyColors.dark),
                             ),
                             leading: CircleAvatar(
-                              backgroundColor: MyColors.primary.withOpacity(
-                                0.1,
-                              ),
+                              backgroundColor: MyColors.primary.withAlpha(25),
                               child: Text(
                                 '${index + 1}',
                                 style: MyFont.semiBold(
@@ -195,78 +301,82 @@ class _SortMenuState extends State<SortMenu> {
                                 ),
                               ),
                             ),
-                            trailing: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: Colors.red,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    color: MyColors.primary,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => _showCategoryDialog(category: cat),
                                 ),
-                                onPressed: () async {
-                                  final deletedCat = tempCategories[index];
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  onPressed: () async {
+                                    final deletedCat = tempCategories[index];
 
-                                  final db =
-                                      currentDB; // your Database instance
-                                  if (db == null) return;
+                                    final db = currentDB; // your Database instance
+                                    if (db == null) return;
 
-                                  // 1️⃣ Check if any product is using this category
-                                  final result = await db.rawQuery(
-                                    'SELECT COUNT(*) as count FROM products WHERE category = ?',
-                                    [deletedCat.id],
-                                  );
-
-                                  final count =
-                                      Sqflite.firstIntValue(result) ?? 0;
-
-                                  if (count > 0) {
-                                    // Category is in use
-                                    UiHelper.showToast(
-                                      context,
-                                      'Cannot delete "${deletedCat.name}" — it is assigned to a product.',
-                                        type:3
+                                    // 1️⃣ Check if any product is using this category
+                                    final result = await db.rawQuery(
+                                      'SELECT COUNT(*) as count FROM products WHERE category = ?',
+                                      [deletedCat.id],
                                     );
-                                    return;
-                                  }
-                                  showDeleteDialog(
-                                    context: context,
-                                    onDeleted: () async {
-                                      // 2️⃣ Safe to delete from DB
-                                      await db.delete(
-                                        'categories',
-                                        where: 'id = ?',
-                                        whereArgs: [deletedCat.id],
-                                      );
 
-                                      // 3️⃣ Remove from temp list and re-sequence
-                                      setState(() {
-                                        tempCategories.removeAt(index);
-                                        for (
-                                          int i = 0;
-                                          i < tempCategories.length;
-                                          i++
-                                        ) {
-                                          tempCategories[i] = DBCategory(
-                                            id: tempCategories[i].id,
-                                            name: tempCategories[i].name,
-                                            sequence: i + 1,
-                                          );
-                                        }
-                                      });
-                                      widget.onApply(
-                                        tempSortCategory,
-                                        tempSortType,
-                                        tempCategories,
-                                      );
+                                    final count = Sqflite.firstIntValue(result) ?? 0;
+
+                                    if (count > 0) {
+                                      // Category is in use
                                       UiHelper.showToast(
                                         context,
-                                        'Category "${deletedCat.name}" deleted.', type:3
+                                        'Cannot delete "${deletedCat.name}" — it is assigned to a product.',
+                                        type: 3,
                                       );
-                                    },
-                                  );
-                                },
-                              ),
+                                      return;
+                                    }
+                                    showDeleteDialog(
+                                      context: context,
+                                      onDeleted: () async {
+                                        // 2️⃣ Safe to delete from DB
+                                        await db.delete(
+                                          'categories',
+                                          where: 'id = ?',
+                                          whereArgs: [deletedCat.id],
+                                        );
+
+                                        // 3️⃣ Remove from temp list and re-sequence
+                                        setState(() {
+                                          tempCategories.removeAt(index);
+                                          for (int i = 0; i < tempCategories.length; i++) {
+                                            tempCategories[i] = DBCategory(
+                                              id: tempCategories[i].id,
+                                              name: tempCategories[i].name,
+                                              sequence: i + 1,
+                                            );
+                                          }
+                                        });
+                                        widget.onApply(
+                                          tempSortCategory,
+                                          tempSortType,
+                                          tempCategories,
+                                        );
+                                        UiHelper.showToast(
+                                          context,
+                                          'Category "${deletedCat.name}" deleted.',
+                                          type: 3,
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -309,7 +419,7 @@ class _SortMenuState extends State<SortMenu> {
                   ),
                   const SizedBox(height: 12),
                   _buildDropdown(
-                    label: 'Order',
+                    label: 'Sort Order',
                     value: getDirection(tempSortType),
                     items: const [
                       {'value': 'Asc', 'label': 'Ascending'},
@@ -340,7 +450,7 @@ class _SortMenuState extends State<SortMenu> {
                     title: 'Shape',
                     subtitle: 'Select Shape of Products',
                     child: SizedBox(
-                      height: 40,
+                      height: 30,
                       child: Row(
                         children: [
                           Expanded(
@@ -398,7 +508,7 @@ class _SortMenuState extends State<SortMenu> {
                     title: 'Size',
                     subtitle: 'Change Size of Products',
                     child: SizedBox(
-                      height: 40,
+                      height: 30,
                       child: Row(
                         children: [
                           const Expanded(child: const SizedBox()),
@@ -458,7 +568,7 @@ class _SortMenuState extends State<SortMenu> {
         children: [
           Text(title, style: MyFont.bold(16, color: MyColors.dark)),
           Text(subtitle, style: MyFont.normal(12, color: MyColors.grey)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           child,
         ],
       ),

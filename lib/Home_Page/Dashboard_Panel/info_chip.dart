@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:inventry_management/Database/database.dart';
-import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../../Shared_Widgets/fonts.dart';
-import '../../Shared_Widgets/main_ui_helper.dart';
 import '../../colors.dart';
 
 class ChipData {
@@ -118,18 +115,29 @@ class _DashboardChip extends StatelessWidget {
     Color iconColor;
     Color iconBgColor;
 
-    if (data.title.toLowerCase().contains('purchase') || data.title.toLowerCase().contains('sales') || data.title.toLowerCase().contains('income')) {
+    if (data.title.toLowerCase().contains('purchase') || data.title.toLowerCase().contains('sales')) {
       icon = Icons.shopping_cart_outlined;
-      iconColor = const Color(0xFF4318FF);
+      iconColor = MyColors.primary;
       iconBgColor = const Color(0xFFF4F7FE);
-    } else if (data.title.toLowerCase().contains('order')) {
-      icon = Icons.access_time_rounded;
-      iconColor = const Color(0xFFFFB547);
-      iconBgColor = const Color(0xFFFFF8ED);
-    } else {
-      icon = Icons.warning_amber_rounded;
-      iconColor = const Color(0xFF01B574);
+    }
+    else if(data.title.toLowerCase().contains('income') || data.title.toLowerCase().contains('spending')){
+      icon = Icons.attach_money_rounded;
+      iconColor = MyColors.success;
       iconBgColor = const Color(0xFFE6FAF5);
+    }
+    else if (data.title.toLowerCase().contains('order')) {
+      icon = Icons.access_time_rounded;
+      iconColor = MyColors.primary;
+      iconBgColor = const Color(0xFFFFF8ED);
+    } else if(data.title.toLowerCase().contains('pending') || data.title.toLowerCase().contains('low')){
+      icon = Icons.warning_amber_rounded;
+      iconColor = MyColors.warning;
+      iconBgColor = const Color(0xFFFFF8ED);
+    }
+    else{
+      icon = Icons.warning_amber_rounded;
+      iconColor = MyColors.error;
+      iconBgColor = const Color(0xFFFFEDED);
     }
 
     return Container(

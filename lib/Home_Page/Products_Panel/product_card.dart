@@ -30,13 +30,13 @@ class _ProductCardState extends State<ProductCard> {
   final formatter = NumberFormat('#,##0');
   bool _isHovered = false;
 
-  Widget _statusPill(String text, Color bgColor, Color textColor,double factor) {
+  Widget _statusPill(String text, Color bgColor, Color textColor,double factor, {String? hero}) {
     return Hero(
-      tag: "product_${widget.product.id}_low_stock",
+      tag: hero ?? "product_${widget.product.id}_low_stock",
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding:  EdgeInsets.symmetric(horizontal: (12 * factor), vertical: (4* factor) ),
+          padding:  EdgeInsets.symmetric(horizontal: (6 * factor), vertical: (3* factor) ),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(8),
@@ -164,14 +164,12 @@ class _ProductCardState extends State<ProductCard> {
                     children: [
                       if (widget.product.categoryName != null && sortCategory == 0)
                         ...[
-                          Hero(
-                            tag: "product_${widget.product.id}_category",
-                            child: _statusPill(
-                                widget.product.categoryName!,
-                                const Color(0xFFF4F7FE),
-                                MyColors.sidebarSelected,
-                                factor
-                            ),
+                          _statusPill(
+                              widget.product.categoryName!,
+                              const Color(0xFFF4F7FE),
+                              MyColors.sidebarSelected,
+                              factor,
+                            hero: "product_${widget.product.id}_category"
                           ),
                         const SizedBox(width: 8),
                         ],
@@ -280,7 +278,18 @@ class _ProductCardState extends State<ProductCard> {
                 children: [
                   Row(
                     children: [
-                      Flexible(child: _stockPill(factor)),
+                      if (widget.product.categoryName != null && sortCategory == 0)
+                        ...[
+                          _statusPill(
+                              widget.product.categoryName!,
+                              const Color(0xFFF4F7FE),
+                              MyColors.sidebarSelected,
+                              factor*1.25,
+                              hero: "product_${widget.product.id}_category"
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      Flexible(child: _stockPill(factor*1.25)),
                     ],
                   ),
                   SizedBox(height: 4 * factor),
