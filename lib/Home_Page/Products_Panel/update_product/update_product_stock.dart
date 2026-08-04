@@ -394,12 +394,12 @@ class _UpdateProductStockState extends State<UpdateProductStock> {
         if (b.isNotEmpty) {
           return;
         } else {
-          await updateAndDeductDirectComponentsOnly(a, currentDB!);
+          await updateAndDeductDirectComponentsOnly(a, currentDB!, productName: product?.name ?? "");
           UiHelper.showToast(context, "Stock Updated Successfully", type: 1);
         }
         close();
       } else {
-        await updateAndDeductDirectComponentsOnly(a, currentDB!);
+        await updateAndDeductDirectComponentsOnly(a, currentDB!, productName: product?.name ?? "");
         close();
         UiHelper.showToast(context, "Stock Updated Successfully", type: 1);
       }

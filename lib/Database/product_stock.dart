@@ -131,6 +131,7 @@ Future<Map<int, int>> getRequiredStock(
 Future<void> updateAndDeductDirectComponentsOnly(
     Map<int, int> orderMap,
     Database db,
+    {String productName = ""}
     ) async {
   print("DEDUCTING DIRECT COMPONENTS ONLY");
 
@@ -200,7 +201,7 @@ Future<void> updateAndDeductDirectComponentsOnly(
         stockBefore: stockBefore,
         stockAfter: stockAfter,
         timestamp: now,
-        remark: 'Component usage for assembly',
+        remark: 'Component usage for assembly: $productName',
       );
       await txn.insert('inventory_movements', movement.toMap());
     }
