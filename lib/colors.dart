@@ -26,7 +26,7 @@ class MyColors {
 
   static const Color sidebarBg = Color(0xFF15192C);
   static const Color sidebarSelected = Color(0xFF3B62FF);
-  static const Color mainBg = Color(0xFFE7ECF8);
+  static const Color mainBg = Color(0xFFD7DFF1);
   static const Color cardBg = Color(0xFFFFFFFF);
   static const Color textMain = Color(0xFF1B2559);
   static const Color textSecondary = Color(0xFFA3AED0);
