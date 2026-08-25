@@ -26,7 +26,7 @@ class ReportsConstants {
   static const int minDateYear = 2000;
 
   // Border styling
-  static const double borderWidth = 0.5;
+  static const double borderWidth = 0.8;
 
   // Export settings
   static const String csvDateFormat = 'dd MMM';
