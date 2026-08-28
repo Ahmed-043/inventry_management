@@ -10,8 +10,8 @@ import '../../colors.dart';
 class ReportsConstants {
   // Table dimensions
   static const double productColWidth = 150;
-  static const double dataColWidth = 120;
-  static const double totalValueWidth = 135;
+  static const double dataColWidth = 100;
+  static const double totalValueWidth = 120;
   static const double rowHeight = 60;
   static const double headerHeight = 50;
 

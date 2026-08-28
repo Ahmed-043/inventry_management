@@ -11,7 +11,7 @@ import 'dart:io' show Platform;
 import 'Shared_Widgets/app_cursor_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'utils/linux_dependencies.dart';
-//
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<double> uiScaleNotifier = ValueNotifier<double>(1.0);
 final ValueNotifier<bool> performanceModeNotifier = ValueNotifier<bool>(false);

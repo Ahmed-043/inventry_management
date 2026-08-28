@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
-import '../../Database/Reports_Data/export_database.dart';
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
 import '../../Database/category.dart';
 import '../../Database/database.dart';
@@ -35,49 +34,17 @@ class _ReportsPageState extends State<ReportsPage> {
       .month, 1);
   DateTime _toDate = DateTime.now();
 
-  // Scroll controllers to keep left (product) and right (data) lists vertically
-  final ScrollController _leftController = ScrollController();
-  final ScrollController _rightController = ScrollController();
-  bool _isSyncingScroll = false;
-
+  // Removed manual scroll controllers as TableView handles scrolling internally.
+  
   @override
   void initState() {
     super.initState();
-    // Sync vertical scrolling between left and right lists so the product column stays aligned
-    _leftController.addListener(() {
-      if (_isSyncingScroll) return;
-      _isSyncingScroll = true;
-      if (_rightController.hasClients) {
-        final offset = _leftController.offset.clamp(
-          _rightController.position.minScrollExtent,
-          _rightController.position.maxScrollExtent,
-        );
-        _rightController.jumpTo(offset);
-      }
-      _isSyncingScroll = false;
-    });
-
-    _rightController.addListener(() {
-      if (_isSyncingScroll) return;
-      _isSyncingScroll = true;
-      if (_leftController.hasClients) {
-        final offset = _rightController.offset.clamp(
-          _leftController.position.minScrollExtent,
-          _leftController.position.maxScrollExtent,
-        );
-        _leftController.jumpTo(offset);
-      }
-      _isSyncingScroll = false;
-    });
-
     _loadCategories();
     _loadData();
   }
 
   @override
   void dispose() {
-    _leftController.dispose();
-    _rightController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
@@ -203,17 +170,15 @@ class _ReportsPageState extends State<ReportsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             _searchbar(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 15),
             Expanded(
               child: _isLoading
                   ? emptyState()
                   : ReportsTable(
                     matrix: _matrix!,
                     stockValues: _stockValues ?? [],
-                    leftController: _leftController,
-                    rightController: _rightController,
                     db: currentDB,
                     onChange: () {
                       _loadData();

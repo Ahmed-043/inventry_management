@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/reports_utils.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/stock_movements.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
 import '../../Shared_Widgets/app_cursor_overlay.dart';
 import '../../Shared_Widgets/fonts.dart';
@@ -12,23 +12,10 @@ import '../../Shared_Widgets/main_ui_helper.dart';
 import '../../colors.dart';
 import '../Products_Panel/update_product/update_product_stock.dart';
 
-/// Custom ScrollBehavior to enable mouse dragging and other devices
-class ReportsScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-        PointerDeviceKind.stylus,
-      };
-}
-
-/// Builds the reports table widget with synchronized scrolling and "grab to move" support
+/// Builds the reports table widget using a virtualized 2D TableView.
 class ReportsTable extends StatefulWidget {
   final List<StockSnapshotRow> matrix;
   final List<ProductStockValue> stockValues;
-  final ScrollController leftController;
-  final ScrollController rightController;
   final Database? db;
   final VoidCallback onChange;
 
@@ -36,8 +23,6 @@ class ReportsTable extends StatefulWidget {
     super.key,
     required this.matrix,
     required this.stockValues,
-    required this.leftController,
-    required this.rightController,
     this.db,
     required this.onChange,
   });
@@ -47,17 +32,14 @@ class ReportsTable extends StatefulWidget {
 }
 
 class _ReportsTableState extends State<ReportsTable> {
+  final ScrollController _verticalController = ScrollController();
   final ScrollController _horizontalController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_horizontalController.hasClients) {
-        //_horizontalController.jumpTo(_horizontalController.position.maxScrollExtent);
-
-       // Or use animation:
         _horizontalController.animateTo(
           _horizontalController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 500),
@@ -69,6 +51,7 @@ class _ReportsTableState extends State<ReportsTable> {
 
   @override
   void dispose() {
+    _verticalController.dispose();
     _horizontalController.dispose();
     super.dispose();
   }
@@ -76,17 +59,12 @@ class _ReportsTableState extends State<ReportsTable> {
   @override
   Widget build(BuildContext context) {
     if (widget.matrix.isEmpty) return const Center(child: Text('No Data'));
-    final List<DateTime> days = widget.matrix.first.dailyStock.map((e) => e.date).toList();
 
+    final List<DateTime> days = widget.matrix.first.dailyStock.map((e) => e.date).toList();
     final Map<int, ProductStockValue> stockValueMap = {
       for (var v in widget.stockValues) v.productId: v
     };
-
     final double grandTotalValue = widget.stockValues.fold(0, (sum, item) => sum + item.totalValue);
-
-    // Only Date columns + Current Stock column
-    final double totalDataWidth =
-        ReportsConstants.dataColWidth * (days.length + 1);
 
     final Set<int> categoryChangeIndices = {};
     for (int i = 1; i < widget.matrix.length; i++) {
@@ -95,455 +73,213 @@ class _ReportsTableState extends State<ReportsTable> {
       }
     }
 
+    final int columnCount = 3 + days.length + 1; // Product, Price, Total + Days + Current
+    final int rowCount = widget.matrix.length + 1; // Header + Data
 
-    return ScrollConfiguration(
-      behavior: ReportsScrollBehavior(),
-      child: Container(
-        decoration: UiHelper.myDecoration(
-        ),
-        margin: const EdgeInsets.only(bottom: 10, right: 10),
-        clipBehavior: Clip.antiAlias,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _FrozenProductColumn(
-              matrix: widget.matrix,
-              controller: widget.leftController,
-              stockValueMap: stockValueMap,
-              grandTotalValue: grandTotalValue,
-              horizontalController: _horizontalController,
-              categoryChangeIndices: categoryChangeIndices,
+    return Container(
+      decoration: UiHelper.myDecoration(),
+      margin: const EdgeInsets.only(bottom: 5),
+      clipBehavior: Clip.antiAlias,
+      child: TableView.builder(
+        verticalDetails: ScrollableDetails.vertical(controller: _verticalController),
+        horizontalDetails: ScrollableDetails.horizontal(controller: _horizontalController),
+        diagonalDragBehavior: DiagonalDragBehavior.free,
+        rowCount: rowCount,
+        columnCount: columnCount,
+        pinnedRowCount: 1,
+        pinnedColumnCount: 3,
+        columnBuilder: (index) {
+          double width = ReportsConstants.dataColWidth;
+          if (index == 0) width = ReportsConstants.productColWidth;
+          if (index == 2) width = ReportsConstants.totalValueWidth;
+          if (index >  2) width = ReportsConstants.dataColWidth + 20;
+          return TableSpan(
+            extent: FixedTableSpanExtent(width),
+            foregroundDecoration: TableSpanDecoration(
+              border: TableSpanBorder(
+                trailing: BorderSide(
+                  color: MyColors.lightGrey,
+                  width: ReportsConstants.borderWidth,
+                ),
+              ),
             ),
-            _ScrollableDataArea(
-              db: widget.db,
-              matrix: widget.matrix,
-              days: days,
-              totalDataWidth: totalDataWidth,
-              controller: widget.rightController,
-              horizontalController: _horizontalController,
-              onChange: widget.onChange,
-              categoryChangeIndices: categoryChangeIndices,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Frozen left column displaying product names, unit price and total value
-class _FrozenProductColumn extends StatelessWidget {
-  final List<StockSnapshotRow> matrix;
-  final ScrollController controller;
-  final Map<int, ProductStockValue> stockValueMap;
-  final double grandTotalValue;
-  final ScrollController horizontalController;
-  final Set<int> categoryChangeIndices;
-
-  const _FrozenProductColumn({
-    required this.matrix,
-    required this.controller,
-    required this.stockValueMap,
-    required this.grandTotalValue,
-    required this.horizontalController,
-    required this.categoryChangeIndices,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double totalWidth = ReportsConstants.productColWidth +
-        ReportsConstants.dataColWidth +
-        ReportsConstants.totalValueWidth;
-    return SizedBox(
-      width: totalWidth,
-      child: GestureDetector(
-        onHorizontalDragUpdate: (details) {
-          if (horizontalController.hasClients) {
-            horizontalController.jumpTo(
-              (horizontalController.offset - details.delta.dx).clamp(
-                horizontalController.position.minScrollExtent,
-                horizontalController.position.maxScrollExtent,
+          );
+        },
+        rowBuilder: (index) {
+          if (index == 0) {
+            return TableSpan(
+              extent: const FixedTableSpanExtent(ReportsConstants.headerHeight),
+              backgroundDecoration: TableSpanDecoration(
+                color: MyColors.blue.withAlpha(20),
+              ),
+              foregroundDecoration: const TableSpanDecoration(
+                border: TableSpanBorder(
+                  trailing: BorderSide(
+                    color: MyColors.lightGrey,
+                    width: ReportsConstants.borderWidth,
+                  ),
+                ),
               ),
             );
           }
+          
+          bool hasSeparator = categoryChangeIndices.contains(index - 1);
+          double height = ReportsConstants.rowHeight + (hasSeparator ? 0.7 : 0);
+          
+          return TableSpan(
+            extent: FixedTableSpanExtent(height),
+            foregroundDecoration: TableSpanDecoration(
+              border: TableSpanBorder(
+                trailing: BorderSide(
+                  color: MyColors.lightGrey,
+                  width: ReportsConstants.borderWidth,
+                ),
+                leading: hasSeparator 
+                    ? BorderSide(color: MyColors.info.withAlpha(150), width: 0.7)
+                    : BorderSide.none,
+              ),
+            ),
+
+          );
         },
-        child: Column(
-          children: [
-            // Header
-            GestureDetector(
-              onVerticalDragUpdate: (details) {
-                if (controller.hasClients) {
-                  controller.jumpTo(
-                    (controller.offset - details.delta.dy).clamp(
-                      controller.position.minScrollExtent,
-                      controller.position.maxScrollExtent,
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                height: ReportsConstants.headerHeight,
-                decoration: BoxDecoration(
-                  color: MyColors.blue.withAlpha(20),
-                  border: Border(
-                    right: BorderSide(
-                      color: MyColors.lightGrey,
-                      width: ReportsConstants.borderWidth,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: ReportsConstants.productColWidth,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          right: BorderSide(
-                            color: MyColors.lightGrey,
-                            width: ReportsConstants.borderWidth,
-                          ),
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Product',
-                        style: MyFont.semiBold(16, color: MyColors.darkBlue),
-                      ),
-                    ),
-                    ReportsCellBuilder.buildCell(
-                      'Unit Price',
-                      ReportsConstants.dataColWidth,
-                      isHeader: true,
-                    ),
-                    Container(
-                      width: ReportsConstants.totalValueWidth - 1,
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      alignment: Alignment.centerLeft,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          right: BorderSide(
-                            color: MyColors.lightGrey,
-                            width: ReportsConstants.borderWidth,
-                          ),
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Total Value\n${NumberFormat.decimalPattern().format(grandTotalValue)}',
-                          style: MyFont.semiBold(14, color: MyColors.darkBlue),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Body
-            Expanded(
-              child: ScrollConfiguration(
-                behavior: ReportsScrollBehavior().copyWith(scrollbars: false),
-                child: ListView.builder(
-                  controller: controller,
-                  itemCount: matrix.length,
-                  itemBuilder: (context, index) {
-                    final row = matrix[index];
-                    bool change = categoryChangeIndices.contains(index);
+        cellBuilder: (context, vicinity) {
+          final int row = vicinity.row;
+          final int col = vicinity.column;
 
-                    final stockVal = stockValueMap[row.productId];
-                    return Column(
-                      children: [
-                        if(change)
-                          Container(
-                            height: 0.7,
-                            color: MyColors.info.withAlpha(150),
-                          ),
-                        Container(
-                          height: ReportsConstants.rowHeight,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: MyColors.lightGrey,
-                                width: ReportsConstants.borderWidth,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: ReportsConstants.productColWidth,
-                                alignment: Alignment.centerLeft,
-                                padding: const EdgeInsets.symmetric(horizontal: 15),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    right: BorderSide(
-                                      color: MyColors.lightGrey,
-                                      width: ReportsConstants.borderWidth,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  row.productName,
-                                  style: MyFont.semiBold(13, color: MyColors.darkBlue),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              ReportsCellBuilder.buildCell(
-                                NumberFormat.decimalPattern().format(stockVal?.basePrice ?? 0.0),
-                                ReportsConstants.dataColWidth,
-                                bold: true,
-                              ),
-                              ReportsCellBuilder.buildCell(
-                                NumberFormat.decimalPattern().format(stockVal?.totalValue ?? 0.0),
-                                ReportsConstants.totalValueWidth,
-                                bold: true,
-                              ),
-                            ],
-                          ),
-                        ),
+          if (row == 0) {
+            return TableViewCell(child: _buildHeaderCell(col, days, grandTotalValue));
+          }
 
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          final int matrixIndex = row - 1;
+          final stockRow = widget.matrix[matrixIndex];
+          final stockVal = stockValueMap[stockRow.productId];
 
-/// Horizontally scrollable data area
-class _ScrollableDataArea extends StatelessWidget {
-  final Database? db;
-  final List<StockSnapshotRow> matrix;
-  final List<DateTime> days;
-  final double totalDataWidth;
-  final ScrollController controller;
-  final ScrollController horizontalController;
-  final VoidCallback onChange;
-  final Set<int> categoryChangeIndices;
-
-  const _ScrollableDataArea({
-    required this.db,
-    required this.matrix,
-    required this.days,
-    required this.totalDataWidth,
-    required this.controller,
-    required this.horizontalController,
-    required this.onChange,
-    required this.categoryChangeIndices,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Scrollbar(
-        controller: horizontalController,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: horizontalController,
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: totalDataWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DataHeader(days: days, verticalController: controller),
-                _DataBody(
-                  db: db,
-                  matrix: matrix,
-                  days: days,
-                  controller: controller,
-                  onChange: onChange,
-                  categoryChangeIndices: categoryChangeIndices,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Header row for data columns
-class _DataHeader extends StatelessWidget {
-  final List<DateTime> days;
-  final ScrollController verticalController;
-
-  const _DataHeader({required this.days, required this.verticalController});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onVerticalDragUpdate: (details) {
-        if (verticalController.hasClients) {
-          verticalController.jumpTo(
-            (verticalController.offset - details.delta.dy).clamp(
-              verticalController.position.minScrollExtent,
-              verticalController.position.maxScrollExtent,
+          return TableViewCell(
+            child: _buildDataCell(
+              context,
+              col,
+              stockRow,
+              stockVal,
+              days,
             ),
           );
-        }
-      },
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeaderCell(int col, List<DateTime> days, double grandTotalValue) {
+    String text = '';
+    if (col == 0) {
+      text = 'Product';
+    } else if (col == 1) {
+      text = 'Unit Price';
+    } else if (col == 2) {
+      text = 'Total Value\n${NumberFormat.decimalPattern().format(grandTotalValue)}';
+    } else if (col < 3 + days.length) {
+      text = DateFormat('dd MMM yy').format(days[col - 3]);
+    } else {
+      text = 'Current';
+    }
+
+    return Tooltip(
+      textStyle: MyFont.semiBold(16, color: MyColors.translucent) ,
+      message: col == 2 ? NumberFormat.decimalPattern().format(grandTotalValue) : '',
       child: Container(
-        height: ReportsConstants.headerHeight,
-        color: MyColors.blue.withAlpha(20),
-        child: Row(
-          children: [
-            ...days.map(
-              (d) => ReportsCellBuilder.buildCell(
-                DateFormat('dd MMM yy').format(d),
-                ReportsConstants.dataColWidth,
-                isHeader: true,
-              ),
-            ),
-            ReportsCellBuilder.buildCell(
-              'Current',
-              ReportsConstants.dataColWidth,
-              isHeader: true,
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: MyFont.semiBold(col == 2 ? 14 : 14, color: MyColors.darkBlue),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
   }
+
+  Widget _buildDataCell(
+    BuildContext context,
+    int col,
+    StockSnapshotRow row,
+    ProductStockValue? stockVal,
+    List<DateTime> days,
+  ) {
+    if (col == 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          row.productName,
+          style: MyFont.semiBold(13, color: MyColors.darkBlue),
+          maxLines: 3,
+        ),
+      );
+    } else if (col == 1) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        alignment: Alignment.center,
+        child: Text(
+          NumberFormat.decimalPattern().format(stockVal?.basePrice ?? 0.0),
+          style: MyFont.semiBold(14, color: MyColors.darkBlue),
+        ),
+      );
+    } else if (col == 2) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        alignment: Alignment.center,
+        child: Text(
+          NumberFormat.decimalPattern().format(stockVal?.totalValue ?? 0.0),
+          style: MyFont.semiBold(14, color: MyColors.darkBlue),
+        ),
+      );
+    } else if (col < 3 + days.length) {
+      final info = row.dailyStock[col - 3];
+      return _VirtualizedDataCell(
+        db: widget.db,
+        productId: row.productId,
+        productName: row.productName,
+        date: info.date,
+        info: info,
+        limit: row.lowStockLimit,
+        originalLowStock: row.originalLowStock,
+        onChange: widget.onChange,
+      );
+    } else {
+      return _VirtualizedCurrentStockCell(
+        stock: row.currentStock,
+        limit: row.lowStockLimit,
+        originalLowStock: row.originalLowStock,
+        productId: row.productId,
+        onChange: widget.onChange,
+      );
+    }
+  }
 }
 
-/// Body rows for data
-class _DataBody extends StatelessWidget {
+class _VirtualizedDataCell extends StatelessWidget {
   final Database? db;
-  final List<StockSnapshotRow> matrix;
-  final List<DateTime> days;
-  final ScrollController controller;
+  final int productId;
+  final String productName;
+  final DateTime date;
+  final DayStockInfo info;
+  final int limit;
+  final int originalLowStock;
   final VoidCallback onChange;
-  final Set<int> categoryChangeIndices;
 
-  const _DataBody({
+  const _VirtualizedDataCell({
     required this.db,
-    required this.matrix,
-    required this.days,
-    required this.controller,
+    required this.productId,
+    required this.productName,
+    required this.date,
+    required this.info,
+    required this.limit,
+    required this.originalLowStock,
     required this.onChange,
-    required this.categoryChangeIndices,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ListView.builder(
-        controller: controller,
-        itemCount: matrix.length,
-        itemBuilder: (context, rowIndex) {
-          final row = matrix[rowIndex];
-          bool change = categoryChangeIndices.contains(rowIndex);
-          return Column(
-            children: [
-              if(change)
-                Container(
-                  height: 0.7,
-                  color: MyColors.info.withAlpha(150),
-                ),
-              Container(
-                height: ReportsConstants.rowHeight,
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: MyColors.lightGrey,
-                      width: ReportsConstants.borderWidth,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    ...row.dailyStock.map(
-                      (info) => ReportsCellBuilder.buildDataCell(
-                        context: context,
-                        db: db,
-                        productId: row.productId,
-                        productName: row.productName,
-                        date: info.date,
-                        info: info,
-                        width: ReportsConstants.dataColWidth,
-                        limit: row.lowStockLimit,
-                        originalLowStock: row.originalLowStock,
-                        onChange: onChange,
-                      ),
-                    ),
-                    ReportsCellBuilder.buildCurrentStockCell(
-                      row.currentStock,
-                      ReportsConstants.dataColWidth,
-                      row.lowStockLimit,
-                      row.originalLowStock,
-                      row.productId,
-                      context,
-                      onChange,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Cell builders for the Reports table
-class ReportsCellBuilder {
-  /// Build a generic table cell with text
-  static Widget buildCell(
-    String text,
-    double width, {
-    bool isHeader = false,
-    Alignment alignment = Alignment.center,
-    double padding = 5,
-    bool bold = false,
-  }) {
-    return Container(
-      width: width,
-      height: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: padding),
-      alignment: alignment,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(
-            color: MyColors.lightGrey,
-            width: ReportsConstants.borderWidth,
-          ),
-        ),
-      ),
-      child: Text(
-        text,
-        style: isHeader
-            ? MyFont.semiBold(16, color: MyColors.darkBlue)
-            : bold
-                ? MyFont.semiBold(14, color: MyColors.darkBlue)
-                : MyFont.normal(14, color: MyColors.darkBlue),
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-
-  /// Build a data cell with stock information
-  static Widget buildDataCell(
-    {
-    required BuildContext context,
-    required Database? db,
-    required int productId,
-    required String productName,
-    required DateTime date,
-    required DayStockInfo info,
-    required double width,
-    required int limit,
-    required int originalLowStock,
-    required VoidCallback onChange,
-  }
-  ) {
     final textColor = ReportsUtils.getTextColor(info.stockAtEnd, limit, originalLowStock);
     String sp = "${info.sold.toStringAsFixed(0)}${info.purchased.toStringAsFixed(0)}";
 
@@ -553,84 +289,63 @@ class ReportsCellBuilder {
         onTap: db == null
             ? null
             : () {
-          getProductMovementsForDate(
-            db,
-            productId: productId,
-            date: date,
-          ).then((value){
-            if (!context.mounted) return;
-            UiHelper.pushPage(
-              context: context,
-              opaque: false,
-              barrierDismissible: true,
-              instantOpen: true,
-              page: StockMovements(
-                movements: value,
-                productId: productId,
-                productName: productName,
-                date: date,
-                onChange: onChange,
-              ),
-            );
-          });
-        },
+                getProductMovementsForDate(db!, productId: productId, date: date).then((value) {
+                  if (!context.mounted) return;
+                  UiHelper.pushPage(
+                    context: context,
+                    opaque: false,
+                    barrierDismissible: true,
+                    instantOpen: true,
+                    page: StockMovements(
+                      movements: value,
+                      productId: productId,
+                      productName: productName,
+                      date: date,
+                      onChange: onChange,
+                    ),
+                  );
+                });
+              },
         child: MouseRegion(
           cursor: db == null ? MouseCursor.defer : SystemMouseCursors.click,
-          onEnter: (_){
-            isClickable =true;
-          },
-          onExit: (_) {
-            isClickable = false;
-          },
-        child: Container(
-            width: width,
-            height: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              border: Border(
-                right: BorderSide(
-                  color: MyColors.lightGrey,
-                  width: ReportsConstants.borderWidth,
-                ),
-              ),
-            ),
-            child: Center(
-              child: RichText(
-                textAlign: TextAlign.center,
-                softWrap: true,
-                text: TextSpan(
-                  children: [
+          onEnter: (_) => isClickable = true,
+          onExit: (_) => isClickable = false,
+          child: Center(
+            child: RichText(
+              textAlign: TextAlign.center,
+              softWrap: true,
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: info.stockAtEnd == 0 ? '__' : info.stockAtEnd.toStringAsFixed(0),
+                    style: MyFont.bold(15, color: textColor),
+                  ),
+                  if (info.sold != 0 || info.purchased != 0)
                     TextSpan(
-                      text: info.stockAtEnd == 0 ? '__' : info.stockAtEnd.toStringAsFixed(0),
-                      style: MyFont.bold(15, color: textColor),
+                      text: '\n',
+                      style: MyFont.normal(12, color: MyColors.black),
                     ),
-                    if (info.sold != 0 || info.purchased != 0)
-                      TextSpan(
-                        text: '\n',
-                        style: MyFont.normal(12, color: MyColors.black),
-                      ),
-                    if (info.sold != 0)
-                      TextSpan(
-                        text: 'Sell: -${info.sold.toStringAsFixed(0)}',
-                        style: MyFont.normal(12, color: MyColors.black),
-                      ),
-                    if (info.sold != 0 && info.purchased != 0)
-                      TextSpan(
-                        text: (sp.length > 8) ? '\n' : ' | ',
-                        style: MyFont.normal(12, color: MyColors.black),
-                      ),
-                    if (info.purchased != 0)
-                      TextSpan(
-                        text: 'Buy: +${info.purchased.toStringAsFixed(0)}',
-                        style: MyFont.normal(12, color: MyColors.black),
-                      ),
-                    if (info.adjustment != 0)
-                      TextSpan(
-                        text: '\nAdj: ${info.adjustment > 0 ? '+' : ''}${info.adjustment.toStringAsFixed(0)}',
-                        style: MyFont.normal(14, color: MyColors.black),
-                      ),
-                  ],
-                ),
+                  if (info.sold != 0)
+                    TextSpan(
+                      text: 'Sell: -${info.sold.toStringAsFixed(0)}',
+                      style: MyFont.normal(12, color: MyColors.black),
+                    ),
+                  if (info.sold != 0 && info.purchased != 0)
+                    TextSpan(
+                      text: (sp.length > 8) ? '\n' : ' | ',
+                      style: MyFont.normal(12, color: MyColors.black),
+                    ),
+                  if (info.purchased != 0)
+                    TextSpan(
+                      text: 'Buy: +${info.purchased.toStringAsFixed(0)}',
+                      style: MyFont.normal(12, color: MyColors.black),
+                    ),
+                  if (info.adjustment != 0)
+                    TextSpan(
+                      text: '\nAdj: ${info.adjustment > 0 ? '+' : ''}${info.adjustment.toStringAsFixed(0)}',
+                      style: MyFont.normal(14, color: MyColors.black),
+                    ),
+                ],
               ),
             ),
           ),
@@ -638,55 +353,45 @@ class ReportsCellBuilder {
       ),
     );
   }
+}
 
-  /// Build a current stock cell
-  static Widget buildCurrentStockCell(
-    double stock,
-    double width,
-    int limit,
-    int originalLowStock,
-    int productId,
-    BuildContext context,
-    VoidCallback onChange,
-  ) {
+class _VirtualizedCurrentStockCell extends StatelessWidget {
+  final double stock;
+  final int limit;
+  final int originalLowStock;
+  final int productId;
+  final VoidCallback onChange;
+
+  const _VirtualizedCurrentStockCell({
+    required this.stock,
+    required this.limit,
+    required this.originalLowStock,
+    required this.productId,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final textColor = ReportsUtils.getTextColor(stock, limit, originalLowStock);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () =>  UiHelper.pushPage(
+        onTap: () => UiHelper.pushPage(
           context: context,
           opaque: false,
           barrierColor: Colors.black54,
           barrierDismissible: true,
-
-          page:  UpdateProductStock(
+          page: UpdateProductStock(
             id: productId,
-            onSave: () {
-              onChange();
-            },
+            onSave: onChange,
           ),
         ),
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
-          onEnter: (_){
-            isClickable =true;
-          },
-          onExit: (_) {
-            isClickable = false;
-          },
-          child: Container(
-            width: width,
-            height: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              border: Border(
-                right: BorderSide(
-                  color: MyColors.lightGrey,
-                  width: ReportsConstants.borderWidth,
-                ),
-              ),
-            ),
+          onEnter: (_) => isClickable = true,
+          onExit: (_) => isClickable = false,
+          child: Center(
             child: Text(
               NumberFormat.decimalPattern().format(stock),
               style: MyFont.bold(16, color: textColor),
