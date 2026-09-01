@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
@@ -139,6 +140,26 @@ class _ReportsPageState extends State<ReportsPage> {
       },
     );
   }
+
+  /// Handle date scrolling increment/decrement
+  void _onDateScroll(int delta, bool isFromDate) {
+    setState(() {
+      if (isFromDate) {
+        final newDate = _fromDate.add(Duration(days: delta));
+        // Clamp to min date and _toDate
+        if (newDate.isBefore(DateTime(ReportsConstants.minDateYear))) return;
+        if (newDate.isAfter(_toDate)) return;
+        _fromDate = newDate;
+      } else {
+        final newDate = _toDate.add(Duration(days: delta));
+        // Clamp to _fromDate and now
+        if (newDate.isBefore(_fromDate)) return;
+        if (newDate.isAfter(DateTime.now())) return;
+        _toDate = newDate;
+      }
+    });
+    _onSearchChanged(); // Reuse debounce for loading data
+  }
   double padding = 10;
 
   @override
@@ -267,11 +288,13 @@ class _ReportsPageState extends State<ReportsPage> {
         _DateButton(
           label: 'From: ${DateFormat('dd MMM yyyy').format(_fromDate)}',
           onTap: _selectFromDate,
+          onScroll: (delta) => _onDateScroll(delta, true),
         ),
         const SizedBox(width: 8),
         _DateButton(
           label: 'To: ${DateFormat('dd MMM yyyy').format(_toDate)}',
           onTap: _selectToDate,
+          onScroll: (delta) => _onDateScroll(delta, false),
         ),
         const SizedBox(width: 12),
         ScaledContainer(
@@ -343,36 +366,49 @@ class _ReportsPageState extends State<ReportsPage> {
 class _DateButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
+  final ValueChanged<int>? onScroll;
 
   const _DateButton({
     required this.label,
     required this.onTap,
+    this.onScroll,
   });
 
   @override
   Widget build(BuildContext context) {
     return ScaledContainer(
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: MyFont.medium(14, color: MyColors.textMain),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),
-              ],
+      child: Listener(
+        onPointerSignal: (pointerSignal) {
+          if (pointerSignal is PointerScrollEvent && onScroll != null) {
+            if (pointerSignal.scrollDelta.dy < 0) {
+              onScroll!(1); // Scroll up -> Increase day
+            } else if (pointerSignal.scrollDelta.dy > 0) {
+              onScroll!(-1); // Scroll down -> Decrease day
+            }
+          }
+        },
+        child: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: MyFont.medium(14, color: MyColors.textMain),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),
+                ],
+              ),
             ),
           ),
         ),

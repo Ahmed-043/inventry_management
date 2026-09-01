@@ -95,7 +95,7 @@ class _ReportsTableState extends State<ReportsTable> {
         child: TableView.builder(
           verticalDetails: ScrollableDetails.vertical(controller: _verticalController),
           horizontalDetails: ScrollableDetails.horizontal(controller: _horizontalController),
-          diagonalDragBehavior: DiagonalDragBehavior.free,
+          diagonalDragBehavior: .weightedEvent,
           rowCount: rowCount,
           columnCount: columnCount,
           pinnedRowCount: 1,
