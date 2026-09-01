@@ -363,7 +363,7 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 }
 
-class _DateButton extends StatelessWidget {
+class _DateButton extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
   final ValueChanged<int>? onScroll;
@@ -375,39 +375,83 @@ class _DateButton extends StatelessWidget {
   });
 
   @override
+  State<_DateButton> createState() => _DateButtonState();
+}
+
+class _DateButtonState extends State<_DateButton> {
+  double _accumulator = 0.0;
+  static const double _threshold = 40.0; // Threshold to trigger a day change
+
+  @override
   Widget build(BuildContext context) {
     return ScaledContainer(
-      child: Listener(
-        onPointerSignal: (pointerSignal) {
-          if (pointerSignal is PointerScrollEvent && onScroll != null) {
-            if (pointerSignal.scrollDelta.dy < 0) {
-              onScroll!(1); // Scroll up -> Increase day
-            } else if (pointerSignal.scrollDelta.dy > 0) {
-              onScroll!(-1); // Scroll down -> Decrease day
+      child: MouseRegion(
+        onExit: (_) => _accumulator = 0.0, // Reset when mouse leaves
+        child: Listener(
+          onPointerSignal: (pointerSignal) {
+            if (pointerSignal is PointerScrollEvent && widget.onScroll != null) {
+              final dy = pointerSignal.scrollDelta.dy;
+              final dx = pointerSignal.scrollDelta.dx;
+
+              // Support both vertical (dy) and horizontal (dx) scrolling.
+              // Natural direction: Scroll Up/Right to increase date, Down/Left to decrease.
+              _accumulator -= dy;
+              _accumulator += dx;
+
+              if (_accumulator.abs() >= _threshold) {
+                final int steps = (_accumulator / _threshold).truncate();
+                if (steps != 0) {
+                  widget.onScroll!(steps);
+                  _accumulator -= steps * _threshold;
+                }
+              }
             }
-          }
-        },
-        child: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: MyFont.medium(14, color: MyColors.textMain),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),
-                ],
+          },
+          onPointerPanZoomUpdate: (event) {
+            if (widget.onScroll != null) {
+              // Trackpad pan gestures also contribute to scrolling
+              final dy = event.panDelta.dy;
+              final dx = event.panDelta.dx;
+
+              // Pan gestures usually have smaller deltas than scroll events
+              // We can adjust sensitivity here if needed
+              _accumulator += dy * 2.0;
+              _accumulator -= dx * 2.0;
+
+              if (_accumulator.abs() >= _threshold) {
+                final int steps = (_accumulator / _threshold).truncate();
+                if (steps != 0) {
+                  widget.onScroll!(steps);
+                  _accumulator -= steps * _threshold;
+                }
+              }
+            }
+          },
+          onPointerPanZoomEnd: (event) {
+            _accumulator = 0.0;
+          },
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.label,
+                      style: MyFont.medium(14, color: MyColors.textMain),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),
+                  ],
+                ),
               ),
             ),
           ),
