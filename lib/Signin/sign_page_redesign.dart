@@ -16,6 +16,7 @@ import '../Database/product_stock.dart';
 import '../Home_Page/home_page.dart';
 import 'create_new_database.dart';
 import 'import_database.dart';
+int check = 0;
 
 class SigninPageRedsign extends StatefulWidget {
   const SigninPageRedsign({super.key});
@@ -444,48 +445,91 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
       ),
     );
   }
-int check = 0;
+
   Future<void> openUserDatabase(String path) async {
-    if (await File(path).exists()) {
-      try{
-        final pref = await SharedPreferences.getInstance();
-        currentDB?.close();
-        currentDB = null;
-        currentDB = await openDatabase(path);
-        check++;
-        if (await validateDatabaseSchema(currentDB!)) {
-          DBInfo? info = await getDBInfo(currentDB!);
-          debugPrint('${info.image?.lengthInBytes}');
-
-          checkAndBackupDatabase(currentDB!);
-          pref.setString('dbPath', path);
-
-          int i = await pushCurrentStockAsOpeningStock(currentDB!);
-          debugPrint("Daily Opening Stock Noted: $i");
-          startDailyOpeningStockScheduler(currentDB!);
-
-          gotoHomePage(path, info);
-        } else {
-          if(check>1) {
-            repairDialog();
-          }
-          else {
-            try {
-            await ensureDatabaseSchema(currentDB!);
-          } catch (e) {
-            debugPrint("Error repairing database: $e");
-            warning("Error repairing database");
-            }
-          }
-          openUserDatabase(path);
-        }
-      } catch(e){
-        if(mounted) {
-          UiHelper.showToast(context, e.toString(),type: 3);
-        }
-      }
-    } else {
+    if (!await File(path).exists()) {
       warning("File does not exist");
+      return;
+    }
+
+    try {
+      final pref = await SharedPreferences.getInstance();
+
+      // Close existing connection
+      if (currentDB != null) {
+        await currentDB!.close();
+        currentDB = null;
+      }
+
+      // Open only ONCE
+      currentDB = await openDatabase(
+        path,
+        singleInstance: true,
+      );
+
+      // First validation
+      bool valid = await validateDatabaseSchema(currentDB!);
+
+      if (!valid) {
+        debugPrint("Database schema is invalid.");
+
+        // Repair
+        try {
+          await ensureDatabaseSchema(currentDB!);
+        } catch (e, stack) {
+          debugPrint("Error repairing database: $e");
+          debugPrintStack(stackTrace: stack);
+
+          warning("Unable to repair database: $e");
+          return;
+        }
+
+        // Validate AFTER repair
+        valid = await validateDatabaseSchema(currentDB!);
+
+        if (!valid) {
+          warning(
+            "Database could not be repaired automatically.",
+          );
+          return;
+        }
+
+        debugPrint("Database repaired successfully.");
+      }
+
+      // Database is now guaranteed to have valid schema
+
+      DBInfo? info = await getDBInfo(currentDB!);
+
+      debugPrint(
+        '${info?.image?.lengthInBytes}',
+      );
+
+      await checkAndBackupDatabase(currentDB!);
+
+      await pref.setString('dbPath', path);
+
+      int i = await pushCurrentStockAsOpeningStock(currentDB!);
+
+      debugPrint(
+        "Daily Opening Stock Noted: $i",
+      );
+
+      startDailyOpeningStockScheduler(currentDB!);
+
+      gotoHomePage(path, info);
+
+    } catch (e, stack) {
+      debugPrint("Error opening database: $e");
+      debugPrintStack(stackTrace: stack);
+
+      if (mounted) {
+        UiHelper.showToast(
+          context,
+          e.toString(),
+          type: 3,
+        );
+      }
     }
   }
 

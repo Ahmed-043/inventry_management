@@ -113,6 +113,7 @@ Future<bool> validateDatabaseSchema(Database db) async {
 }
 
 Future<void> ensureDatabaseSchema(Database db) async {
+  print("Correcting the DATABASE");
   for (final entry in dbSchema.entries) {
     final table = entry.key;
     final cols = entry.value;
