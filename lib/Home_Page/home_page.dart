@@ -141,10 +141,10 @@ class HomePageState extends State<HomePage> {
               }
             }
           },
-          child: SizedBox(
+          child: Container(
             width: double.infinity,
             height: double.infinity,
-            //color: plainUi ? MyColors.lightestGrey : MyColors.light,
+            color: MyColors.sidebarBg,
             child: Column(
               children: [
                 Expanded(
@@ -180,11 +180,18 @@ class HomePageState extends State<HomePage> {
                       ),
 
                       Positioned(
-                        left: collapsed ? 0 : ( collapse ? 60 : collapseSideBar ? 80 : 200),
+                        left: collapsed ? 0 : ( collapse ? 60 : collapseSideBar ? 60 : 175),
                         top: 0,
                         right: 0,
                         bottom: 0,
-                        child: _getPage(selectedIndex),
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(25),
+                            child: Container(
+                                color: MyColors.mainBg,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left:10,right: 10),
+                                  child: _getPage(selectedIndex),
+                                ))),
                       ),
                     ],
                   ),

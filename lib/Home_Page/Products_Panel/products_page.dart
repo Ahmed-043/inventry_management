@@ -10,7 +10,6 @@ import 'package:inventry_management/Home_Page/Products_Panel/product_card.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_stock.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_panel.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
-import 'package:inventry_management/Shared_Widgets/topbar.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_button.dart';
@@ -220,7 +219,6 @@ class _StockDashboardState extends State<StockDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    bool compress = MediaQuery.of(context).size.width < 600;
     return Focus(
       focusNode: _focusNode,
       autofocus: true,
@@ -467,7 +465,7 @@ class _StockDashboardState extends State<StockDashboard> {
   Widget topBar() {
     return Container(
       color: MyColors.mainBg,
-      padding: const EdgeInsets.only(top: 12,right: 12),
+      padding: const EdgeInsets.only(top: 12,right: 0),
       child: Column(
         children: [
           Row(

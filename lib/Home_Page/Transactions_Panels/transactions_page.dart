@@ -137,7 +137,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     spacing = compress ? 6 : 12;
 
     return Padding(
-      padding: EdgeInsets.only(top:padding,right: padding),
+      padding: EdgeInsets.only(top:padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

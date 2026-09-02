@@ -9,6 +9,7 @@ import 'Signin/welcome_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'Shared_Widgets/app_cursor_overlay.dart';
+import 'Shared_Widgets/window_title_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'utils/linux_dependencies.dart';
 
@@ -34,7 +35,7 @@ void main() async {
       minimumSize: Size(650, 500),
       center: true,
       backgroundColor: Colors.white,
-      titleBarStyle: TitleBarStyle.normal,
+      titleBarStyle: TitleBarStyle.hidden,
     );
 
     windowManager.waitUntilReadyToShow(options, () async {
@@ -94,27 +95,35 @@ class MyApp extends StatelessWidget {
             final mediaQuery = MediaQuery.of(context);
             final realSize = mediaQuery.size;
 
-            Widget scaledApp = SizedBox(
-              width: realSize.width,
-              height: realSize.height,
-              child: OverflowBox(
-                alignment: Alignment.topLeft,
-                minWidth: realSize.width / scale,
-                maxWidth: realSize.width / scale,
-                minHeight: realSize.height / scale,
-                maxHeight: realSize.height / scale,
-                child: Transform.scale(
-                  scale: scale,
-                  alignment: Alignment.topLeft,
-                  child: MediaQuery(
-                    data: mediaQuery.copyWith(
-                      size: realSize / scale,
-                      devicePixelRatio: mediaQuery.devicePixelRatio * scale,
+            Widget scaledApp = Column(
+              children: [
+                if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS))
+                  const WindowTitleBar(),
+                Expanded(
+                  child: SizedBox(
+                    width: realSize.width,
+                    height: realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0),
+                    child: OverflowBox(
+                      alignment: Alignment.topLeft,
+                      minWidth: realSize.width / scale,
+                      maxWidth: realSize.width / scale,
+                      minHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
+                      maxHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
+                      child: Transform.scale(
+                        scale: scale,
+                        alignment: Alignment.topLeft,
+                        child: MediaQuery(
+                          data: mediaQuery.copyWith(
+                            size: Size(realSize.width / scale, (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale),
+                            devicePixelRatio: mediaQuery.devicePixelRatio * scale,
+                          ),
+                          child: child,
+                        ),
+                      ),
                     ),
-                    child: child,
                   ),
                 ),
-              ),
+              ],
             );
 
             if (!_supportsCustomCursor) {

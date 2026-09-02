@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Home_Page/profile.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
@@ -31,7 +32,6 @@ class SidebarPanel extends StatefulWidget {
 }
 
 class _SidebarPanelState extends State<SidebarPanel> {
-
   final tiles = [
     {'title': 'Dashboard', 'icon': Icons.home_rounded},
     {'title': 'Products', 'icon': Icons.inventory_2_outlined},
@@ -46,17 +46,27 @@ class _SidebarPanelState extends State<SidebarPanel> {
 
   bool _isItemHidden(int index) {
     switch (index) {
-      case 0: return hideDashboard;
-      case 1: return hideProducts;
-      case 2: return hideCustomers;
-      case 3: return hideSuppliers;
-      case 4: return hideOrders;
-      case 5: return hideTransactions;
-      case 6: return hideReports;
-      case 7: return hideSettings;
-      default: return false;
+      case 0:
+        return hideDashboard;
+      case 1:
+        return hideProducts;
+      case 2:
+        return hideCustomers;
+      case 3:
+        return hideSuppliers;
+      case 4:
+        return hideOrders;
+      case 5:
+        return hideTransactions;
+      case 6:
+        return hideReports;
+      case 7:
+        return hideSettings;
+      default:
+        return false;
     }
   }
+
   bool collapseButton = false;
 
   @override
@@ -64,6 +74,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
     // TODO: implement initState
     super.initState();
   }
+
   int selected = 0;
 
   @override
@@ -86,33 +97,60 @@ class _SidebarPanelState extends State<SidebarPanel> {
                         prefs.setBool('collapseSidebar', collapseSideBar);
                         widget.onItemSelected(selected);
                       },
-                      hoverColor: MyColors.translucent.withAlpha(20),
+                      hoverColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
                       child: MouseRegion(
-                        onEnter: (_){
+                        onEnter: (_) {
                           setState(() {
                             collapseButton = true;
                           });
                         },
-                        onExit: (_){
+                        onExit: (_) {
                           setState(() {
                             collapseButton = false;
                           });
                         },
                         child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 18,vertical: 10),
-                            width: double.infinity,
-                             height: 60,
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                            ),
-                            child: collapseButton
-                                ? Icon(collapseSideBar ? Icons.arrow_forward_ios_outlined : Icons.arrow_back_rounded,color: MyColors.translucent,)
-                                : Image.asset(widget.collaps ? 'assets/images/app_logo.png': 'assets/images/odventory_logo.png',
-                              color: MyColors.translucent.withOpacity(0.8), alignment: Alignment.center,)
+
+                          width: double.infinity,
+                          height: 60,
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
+                          ),
+                          child: collapseButton
+                              ? Icon(
+                                  collapseSideBar
+                                      ? Icons.arrow_forward_ios_outlined
+                                      : Icons.arrow_back_rounded,
+                                  color: MyColors.translucent,
+                                )
+                              : Row(
+                            mainAxisAlignment: .center,
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/images/app_logo.svg',
+                                      color: MyColors.translucent.withOpacity(0.9),
+                                      alignment: Alignment.center,
+                                      height: 40,
+                                      width: 40,
+                                    ),
+                                    if(!widget.collaps)
+                                    Column(
+                                      children: [
+                                        SizedBox(height: 22,),
+                                        Text(
+                                          'ODVENTORY',
+                                          style: MyFont.bold(16, color: MyColors.translucent.withOpacity(0.9)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                     ),
-                   // const SizedBox(height: 20),
+                    // const SizedBox(height: 20),
                     Column(
                       children: [
                         for (int index = 0; index < tiles.length - 1; index++)
@@ -148,69 +186,81 @@ class _SidebarPanelState extends State<SidebarPanel> {
                 if (!widget.vCollaps && widget.info != null)
                   Padding(
                     padding: EdgeInsets.all(widget.collaps ? 4 : 8),
-                    child: ScaledContainer(child: InkWell(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => Dialog(
-                            backgroundColor: Colors.transparent,
-                            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: ProfileSettings(
-                              info: widget.info!,
-                              onSave: () {
-                                Navigator.pop(context);
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Ink(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: MyColors.translucent.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            if(widget.info!.image != null)
-                              Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: MemoryImage(widget.info!.image!),
-                                  fit: BoxFit.cover,
-                                ),
+                    child: ScaledContainer(
+                      child: InkWell(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              insetPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: ProfileSettings(
+                                info: widget.info!,
+                                onSave: () {
+                                  Navigator.pop(context);
+                                  setState(() {});
+                                },
                               ),
                             ),
-                            if (!widget.collaps)
-                             ...[
-                               const SizedBox(width: 10),
-                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      widget.info!.dbName,
-                                      style: MyFont.bold(14, color: MyColors.translucent),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Ink(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: MyColors.translucent.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              if (widget.info!.image != null)
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: MemoryImage(widget.info!.image!),
+                                      fit: BoxFit.cover,
                                     ),
-                                    Text(
-                                      'Pro Plan - Active',
-                                      style: MyFont.normal(12, color: MyColors.translucent.withOpacity(0.5)),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),]
-                          ],
+                              if (!widget.collaps) ...[
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        widget.info!.dbName,
+                                        style: MyFont.bold(
+                                          14,
+                                          color: MyColors.translucent,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        'Pro Plan - Active',
+                                        style: MyFont.normal(
+                                          12,
+                                          color: MyColors.translucent
+                                              .withOpacity(0.5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
-                    )),
+                    ),
                   ),
                 const SizedBox(height: 10),
               ],
@@ -230,7 +280,10 @@ class _SidebarPanelState extends State<SidebarPanel> {
     return ScaledContainer(
       scale: 1.1,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: widget.collaps ? 8 : 12, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.collaps ? 8 : 12,
+          vertical: 6,
+        ),
         child: MouseRegion(
           onEnter: (_) => isClickable = true,
           onExit: (_) => isClickable = false,
@@ -241,38 +294,45 @@ class _SidebarPanelState extends State<SidebarPanel> {
             child: Ink(
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected ? MyColors.sidebarSelected : MyColors.transparent,
+                color: isSelected
+                    ? MyColors.sidebarSelected
+                    : MyColors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child:
-              (title == null)
-               ? Center(
-                child: Icon(
-                  icon,
-                  color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
-                  size: 20,
-                ),
-              )
-              : Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
-                    size: 20,
-                  ),
-                  if (title != null) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      title,
-                      style: MyFont.semiBold(
-                        14,
-                        color: isSelected ? MyColors.translucent : MyColors.translucent.withOpacity(0.6),
+              child: (title == null)
+                  ? Center(
+                      child: Icon(
+                        icon,
+                        color: isSelected
+                            ? MyColors.translucent
+                            : MyColors.translucent.withOpacity(0.6),
+                        size: 20,
                       ),
+                    )
+                  : Row(
+                      children: [
+                        Icon(
+                          icon,
+                          color: isSelected
+                              ? MyColors.translucent
+                              : MyColors.translucent.withOpacity(0.6),
+                          size: 20,
+                        ),
+                        if (title != null) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            title,
+                            style: MyFont.semiBold(
+                              14,
+                              color: isSelected
+                                  ? MyColors.translucent
+                                  : MyColors.translucent.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
           ),
         ),

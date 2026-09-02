@@ -295,7 +295,7 @@ class _DashboardState extends State<Dashboard> {
                 if (!isLoading)
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(left: 10, right: 6,),
+                      padding: EdgeInsets.only(left: 0,),
                       child: Listener(
                         onPointerSignal: (pointerSignal) {
                           if (pointerSignal is PointerScrollEvent) {
@@ -408,71 +408,68 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget _topbar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        children: [
-          Text(
-            "Dashboard",
-            style: MyFont.bold(24, color: MyColors.textMain),
-          ),
-          const Spacer(),
-          Wrap(
-            spacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              UiHelper.myButton(
+    return Row(
+      children: [
+        Text(
+          "Dashboard",
+          style: MyFont.bold(24, color: MyColors.textMain),
+        ),
+        const Spacer(),
+        Wrap(
+          spacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            UiHelper.myButton(
+              callback: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        NewOrderPage(sell: true, callback: () {}),
+                  ),
+                );
+              },
+              child: Icon(Icons.add, color: Colors.white, size: 18),
+              title: "Create new order",
+              textSize: 14,
+              filled: true,
+              color: MyColors.sidebarSelected,
+              borderRadius: 10,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            Hero(
+              tag: 'newTransaction',
+              child: UiHelper.myButton(
                 callback: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          NewOrderPage(sell: true, callback: () {}),
+                  UiHelper.pushPage(
+                    context: context,
+                    opaque: false,
+                    barrierColor: Colors.black54,
+                    page: AddNewTransactionDialog(
+                      action: NewTransactionDialog(
+                        onSave: () {
+                          loadDashboard();
+                        },
+                      ),
                     ),
                   );
                 },
-                child: Icon(Icons.add, color: Colors.white, size: 18),
-                title: "Create new order",
+                child: Icon(Icons.swap_horiz_rounded, color: MyColors.textMain, size: 18),
+                title: "Record Transaction",
                 textSize: 14,
-                filled: true,
-                color: MyColors.sidebarSelected,
+                filled: false,
+                color: MyColors.primary,
                 borderRadius: 10,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              Hero(
-                tag: 'newTransaction',
-                child: UiHelper.myButton(
-                  callback: () {
-                    UiHelper.pushPage(
-                      context: context,
-                      opaque: false,
-                      barrierColor: Colors.black54,
-                      page: AddNewTransactionDialog(
-                        action: NewTransactionDialog(
-                          onSave: () {
-                            loadDashboard();
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  child: Icon(Icons.swap_horiz_rounded, color: MyColors.textMain, size: 18),
-                  title: "Record Transaction",
-                  textSize: 14,
-                  filled: false,
-                  color: MyColors.textMain,
-                  borderRadius: 10,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+            IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

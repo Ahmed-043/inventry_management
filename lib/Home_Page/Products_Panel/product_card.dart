@@ -112,7 +112,7 @@ class _ProductCardState extends State<ProductCard> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final h = constraints.maxHeight;
-        final w = constraints.maxWidth;
+      //  final w = constraints.maxWidth;
         final factor = (h / 300).clamp(0.4, 1.5);
 
         return Column(
@@ -146,7 +146,7 @@ class _ProductCardState extends State<ProductCard> {
                             )
                             : Icon(Icons.inventory_2_outlined,
                                 size: 48 * factor,
-                                color: MyColors.textSecondary.withOpacity(0.5)),
+                                color: MyColors.textSecondary.withAlpha(125)),
                       ),
                     ),
                   ],
@@ -263,7 +263,7 @@ class _ProductCardState extends State<ProductCard> {
                           ? Image.memory(widget.product.imageData!,
                               fit: BoxFit.cover)
                           : Icon(Icons.inventory_2_outlined,
-                              size: h * 0.4, color: MyColors.textSecondary.withOpacity(0.5)),
+                              size: h * 0.4, color: MyColors.textSecondary.withAlpha(125)),
                     ),
                   ),
                 ),
@@ -335,7 +335,7 @@ class _ProductCardState extends State<ProductCard> {
                       color: Colors.transparent,
                       child: Text(
                         'Rs. ${formatter.format(widget.product.totalPrice)}',
-                        style: MyFont.bold(h * 0.22, color: MyColors.textMain),
+                        style: MyFont.bold(h * 0.18, color: MyColors.textMain),
                       ),
                     ),
                   ),

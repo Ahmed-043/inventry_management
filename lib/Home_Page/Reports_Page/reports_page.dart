@@ -186,7 +186,7 @@ class _ReportsPageState extends State<ReportsPage> {
     return Scaffold(
       backgroundColor: MyColors.mainBg,
       body: Padding(
-        padding: EdgeInsets.only(top:padding,right: padding),
+        padding: EdgeInsets.only(top:padding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -85,7 +85,6 @@ class _PersonsPageState extends State<PersonsPage> {
     if (oldWidget.isCustomer != widget.isCustomer) {
       _loadPersons(); // reload when switching between customer/supplier
     }
-    searchController.dispose();
   }
 
   @override
@@ -253,7 +252,7 @@ class _PersonsPageState extends State<PersonsPage> {
 
   Widget topBar() {
     return Container(
-      padding: const EdgeInsets.only(top: 12,right: 12),
+      padding: const EdgeInsets.only(top: 12),
       child: Column(
         children: [
           Row(
@@ -292,7 +291,7 @@ class _PersonsPageState extends State<PersonsPage> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 9),
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
@@ -302,7 +301,7 @@ class _PersonsPageState extends State<PersonsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
             height: 40,
             decoration: BoxDecoration(

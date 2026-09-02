@@ -146,7 +146,7 @@ class _OrdersPageState extends State<OrdersPage> {
     compress = MediaQuery.of(context).size.width < 1000;
     double spacing = compress ? 6 : 12;
     return Padding(
-      padding: EdgeInsets.only(top:12 ,right: 12),
+      padding: EdgeInsets.only(top:12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
