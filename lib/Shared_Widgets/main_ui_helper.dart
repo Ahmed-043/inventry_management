@@ -172,7 +172,7 @@ class UiHelper {
     bool autofocus = false,
     VoidCallback? onTap,
     double fontSize = 17,
-    double borderRadius = 10,
+    double borderRadius = 15,
     TextInputType? textType,
     List<TextInputFormatter>? inputFormatters,
     VoidCallback? onChange,

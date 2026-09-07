@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'db_info.dart';
 import 'Reports_Data/export_database.dart';
@@ -58,7 +60,8 @@ Future<void> _handleExcelBackups(Database db, DBInfo info, DateTime lastBackup, 
       final file = File(p.join(backupDir, "${info.dbName} Daily Backup.xlsx"));
       // Safeguard: don't re-export if we already did it today
       if (!await file.exists() || !isSameDay(await file.lastModified(), now)) {
-        await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} Daily Backup");
+        final result = await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} Daily Backup");
+        if (result == null) await addBackupLog(info.dbName, false, "Daily Excel export failed");
       }
     }
 
@@ -67,7 +70,8 @@ Future<void> _handleExcelBackups(Database db, DBInfo info, DateTime lastBackup, 
       final file = File(p.join(backupDir, "${info.dbName} weekly Backup.xlsx"));
       // Safeguard: don't re-export if we already did it in the last 7 days
       if (!await file.exists() || now.difference(await file.lastModified()).inDays >= 7) {
-        await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} weekly Backup");
+        final result = await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} weekly Backup");
+        if (result == null) await addBackupLog(info.dbName, false, "Weekly Excel export failed");
       }
     }
 
@@ -81,11 +85,13 @@ Future<void> _handleExcelBackups(Database db, DBInfo info, DateTime lastBackup, 
       }
       
       if (fileNeedsUpdate) {
-        await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} monthly Backup");
+        final result = await exportDatabaseToExcel(db, backupDir, fileName: "${info.dbName} monthly Backup");
+        if (result == null) await addBackupLog(info.dbName, false, "Monthly Excel export failed");
       }
     }
   } catch (e) {
     debugPrint('Excel backup failed: $e');
+    await addBackupLog(info.dbName, false, "Excel backup process failed: $e");
   }
 }
 
@@ -100,22 +106,62 @@ Future<bool> backupDatabase(Database db, DBInfo info) async {
     if (!await dir.exists()) await dir.create(recursive: true);
 
     final dbFile = File(db.path); // Correct: actual DB file path
-    if (!await dbFile.exists()) return false;
+    if (!await dbFile.exists()) {
+      await addBackupLog(info.dbName, false, "Source database file not found");
+      return false;
+    }
 
     final backupPath = p.join(backupDir, p.basename(db.path));
     await dbFile.copy(backupPath);
 
     // Verify backup file exists
     final backupFile = File(backupPath);
-    if (!await backupFile.exists()) return false;
+    if (!await backupFile.exists()) {
+      await addBackupLog(info.dbName, false, "Backup file verification failed");
+      return false;
+    }
 
     // Save backupDir to info if it was empty
     if (info.backupDir.isEmpty) info.backupDir = backupDir;
 
+    await addBackupLog(info.dbName, true, null);
     return true;
   } catch (e) {
     debugPrint('Backup failed: $e');
+    await addBackupLog(info.dbName, false, e.toString());
     return false;
+  }
+}
+
+/// Adds a log entry for the backup process to SharedPreferences
+Future<void> addBackupLog(String dbName, bool success, String? error) async {
+  final log = {
+    'dbName': dbName,
+    'datetime': DateTime.now().toIso8601String(),
+    'status': success ? 'Success' : 'Failed',
+    'error': error ?? '',
+  };
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> logs = prefs.getStringList('backup_logs') ?? [];
+    logs.add(jsonEncode(log));
+    // Keep only last 100 logs to prevent SharedPreferences from growing too large
+    if (logs.length > 100) {
+      logs = logs.sublist(logs.length - 100);
+    }
+    await prefs.setStringList('backup_logs', logs);
+  } catch (e) {
+    debugPrint('Failed to save backup log: $e');
+  }
+}
+
+/// Clears all backup logs from SharedPreferences
+Future<void> clearBackupLogs() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('backup_logs');
+  } catch (e) {
+    debugPrint('Failed to clear backup logs: $e');
   }
 }
 

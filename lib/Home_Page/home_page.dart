@@ -7,10 +7,11 @@ import 'package:inventry_management/colors.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
 import '../Database/person.dart';
+import 'package:inventry_management/Home_Page/Expense_Tracking/expenses_page.dart';
+import 'package:inventry_management/Home_Page/Orders_panel/orders_page.dart';
+import 'package:inventry_management/Home_Page/Reports_Page/reports_page.dart';
+import 'package:inventry_management/Home_Page/Settings_panel/settings_page.dart';
 import 'Customers&Suppliers/persons_page.dart';
-import 'Orders_panel/orders_page.dart';
-import 'Reports_Page/reports_page.dart';
-import 'Settings_panel/settings_page.dart';
 import 'bottom_navbar.dart';
 import 'logout_panel.dart';
 import 'sidebar.dart';
@@ -52,9 +53,11 @@ class HomePageState extends State<HomePage> {
       ? 4
       : !hideTransactions
       ? 5
-      : !hideReports
+      : !hideExpenses
       ? 6
-      : 7; // Settings (or last item if all others are hidden)
+      : !hideReports
+      ? 7
+      : 8; // Settings (or last item if all others are hidden)
 
     final FocusNode _focusNode = FocusNode();
 
@@ -79,8 +82,10 @@ class HomePageState extends State<HomePage> {
           initialPerson: filterPerson,
         );
       case 6:
-        return ReportsPage();
+        return const ExpensesPage();
       case 7:
+        return ReportsPage();
+      case 8:
         return Builder(
           builder: (context) => SettingsPanel(
             update: () {
@@ -89,14 +94,14 @@ class HomePageState extends State<HomePage> {
             },
           ),
         );
-      case 8:
+      case 9:
         return LogoutPanel();
       default:
         return const Center(child: Text("Page Not Found"));
     }
   }
 
-  int get pagesCount => 9;
+  int get pagesCount => 10;
 
 
 

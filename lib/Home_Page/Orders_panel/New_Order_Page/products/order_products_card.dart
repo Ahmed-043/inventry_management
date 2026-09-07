@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/invoice/reciept_card.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
@@ -47,7 +48,7 @@ class OrderProductsCard extends StatefulWidget {
 }
 
 class _OrderProductsCardState extends State<OrderProductsCard> {
-  final Map<int, bool> blinkMap = {}; // 👈 store per-item blink states
+  final Map<String, bool> blinkMap = {}; // 👈 store per-item blink states
   TextEditingController searchController = TextEditingController();
   Timer? _debounce;
   List<int> visibleIndices = [];
@@ -200,7 +201,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                         final tapPosition = details.globalPosition;
                         final screenSize = MediaQuery.of(context).size;
                         qtState(
-                          () => blinkMap[index] = true,
+                          () => blinkMap['${index}_q'] = true,
                         ); // start blinking before dialog
                         const dialogWidth = 400.0;
                         const dialogHeight = 200.0;
@@ -252,7 +253,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                           ),
                         );
                         qtState(
-                          () => blinkMap[index] = false,
+                          () => blinkMap['${index}_q'] = false,
                         ); // start blinking before dialog
                       },
 
@@ -279,7 +280,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                               ),
                             ),
                           ),
-                          if (blinkMap[index] ?? false) BlinkingCursor(),
+                          if (blinkMap['${index}_q'] ?? false) BlinkingCursor(),
                           if (qtHovering && widget.order.editable)
                             Icon(
                               Icons.edit,
@@ -302,7 +303,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                 height: height,
                 padding: EdgeInsets.all(5),
                 child: StatefulBuilder(
-                  builder: (context, qtState) {
+                  builder: (context, pState) {
                     return InkWell(
                       borderRadius: BorderRadius.circular(height / 2),
                       onTapDown: (TapDownDetails details) async {
@@ -310,33 +311,77 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                           return;
                         }
                         final tapPosition = details.globalPosition;
-                        showDialog(
+                        final priceController = TextEditingController(
+                          text: item.price.toString(),
+                        );
+                        final screenSize = MediaQuery.of(context).size;
+
+                        pState(() => blinkMap['${index}_p'] = true);
+
+                        const dialogWidth = 200.0;
+                        const dialogHeight = 70.0;
+
+                        double left = tapPosition.dx - (dialogWidth / 2);
+                        double top = tapPosition.dy + 20;
+
+                        if (top + dialogHeight > screenSize.height) {
+                          top = tapPosition.dy - dialogHeight - 20;
+                        }
+                        left = left.clamp(
+                          10,
+                          screenSize.width - dialogWidth - 10,
+                        );
+
+                        await showDialog(
                           context: context,
                           barrierColor: Colors.transparent,
                           builder: (_) => Stack(
                             children: [
                               Positioned(
-                                left:
-                                    tapPosition.dx -
-                                    100, // exact x position of tap
-                                top: tapPosition.dy + 20, // adjust y
+                                left: left,
+                                top: top,
                                 child: Material(
                                   elevation: 6,
+
                                   borderRadius: BorderRadius.circular(8),
                                   child: SizedBox(
-                                    width: 300,
-                                    height: 60,
-                                    child: Container(),
+                                    width: dialogWidth,
+                                    //height: dialogHeight,
+                                    child: UiHelper.myTextField(
+                                      controller: priceController,
+                                      autofocus: true,
+                                      label: 'Price',
+                                      borderRadius: 8,
+                                      textType: const TextInputType
+                                          .numberWithOptions(decimal: true),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d*\.?\d*'),
+                                        ),
+                                      ],
+                                      onChange: () {
+                                        setState(() {
+                                          item.price =
+                                              double.tryParse(
+                                                priceController.text,
+                                              ) ??
+                                              0.0;
+                                          _updateTotal();
+                                        });
+                                      },
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         );
+                        pState(() => blinkMap['${index}_p'] = false);
+                        priceController.dispose();
                       },
                       hoverColor: MyColors.blue.withAlpha(20),
                       onHover: (value) {
-                        qtState(() {
+                        pState(() {
                           qtHovering = false;
                           pHovering = value;
                         });
@@ -354,6 +399,7 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                               ),
                             ),
                           ),
+                          if (blinkMap['${index}_p'] ?? false) BlinkingCursor(),
                           if (pHovering && widget.order.editable)
                             Icon(
                               Icons.edit,

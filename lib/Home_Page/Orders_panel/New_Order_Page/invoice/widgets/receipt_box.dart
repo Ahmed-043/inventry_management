@@ -232,6 +232,7 @@ class ReceiptBox extends StatelessWidget {
   Widget _buildTotals() {
     return Column(
       children: [
+        if(order.tax.second != 0)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -242,7 +243,8 @@ class ReceiptBox extends StatelessWidget {
             ),
           ],
         ),
-        Row(
+        if(order.discount.second != 0)
+          Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text("Discount (${order.discount.first}):", style: MyFont.normal(14)),

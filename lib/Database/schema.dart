@@ -108,4 +108,23 @@ final Map<String, Map<String, String>> dbSchema = {
     'timestamp': 'INTEGER NOT NULL',
     'remark': 'TEXT DEFAULT ""',
   },
+  'expenses': {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'category_id': 'INTEGER DEFAULT 0',
+    'title': 'TEXT NOT NULL DEFAULT ""',
+    'amount': 'REAL NOT NULL DEFAULT 0',
+    'payment_method': "TEXT CHECK(payment_method IN ('Cash','Bank','Digital','Other')) NOT NULL DEFAULT 'Cash'",
+    'expense_date': 'INTEGER NOT NULL',
+    'person_id': 'INTEGER DEFAULT 0',
+    'person_name': 'TEXT DEFAULT ""',
+    'remark': 'TEXT DEFAULT ""',
+    'created_at': 'INTEGER NOT NULL DEFAULT 0',
+  },
+  'expense_categories': {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'name': 'TEXT NOT NULL UNIQUE',
+    'icon': 'TEXT DEFAULT ""',
+    'sequence': 'INTEGER DEFAULT 0',
+    'active': 'INTEGER DEFAULT 1 CHECK(active IN (0,1))',
+  },
 };

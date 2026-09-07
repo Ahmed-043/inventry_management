@@ -496,7 +496,7 @@ class _StockDashboardState extends State<StockDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(

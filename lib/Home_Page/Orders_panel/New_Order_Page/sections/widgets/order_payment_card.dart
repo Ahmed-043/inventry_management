@@ -140,6 +140,7 @@ class _OrderPaymentCardState extends State<OrderPaymentCard> {
         label: label,
         hint: hint,
         onChange: onChanged,
+        borderRadius: 15,
         textType: TextInputType.number,
         readOnly: !(widget.order.editable),
         inputFormatters: [

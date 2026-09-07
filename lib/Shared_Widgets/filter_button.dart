@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
@@ -24,7 +26,12 @@ class FilterButton extends StatelessWidget {
       child: GestureDetector(
         onTapDown: (details) {
           final tapPosition = details.globalPosition;
-
+          var x = tapPosition.dx;
+          var y = tapPosition.dy;
+          if (Platform.isLinux){
+            x = tapPosition.dx - 225;
+            y = tapPosition.dy - 30;
+          }
           showDialog(
             context: context,
             barrierColor: Colors.transparent,
@@ -37,8 +44,8 @@ class FilterButton extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: tapPosition.dx - 10,
-                  top: tapPosition.dy + 5,
+                  left: x - 10,
+                  top: y + 5,
                   child: Material(
                     elevation: 6,
                     borderRadius: BorderRadius.circular(12),

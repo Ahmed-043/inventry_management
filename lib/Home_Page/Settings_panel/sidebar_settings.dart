@@ -158,6 +158,16 @@ class _SidebarSettingsState extends State<SidebarSettings> {
               ),
 
               UiHelper.switchTile(
+                title: 'Expenses',
+                decoration: BoxDecoration(color: MyColors.translucent),
+                value: !hideExpenses,
+                onChanged: (val) {
+                  hideExpenses = !val;
+                  _savePref('hideExpenses', !val);
+                },
+              ),
+
+              UiHelper.switchTile(
                 title: 'Reports',
                 decoration: BoxDecoration(color: MyColors.translucent),
                 value: !hideReports,

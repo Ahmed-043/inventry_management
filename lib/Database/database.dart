@@ -20,6 +20,7 @@ bool hideDashboard = false,
     hideSuppliers = false,
     hideOrders = false,
     hideTransactions = false,
+    hideExpenses = false,
     hideReports = false,
     hideSettings = false;
 int lowStockLimit = 50, sortCategory = 0,sort = 9;

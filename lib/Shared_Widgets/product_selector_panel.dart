@@ -147,246 +147,249 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
         }
       },
 
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10),
-           margin: EdgeInsets.only(bottom: 5),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      (widget.select == 's') ? 'Missing Stock Products': widget.select == 'S' ?'Missing Components':  'Select Products',
-                      style: MyFont.semiBold(25),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
-                if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
-                  // color: Colors.green,
-                  width: 600,
-                  child: CupertinoSlidingSegmentedControl<bool>(
-                    backgroundColor: MyColors.grey.withAlpha(12),
-                    thumbColor: isRegistered ? MyColors.info : MyColors.error,
-                    groupValue: isRegistered, // the currently selected segment
-                    children: {
-                      true: Text(
-                        'Registered',
-                        style: MyFont.normal(
-                          15,
-                          color: isRegistered
-                              ? MyColors.translucent
-                              : MyColors.black,
-                        ),
-                      ),
-                      false: Text(
-                        'Anonymous',
-                        style: MyFont.normal(
-                          15,
-                          color: isRegistered
-                              ? MyColors.black
-                              : MyColors.translucent,
-                        ),
-                      ),
-                    },
-                    onValueChanged: (bool? value) {
-                      if (value != null) {
-                        setState(() => isRegistered = value);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          isRegistered
-              ? Expanded(
-                  child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+             margin: EdgeInsets.only(bottom: 5),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                     if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
-                        height: 50,
-                        child: TextField(
-                          focusNode: _searchFocus,
-                          autofocus: true,
-                          controller: searchController,
-                          onChanged: (e) {
-                            _searchTimer?.cancel();
-                            _searchTimer = Timer(
-                              const Duration(milliseconds: 500),
-                              () {
-                                _loadProducts();
-                              },
-                            );
-                          },
-                          style: MyFont.semiBold(
-                            20,
-                            color: MyColors.darkBlue,
-                          ),
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(
-                              Icons.search_rounded,
-                              color: MyColors.darkBlue,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(
-                                width: 2,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(
-                                width: 2,
-                                color: MyColors.darkBlue,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide(
-                                width: 2,
-                                color: MyColors.darkBlue,
-                              ),
-                            ),
-                            labelStyle: MyFont.semiBold(
-                              20,
-                              color: MyColors.darkBlue.withAlpha(230),
-                            ),
-                            hint: Text(
-                              "Search (Name, SKU, Description)",
-                              style: MyFont.normal(20, color: MyColors.grey),
-                            ),
-                          ),
-                        ),
+                      Text(
+                        (widget.select == 's') ? 'Missing Stock Products': widget.select == 'S' ?'Missing Components':  'Select Products',
+                        style: MyFont.semiBold(25),
                       ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 25,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Product Details", style: MyFont.normal(15)),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'In Stock only',
-                                  style: MyFont.normal(12),
-                                ),
-                                Checkbox(
-                                  overlayColor: WidgetStateProperty.all(
-                                    Colors.transparent,
-                                  ), // no hover effect
-                                  value: inStock, // bool variable (true/false)
-                                  onChanged: (bool? value) {
-                                    // callback when user taps
-                                    setState(() {
-                                      inStock = value!;
-                                      _loadProducts();
-                                    });
-                                  },
-                                  activeColor: Colors
-                                      .blue, // (optional) color when checked
-                                  checkColor:
-                                      Colors.white, // (optional) tick color
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: Alignment.topCenter,
-                              child: isLoading
-                                  ? CircularProgressIndicator()
-                                  : products.isEmpty
-                                  ? emptyState()
-                                  : GridView.builder(
-                                      clipBehavior: Clip.none,
-                                      padding: EdgeInsets.zero,
-                                      physics: const BouncingScrollPhysics(),
-                                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                        maxCrossAxisExtent: 400,
-                                        mainAxisSpacing: 10,
-                                        crossAxisSpacing: 10,
-                                        childAspectRatio: 380 / 80,
-                                      ),
-                                      itemCount: products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).length,
-                                      itemBuilder: (context, index) {
-                                        final visible = products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).toList();
-                                        final p = visible[index];
-                                        return InkWell(
-                                          onTap: () {
-                                            toggleSelection(p);
-                                            debugPrint(
-                                              "Selected Products: ${widget.products.map((e) => e.id).toList()}",
-                                            );
-                                            debugPrint(
-                                              "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
-                                            );
-                                            debugPrint(
-                                              "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
-                                            );
-                                          },
-                                          child: productCard(p),
-                                        );
-                                      },
-                                    ),
-                            ),
-                            if (!(page==0 && products.length < pSize))
-                            PaginationBar(
-                              page: page,
-                              pageSize: pSize,
-                              itemCount: products.length,
-                              onPrevious: () {
-                                setState(() {
-                                  page--;
-                                  _loadProducts();
-                                });
-                              },
-                              onNext: () {
-                                setState(() {
-                                  page++;
-                                  _loadProducts();
-                                });
-                              },
-                            ),
-                            if( !(widget.select == 's' ||widget.select == 'S' ))
-                            Align(
-                              alignment: Alignment.bottomRight,
-                              child: SizedBox(
-                                width: 170,
-                                height: 50,
-                                child: UiHelper.myButton(
-                                  callback: () {
-                                    Navigator.pop(context, widget.products);
-                                  },
-                                  filled: true,
-                                  borderRadius: 25,
-                                  title:
-                                      "Add Products",
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(Icons.close_rounded),
                       ),
                     ],
                   ),
-                )
-              : Placeholder(),
-          Container(height: 10),
-        ],
+                  if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
+                    // color: Colors.green,
+                    width: 600,
+                    child: CupertinoSlidingSegmentedControl<bool>(
+                      backgroundColor: MyColors.grey.withAlpha(12),
+                      thumbColor: isRegistered ? MyColors.info : MyColors.error,
+                      groupValue: isRegistered, // the currently selected segment
+                      children: {
+                        true: Text(
+                          'Registered',
+                          style: MyFont.normal(
+                            15,
+                            color: isRegistered
+                                ? MyColors.translucent
+                                : MyColors.black,
+                          ),
+                        ),
+                        false: Text(
+                          'Unregistered',
+                          style: MyFont.normal(
+                            15,
+                            color: isRegistered
+                                ? MyColors.black
+                                : MyColors.translucent,
+                          ),
+                        ),
+                      },
+                      onValueChanged: (bool? value) {
+                        if (value != null) {
+                          setState(() => isRegistered = value);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            isRegistered
+                ? Expanded(
+                    child: Column(
+                      children: [
+                       if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
+                          height: 50,
+                          child: TextField(
+                            focusNode: _searchFocus,
+                            autofocus: true,
+                            controller: searchController,
+                            onChanged: (e) {
+                              _searchTimer?.cancel();
+                              _searchTimer = Timer(
+                                const Duration(milliseconds: 500),
+                                () {
+                                  _loadProducts();
+                                },
+                              );
+                            },
+                            style: MyFont.semiBold(
+                              20,
+                              color: MyColors.darkBlue,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: MyColors.darkBlue,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(
+                                  width: 2,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(
+                                  width: 2,
+                                  color: MyColors.darkBlue,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: BorderSide(
+                                  width: 2,
+                                  color: MyColors.darkBlue,
+                                ),
+                              ),
+                              labelStyle: MyFont.semiBold(
+                                20,
+                                color: MyColors.darkBlue.withAlpha(230),
+                              ),
+                              hint: Text(
+                                "Search (Name, SKU, Description)",
+                                style: MyFont.normal(20, color: MyColors.grey),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 25,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Product Details", style: MyFont.normal(15)),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'In Stock only',
+                                    style: MyFont.normal(12),
+                                  ),
+                                  Checkbox(
+                                    overlayColor: WidgetStateProperty.all(
+                                      Colors.transparent,
+                                    ), // no hover effect
+                                    value: inStock, // bool variable (true/false)
+                                    onChanged: (bool? value) {
+                                      // callback when user taps
+                                      setState(() {
+                                        inStock = value!;
+                                        _loadProducts();
+                                      });
+                                    },
+                                    activeColor: Colors
+                                        .blue, // (optional) color when checked
+                                    checkColor:
+                                        Colors.white, // (optional) tick color
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Align(
+                                alignment: Alignment.topCenter,
+                                child: isLoading
+                                    ? CircularProgressIndicator()
+                                    : products.isEmpty
+                                    ? emptyState()
+                                    : GridView.builder(
+                                        clipBehavior: Clip.none,
+                                        padding: EdgeInsets.zero,
+                                        physics: const BouncingScrollPhysics(),
+                                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 400,
+                                          mainAxisSpacing: 10,
+                                          crossAxisSpacing: 10,
+                                          childAspectRatio: 380 / 80,
+                                        ),
+                                        itemCount: products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).length,
+                                        itemBuilder: (context, index) {
+                                          final visible = products.where((p) => !inStock || p.stock >= 1 || (p.lowStock >= 0 && p.stock == p.lowStock)).toList();
+                                          final p = visible[index];
+                                          return InkWell(
+                                            onTap: () {
+                                              toggleSelection(p);
+                                              debugPrint(
+                                                "Selected Products: ${widget.products.map((e) => e.id).toList()}",
+                                              );
+                                              debugPrint(
+                                                "Selected Orders: ${widget.orderItems.map((e) => e.productId).toList()}",
+                                              );
+                                              debugPrint(
+                                                "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
+                                              );
+                                            },
+                                            child: productCard(p),
+                                          );
+                                        },
+                                      ),
+                              ),
+                              if (!(page==0 && products.length < pSize))
+                              PaginationBar(
+                                page: page,
+                                pageSize: pSize,
+                                itemCount: products.length,
+                                onPrevious: () {
+                                  setState(() {
+                                    page--;
+                                    _loadProducts();
+                                  });
+                                },
+                                onNext: () {
+                                  setState(() {
+                                    page++;
+                                    _loadProducts();
+                                  });
+                                },
+                              ),
+                              if( !(widget.select == 's' ||widget.select == 'S' ))
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: SizedBox(
+                                  width: 170,
+                                  height: 50,
+                                  child: UiHelper.myButton(
+                                    callback: () {
+                                      Navigator.pop(context, widget.products);
+                                    },
+                                    filled: true,
+                                    borderRadius: 25,
+                                    title:
+                                        "Add Products",
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : SizedBox.shrink(),
+            Container(height: 10),
+          ],
+        ),
       ),
     );
   }

@@ -39,6 +39,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
     {'title': 'Suppliers', 'icon': Icons.local_shipping_outlined},
     {'title': 'Orders', 'icon': Icons.production_quantity_limits_rounded},
     {'title': 'Transactions', 'icon': Icons.mobile_friendly_rounded},
+    {'title': 'Expenses', 'icon': Icons.account_balance_wallet_outlined},
     {'title': 'Reports', 'icon': Icons.bar_chart_outlined},
     {'title': 'Settings', 'icon': Icons.settings_outlined},
     {'title': 'Logout', 'icon': Icons.logout},
@@ -59,8 +60,10 @@ class _SidebarPanelState extends State<SidebarPanel> {
       case 5:
         return hideTransactions;
       case 6:
-        return hideReports;
+        return hideExpenses;
       case 7:
+        return hideReports;
+      case 8:
         return hideSettings;
       default:
         return false;
@@ -241,7 +244,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
                                           14,
                                           color: MyColors.translucent,
                                         ),
-                                        maxLines: 1,
+                                        maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
