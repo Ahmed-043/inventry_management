@@ -20,14 +20,23 @@ class AddExpenseDialog extends StatefulWidget {
 
 class _AddExpenseDialogState extends State<AddExpenseDialog> {
   late AddExpenseController controller;
-
+  late  bool isLoading = true;
   @override
   void initState() {
+    setState(() {
+      isLoading = true;
+    });
     super.initState();
     controller = AddExpenseController();
     controller.loadCategories();
-    controller.addListener(() {
-      if (mounted) setState(() {});
+    controller.addListener(() async {
+     await Future.delayed(const Duration(milliseconds: 300), () {});
+     isLoading = false;
+      if (mounted) {
+        setState(() {
+
+      });
+      }
     });
   }
 
@@ -46,7 +55,8 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: !isLoading
+          ? Column(
         children: [
           _buildHeader(),
           Expanded(
@@ -62,7 +72,8 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           ),
           _buildFooter(),
         ],
-      ),
+      )
+          : SizedBox(),
     );
   }
 

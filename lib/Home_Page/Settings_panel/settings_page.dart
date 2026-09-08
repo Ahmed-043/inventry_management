@@ -74,7 +74,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
               ],
             ),
           ),
-        )
+        ),
+        Align(
+            alignment: Alignment.bottomCenter,
+            child: Text("Developed by NESCO Industries", style: MyFont.bold(14, color: MyColors.textMain))),
+
       ],
     );
   }

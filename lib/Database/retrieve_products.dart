@@ -1,5 +1,6 @@
 
 import 'package:flutter/cupertino.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
@@ -106,22 +107,28 @@ Future<List<Product>> getProductsPage(
   String whereClause = '';
   List<dynamic> whereArgs = [];
 
-  // ---------------- SEARCH ----------------
-  if (search != null && search.trim().isNotEmpty) {
-    final normalizedSearch =
-    search.replaceAll(RegExp(r'[\s-]'), '').toLowerCase();
+  // ---------------- SEARCH (Substrings len >= searchSubstringLen) ----------------
+  if (search != null && search.trim().length >= searchSubstringLen) {
+    final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+    final List<String> searchOrClauses = [];
 
-    whereClause += '''
-      (LOWER(REPLACE(REPLACE(name, ' ', ''), '-', '')) LIKE ? OR
-       LOWER(REPLACE(REPLACE(sku, ' ', ''), '-', '')) LIKE ? OR
-       LOWER(REPLACE(REPLACE(description, ' ', ''), '-', '')) LIKE ?)
-    ''';
+    for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+      final window = normalizedSearch.substring(i, i + searchSubstringLen);
+      final pattern = '%$window%';
+      
+      const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+      
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'name')} LIKE ?");
+      whereArgs.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'sku')} LIKE ?");
+      whereArgs.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'description')} LIKE ?");
+      whereArgs.add(pattern);
+    }
 
-    whereArgs.addAll([
-      '%$normalizedSearch%',
-      '%$normalizedSearch%',
-      '%$normalizedSearch%',
-    ]);
+    if (searchOrClauses.isNotEmpty) {
+      whereClause += '${whereClause.isEmpty ? '' : ' AND '}(${searchOrClauses.join(' OR ')})';
+    }
   }
   // ---------------- Active products FILTER ----------------
 

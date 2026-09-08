@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -181,9 +182,27 @@ class Expense {
     List<String> whereClauses = [];
     List<dynamic> whereArgs = [];
 
-    if (search != null && search.isNotEmpty) {
-      whereClauses.add("(title LIKE ? OR remark LIKE ? OR person_name LIKE ?)");
-      whereArgs.addAll(["%$search%", "%$search%", "%$search%"]);
+    if (search != null && search.trim().length >= searchSubstringLen) {
+      final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+      final List<String> searchOrClauses = [];
+
+      for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+        final window = normalizedSearch.substring(i, i + searchSubstringLen);
+        final pattern = '%$window%';
+        
+        const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+        
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'title')} LIKE ?");
+        whereArgs.add(pattern);
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'remark')} LIKE ?");
+        whereArgs.add(pattern);
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'person_name')} LIKE ?");
+        whereArgs.add(pattern);
+      }
+
+      if (searchOrClauses.isNotEmpty) {
+        whereClauses.add('(${searchOrClauses.join(' OR ')})');
+      }
     }
     if (categoryId != null && categoryId != 0) {
       whereClauses.add("category_id = ?");
@@ -237,9 +256,27 @@ class Expense {
     List<String> whereClauses = [];
     List<dynamic> whereArgs = [];
 
-    if (search != null && search.isNotEmpty) {
-      whereClauses.add("(title LIKE ? OR remark LIKE ? OR person_name LIKE ?)");
-      whereArgs.addAll(["%$search%", "%$search%", "%$search%"]);
+    if (search != null && search.trim().length >= searchSubstringLen) {
+      final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+      final List<String> searchOrClauses = [];
+
+      for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+        final window = normalizedSearch.substring(i, i + searchSubstringLen);
+        final pattern = '%$window%';
+        
+        const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+        
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'title')} LIKE ?");
+        whereArgs.add(pattern);
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'remark')} LIKE ?");
+        whereArgs.add(pattern);
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'person_name')} LIKE ?");
+        whereArgs.add(pattern);
+      }
+
+      if (searchOrClauses.isNotEmpty) {
+        whereClauses.add('(${searchOrClauses.join(' OR ')})');
+      }
     }
     if (categoryId != null && categoryId != 0) {
       whereClauses.add("category_id = ?");

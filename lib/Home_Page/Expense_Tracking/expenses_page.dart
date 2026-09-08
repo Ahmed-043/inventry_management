@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense_category.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/add_expense_dialog.dart';
+import 'package:inventry_management/Home_Page/Expense_Tracking/daily_expense_tracker.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/expense_cards.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
@@ -136,29 +137,51 @@ class _ExpensesPageState extends State<ExpensesPage> {
               ),
               Row(
                 children: [
+                  Hero(
+                    tag: 'addExpense',
+                    child: UiHelper.myButton(
+                      callback: () {
+                        UiHelper.pushPage(
+                          context: context,
+                          opaque: false,
+                          barrierColor: Colors.black54,
+                          page: Center(
+                            child: Hero(
+                              tag: 'addExpense',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: AddExpenseDialog(
+                                  onSave: () =>  _loadData(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+
+                      },
+
+                      child: const Icon(Icons.add, color: Colors.white, size: 18),
+                      title: "Add Expense",
+                      textSize: 14,
+                      filled: true,
+                      color: MyColors.sidebarSelected,
+                      borderRadius: 10,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   UiHelper.myButton(
                     callback: () {
                       UiHelper.pushPage(
                         context: context,
-                        opaque: false,
-                        barrierColor: Colors.black54,
-                        page: Center(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: AddExpenseDialog(
-                              onSave: () =>  _loadData(),
-                            ),
-                          ),
-                        ),
+                        page: const DailyExpenseTracker(),
                       );
-
                     },
-
-                    child: const Icon(Icons.add, color: Colors.white, size: 18),
-                    title: "Add Expense",
+                    child: const Icon(Icons.receipt_long, color: Colors.white, size: 18),
+                    title: "Daily Tracker",
                     textSize: 14,
                     filled: true,
-                    color: MyColors.sidebarSelected,
+                    color: Colors.blueGrey,
                     borderRadius: 10,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
@@ -235,7 +258,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
     final categoryOptions = ['All', ...categories.map((c) => c.name)];
     final paymentOptions = ['All', 'Cash', 'Digital', 'Bank', 'Other'];
     final typeOptions = ['All', 'Income', 'Expense'];
-    final dateOptions = ["Start: ${formatEpoch(startDate)}", "End: ${formatEpoch(endDate)}"];
+    final dateOptions = ["From: ${formatEpoch(startDate)}", "To: ${formatEpoch(endDate)}"];
 
     Widget searchBar(){
       return Container(

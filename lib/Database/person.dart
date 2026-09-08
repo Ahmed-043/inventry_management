@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class Person {
@@ -105,18 +106,31 @@ Future<List<Person>> getPersons(
     whereClauses.add("p.type = 'local'");
   }
 
-  // 🔹 Case-insensitive search
-  if (search != null && search.trim().isNotEmpty) {
-    whereClauses.add('''
-      (
-        LOWER(p.name) LIKE ?
-        OR LOWER(p.phone) LIKE ?
-        OR LOWER(p.email) LIKE ?
-        OR LOWER(p.address) LIKE ?
-      )
-    ''');
-    final q = '%${search.toLowerCase()}%';
-    args.addAll([q, q, q, q]);
+  // 🔹 Case-insensitive substring search (min searchSubstringLen chars)
+  if (search != null && search.trim().length >= searchSubstringLen) {
+    final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+    final List<String> searchOrClauses = [];
+    
+    // Generate sliding windows from the search term
+    for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+      final window = normalizedSearch.substring(i, i + searchSubstringLen);
+      final pattern = '%$window%';
+      
+      const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+      
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.name')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.phone')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.email')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.address')} LIKE ?");
+      args.add(pattern);
+    }
+    
+    if (searchOrClauses.isNotEmpty) {
+      whereClauses.add('(${searchOrClauses.join(' OR ')})');
+    }
   }
 
   // 🔹 Pending-only scope (transaction-based, NOT person table)
@@ -235,9 +249,21 @@ Future<List<Person>> getAllPersons(
   String? where;
   List<Object?>? whereArgs;
 
-  if (search != null && search.isNotEmpty) {
-    where = 'LOWER(name) LIKE ?';
-    whereArgs = ['%${search.toLowerCase()}%'];
+  if (search != null && search.trim().length >= searchSubstringLen) {
+    final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+    final List<String> searchOrClauses = [];
+    final List<Object?> searchArgs = [];
+
+    for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+      final window = normalizedSearch.substring(i, i + searchSubstringLen);
+      searchOrClauses.add("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(name, ' ', ''), '-', ''), '_', ''), '.', ''), ',', '')) LIKE ?");
+      searchArgs.add('%$window%');
+    }
+
+    if (searchOrClauses.isNotEmpty) {
+      where = '(${searchOrClauses.join(' OR ')})';
+      whereArgs = searchArgs;
+    }
   }
 
   if (filter == 1) {
@@ -283,18 +309,31 @@ Future<Map<String, int>> getPersonsCountByType(
   final List<String> whereClauses = ['p.personType = ?'];
   final List<Object?> args = [personType];
 
-  // 🔹 Case-insensitive search
-  if (search != null && search.trim().isNotEmpty) {
-    whereClauses.add('''
-      (
-        LOWER(p.name) LIKE ?
-        OR LOWER(p.phone) LIKE ?
-        OR LOWER(p.email) LIKE ?
-        OR LOWER(p.address) LIKE ?
-      )
-    ''');
-    final q = '%${search.toLowerCase()}%';
-    args.addAll([q, q, q, q]);
+  // 🔹 Case-insensitive substring search (min searchSubstringLen chars)
+  if (search != null && search.trim().length >= searchSubstringLen) {
+    final normalizedSearch = search.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+    final List<String> searchOrClauses = [];
+    
+    // Generate sliding windows from the search term
+    for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+      final window = normalizedSearch.substring(i, i + searchSubstringLen);
+      final pattern = '%$window%';
+      
+      const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+      
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.name')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.phone')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.email')} LIKE ?");
+      args.add(pattern);
+      searchOrClauses.add("${normalization.replaceFirst('%s', 'p.address')} LIKE ?");
+      args.add(pattern);
+    }
+    
+    if (searchOrClauses.isNotEmpty) {
+      whereClauses.add('(${searchOrClauses.join(' OR ')})');
+    }
   }
 
   final result = await db.rawQuery('''

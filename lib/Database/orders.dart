@@ -1,5 +1,6 @@
 
 import 'package:flutter/cupertino.dart';
+import 'package:inventry_management/Database/database.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'Reports_Data/inventory_movments.dart';
@@ -244,16 +245,32 @@ Future<List<Order>> fetchFilteredOrders(
     args.add(personId);
   }
 
-  // --- Search ---
-  if (searchValue != null && searchValue.trim().isNotEmpty) {
+  // --- Search (Substrings len >= searchSubstringLen) ---
+  if (searchValue != null && searchValue.trim().length >= searchSubstringLen) {
     final val = searchValue.trim();
     final id = int.tryParse(val);
     if (id != null) {
       where.add('(o.id = ?)');
       args.addAll([id]);
     } else {
-      where.add('(o.name LIKE ? OR o.remark LIKE ?)');
-      args.addAll(['%$val%', '%$val%']);
+      final normalizedSearch = val.replaceAll(RegExp(r'[\s\-_.,]'), '').toLowerCase();
+      final List<String> searchOrClauses = [];
+      
+      for (int i = 0; i <= normalizedSearch.length - searchSubstringLen; i++) {
+        final window = normalizedSearch.substring(i, i + searchSubstringLen);
+        final pattern = '%$window%';
+        
+        const normalization = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(%s, ' ', ''), '-', ''), '_', ''), '.', ''), ',', ''))";
+        
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'o.name')} LIKE ?");
+        args.add(pattern);
+        searchOrClauses.add("${normalization.replaceFirst('%s', 'o.remark')} LIKE ?");
+        args.add(pattern);
+      }
+
+      if (searchOrClauses.isNotEmpty) {
+        where.add('(${searchOrClauses.join(' OR ')})');
+      }
     }
   }
 
