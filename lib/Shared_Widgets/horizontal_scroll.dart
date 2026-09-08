@@ -28,13 +28,17 @@ class HorizontalScroll extends StatelessWidget {
         return Listener(
           onPointerSignal: (event) {
             if (event is PointerScrollEvent && ctrl.hasClients) {
-              final delta = scrollByWidth
-                  ? constraints.maxWidth * (event.scrollDelta.dy.sign)
-                  : event.scrollDelta.dy * speed;
+              GestureBinding.instance.pointerSignalResolver.register(event, (event) {
+                if (event is PointerScrollEvent) {
+                  final delta = scrollByWidth
+                      ? constraints.maxWidth * (event.scrollDelta.dy.sign)
+                      : event.scrollDelta.dy * speed;
 
-              ctrl.jumpTo(
-                (ctrl.offset + delta).clamp(0.0, ctrl.position.maxScrollExtent),
-              );
+                  ctrl.jumpTo(
+                    (ctrl.offset + delta).clamp(0.0, ctrl.position.maxScrollExtent),
+                  );
+                }
+              });
             }
           },
           child: enableOuterScroll

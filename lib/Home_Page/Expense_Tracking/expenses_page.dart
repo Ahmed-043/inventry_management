@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense_category.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/add_expense_dialog.dart';
-import 'package:inventry_management/Home_Page/Expense_Tracking/daily_expense_tracker.dart';
+import 'package:inventry_management/Home_Page/Expense_Tracking/Expense_Report/expense_report.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/expense_cards.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
@@ -178,7 +178,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       );
                     },
                     child: const Icon(Icons.receipt_long, color: Colors.white, size: 18),
-                    title: "Daily Tracker",
+                    title: "Expense Report",
                     textSize: 14,
                     filled: true,
                     color: Colors.blueGrey,
