@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense_category.dart';
+import 'package:inventry_management/Database/db_info.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
@@ -28,6 +29,7 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
   String _selectedView = 'Daily';
+  DBInfo? companyInfo;
 
   List<Expense> expenses = [];
   Map<int, String> categoryNames = {};
@@ -42,7 +44,15 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
     super.initState();
     _fromDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     _toDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    _loadCompanyInfo();
     _loadData();
+  }
+
+  Future<void> _loadCompanyInfo() async {
+    if (currentDB != null) {
+      final info = await getDBInfo(currentDB!);
+      setState(() => companyInfo = info);
+    }
   }
 
   Future<void> _loadData() async {
@@ -211,16 +221,16 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
     double netTotal = totalIn - totalOut;
 
     return Material(
-      color: MyColors.translucent,
+      color: MyColors.mainBg,
       child: Stack(
         children: [
           Positioned.fill(
             child: CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  pinned: false,
-                  backgroundColor: MyColors.translucent,
-                  elevation: 2,
+                  pinned: true,
+                  backgroundColor: MyColors.mainBg,
+                  elevation: 0,
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
                     onPressed: () => Navigator.pop(context),
@@ -235,7 +245,7 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                         Row(
                           children: [
                             StatusSegmentedControl(
-                              fontSize: 20,
+                              fontSize: 14,
                               selected: _selectedView,
                               options: const [
                                 TwoValue(first: 'Daily', second: MyColors.sidebarSelected),
@@ -245,43 +255,27 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                               ],
                               onChanged: (view) => _updateDatesForView(view),
                             ),
-                            const SizedBox(width: 24),
+                            const SizedBox(width: 16),
                             HoverScroll(
                               onScroll: _onRangeHoverScroll,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  ScaledContainer(
-                                    scale: 1.4,
-                                    child: IconButton(
-                                      splashColor: Colors.transparent,
-                                      highlightColor: Colors.transparent,
-                                      hoverColor: Colors.transparent,
-                                      icon: const Icon(Icons.arrow_back_rounded, color: MyColors.lightGrey, size: 28),
-                                      onPressed: () => _navigatePeriod(-1),
-                                      padding: EdgeInsets.zero,
-                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.chevron_left, color: MyColors.grey),
+                                    onPressed: () => _navigatePeriod(-1),
                                   ),
-                                  const SizedBox(width: 20),
                                   Container(
-                                    constraints: const BoxConstraints(minWidth: 150),
+                                    constraints: const BoxConstraints(minWidth: 120),
                                     alignment: Alignment.center,
                                     child: Text(
                                       _getPeriodLabel(),
-                                      style: MyFont.bold(18, color: MyColors.grey),
+                                      style: MyFont.bold(14, color: MyColors.grey),
                                     ),
                                   ),
-                                  const SizedBox(width: 20),
-                                  ScaledContainer(
-                                    scale: 1.4,
-                                    child: IconButton(
-                                      splashColor: Colors.transparent,
-                                      highlightColor: Colors.transparent,
-                                      hoverColor: Colors.transparent,
-                                      icon: const Icon(Icons.arrow_forward_rounded, color: MyColors.lightGrey, size: 28),
-                                      onPressed: () => _navigatePeriod(1),
-                                      padding: EdgeInsets.zero,
-                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.chevron_right, color: MyColors.grey),
+                                    onPressed: () => _navigatePeriod(1),
                                   ),
                                 ],
                               ),
@@ -315,7 +309,7 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                 else
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 18, bottom: 70),
+                      padding: const EdgeInsets.only(top: 18, bottom: 80),
                       child: Center(
                         child: RepaintBoundary(
                           key: _reportKey,
@@ -327,6 +321,7 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                             totalIn: totalIn,
                             totalOut: totalOut,
                             netTotal: netTotal,
+                            companyInfo: companyInfo,
                           ),
                         ),
                       ),
@@ -339,12 +334,12 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
             alignment: Alignment.bottomCenter,
             child: Container(
               margin: const EdgeInsets.all(15),
-              height: 35,
+              height: 45,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   UiHelper.myButton(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     callback: _handleShare,
                     title: "Share Report",
                     child: isSharing
@@ -364,13 +359,12 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                     color: MyColors.info,
                     borderRadius: 12,
                     filled: false,
-                    textSize: 14,
                   ),
                   const SizedBox(width: 8),
                   UiHelper.myButton(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     callback: _handleSave,
-                    title: "Save Report",
+                    title: "Save as Image",
                     child: isSaving
                         ? const SizedBox(
                             width: 20,
@@ -388,7 +382,6 @@ class _DailyExpenseTrackerState extends State<DailyExpenseTracker> {
                     color: MyColors.info,
                     borderRadius: 12,
                     filled: true,
-                    textSize: 14,
                   ),
                 ],
               ),

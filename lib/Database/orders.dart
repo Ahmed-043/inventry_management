@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:inventry_management/Database/database.dart';
+import 'package:inventry_management/Database/ledger.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'Reports_Data/inventory_movments.dart';
@@ -142,7 +143,7 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
     await handleProductUpdates(order, items, txn, orderId);
 
     // 3️⃣ Insert Payment Transaction
-    await txn.insert('payment_transactions', {
+    final transactionId = await txn.insert('payment_transactions', {
       'person_id': order.personId,
       'name': order.name,
       'order_id': orderId,
@@ -155,6 +156,9 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
       'remark': order.remark,
       'payment_timestamp': order.paymentTimestamp,
     });
+
+    // 4️⃣ Sync to Ledger
+    await LedgerHelper.processPaymentTransaction(txn, transactionId, source: 'order');
 
     return orderId;
   });
@@ -537,6 +541,17 @@ Future<bool> updatePendingOrderFromObject(
       where: 'order_id = ?',
       whereArgs: [order.id],
     );
+
+    // 5️⃣ Sync all updated transactions to Ledger
+    final transResult = await txn.query(
+      'payment_transactions',
+      columns: ['id'],
+      where: 'order_id = ?',
+      whereArgs: [order.id],
+    );
+    for (final row in transResult) {
+      await LedgerHelper.processPaymentTransaction(txn, row['id'] as int, source: 'order');
+    }
 
     return true;
   });

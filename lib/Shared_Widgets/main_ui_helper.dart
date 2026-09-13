@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -179,6 +180,7 @@ class UiHelper {
     FocusNode? focusNode,
     Widget? suffix,
     Widget? prefix,
+    Color borderColor = MyColors.lightGrey,
     EdgeInsets? padding,
   }) {
     return MouseRegion(
@@ -196,7 +198,6 @@ class UiHelper {
         keyboardType: textType,
         inputFormatters: inputFormatters,
         onChanged: (_) => onChange?.call(),
-
         focusNode: focusNode,
         style: MyFont.normal(fontSize, color: MyColors.darkBlue),
         cursorColor: MyColors.darkBlue,
@@ -209,7 +210,7 @@ class UiHelper {
           prefixIcon: prefix,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: BorderSide(width: 2, color: MyColors.lightGrey),
+            borderSide: BorderSide(width: 2, color: borderColor),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
@@ -778,13 +779,15 @@ class UiHelper {
       color: Colors.white,
     );
   }
+
   static Future<T?> pushPage<T>({
     required BuildContext context,
     required Widget page,
     bool instantOpen = false,
     bool opaque = true,
     Color barrierColor = Colors.black54,
-    bool barrierDismissible = false
+    bool barrierDismissible = false,
+    bool blurBackground = true,
   }){
     if(performanceMode || instantOpen){
       return Navigator.of(context).push<T>(
@@ -806,11 +809,19 @@ class UiHelper {
           barrierDismissible: barrierDismissible,
           transitionDuration: const Duration(milliseconds: 500), // slower transition
           reverseTransitionDuration: const Duration(milliseconds: 500), // pop
-          pageBuilder: (context, animation, secondaryAnimation) =>page,
+          pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,
-              child: child,
+              child: blurBackground
+                  ? BackdropFilter(
+                      filter: ui.ImageFilter.blur(
+                        sigmaX: 5.0 * animation.value,
+                        sigmaY: 5.0 * animation.value,
+                      ),
+                      child: child,
+                    )
+                  : child,
             );
           },
         ),

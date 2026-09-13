@@ -152,22 +152,22 @@ class _NewTransactionDialogState extends State<NewTransactionDialog> {
               if (!transaction.editable) {
                 return;
               }
-              final result = await showDialog<Person>(
+              final result = await UiHelper.pushPage<Person>(
                 context: context,
-                builder: (BuildContext context) {
-                  return Dialog(
-                    insetPadding: EdgeInsets.zero,
-                    child: Container(
-                      width: 400,
-                      height: 600,
-                      decoration: BoxDecoration(
-                        color: MyColors.translucent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: ChoosePerson(filter: 0, person: person),
+                opaque: false,
+                barrierDismissible: true,
+                page: Dialog(
+                  insetPadding: EdgeInsets.zero,
+                  child: Container(
+                    width: 400,
+                    height: 600,
+                    decoration: BoxDecoration(
+                      color: MyColors.translucent,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                },
+                    child: ChoosePerson(filter: 0, person: person),
+                  ),
+                ),
               );
               if (result != null) {
                 result.personType == 'customer' ? transaction.type = 'Incoming' : transaction.type = 'Outgoing';

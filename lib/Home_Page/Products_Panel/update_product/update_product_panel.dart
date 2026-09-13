@@ -574,16 +574,19 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
         focusColor: Colors.transparent,
         splashColor: Colors.transparent,
         onTap: () async {
-          final List<Product>? result = await showDialog<List<Product>>(
+          final List<Product>? result = await UiHelper.pushPage<List<Product>>(
             context: context,
-            builder: (context) => Dialog(
-              insetPadding: EdgeInsets.all(10),
+            opaque: false,
+            barrierDismissible: true,
+            blurBackground: false,
+            page: Dialog(
+              insetPadding: EdgeInsets.all(0),
               backgroundColor: MyColors.mainBg,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Container(
                 width: 1200,
                 height: 800,
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(0),
                 child: ProductSelectorPanel(
                   products: controller.compProducts,
                   allowedIds: controller.availableProducts.map((p) => p.id).toList(),

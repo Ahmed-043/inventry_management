@@ -131,4 +131,16 @@ final Map<String, Map<String, String>> dbSchema = {
     'sequence': 'INTEGER DEFAULT 0',
     'active': 'INTEGER DEFAULT 1 CHECK(active IN (0,1))',
   },
+  'ledger': {
+    'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+    'person_id': 'INTEGER NOT NULL',
+    'transaction_id': 'INTEGER DEFAULT 0',
+    'order_id': 'INTEGER DEFAULT 0',
+    'source': 'TEXT DEFAULT ""',
+    'timestamp': 'INTEGER NOT NULL',
+    'entry_type': "TEXT NOT NULL CHECK(entry_type IN ('debit','credit'))",
+    'amount': 'REAL NOT NULL DEFAULT 0 CHECK(amount >= 0)',
+    'balance': 'REAL NOT NULL DEFAULT 0',
+    'remark': 'TEXT DEFAULT ""',
+  },
 };

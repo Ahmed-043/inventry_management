@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:inventry_management/Database/ledger.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 
@@ -68,12 +68,19 @@ class PaymentTransaction {
 }
 /// Insert New Transaction
 Future<int> insertTransaction(Database db, PaymentTransaction p) async {
-  final data = p.toMap(); // keep your map as it is
-  if (p.paidAmount.abs() >= p.amount.abs() && p.amount != 0) {
-    data['payment_status'] = 'Paid';
-  }
-  data.remove('id'); // <-- remove id safely
-  return await db.insert('payment_transactions', data);
+  return await db.transaction((txn) async {
+    final data = p.toMap(); // keep your map as it is
+    if (p.paidAmount.abs() >= p.amount.abs() && p.amount != 0) {
+      data['payment_status'] = 'Paid';
+    }
+    data.remove('id'); // <-- remove id safely
+    final id = await txn.insert('payment_transactions', data);
+    
+    // Sync to Ledger
+    await LedgerHelper.processPaymentTransaction(txn, id);
+    
+    return id;
+  });
 }
 
 /// Update Transaction (only allowed rows if Payment Status is not 'Paid'
@@ -134,6 +141,11 @@ Future<bool> updatePaymentIfNotPaid(
 
   // If update failed, stop here
   if (rows <= 0) return false;
+
+  // Sync to Ledger
+  await db.transaction((txn) async {
+    await LedgerHelper.processPaymentTransaction(txn, id);
+  });
 
   // Reflect on ORDER if orderId > 0 or transaction has an order > 0
   final targetOrderId = currentOrderId;
@@ -230,6 +242,9 @@ Future<void> distributePayments(
           whereArgs: [id],
         );
 
+        // Sync to Ledger
+        await LedgerHelper.processPaymentTransaction(txn, id, source: 'person');
+
         if (orderId > 0) {
           final Map<String, dynamic> orderUpdate = {
             'paid_amount': newPaid,
@@ -288,6 +303,9 @@ Future<void> distributePayments(
           where: 'id = ?',
           whereArgs: [id],
         );
+
+        // Sync to Ledger
+        await LedgerHelper.processPaymentTransaction(txn, id, source: 'person');
 
         if (orderId > 0) {
           final Map<String, dynamic> orderUpdate = {

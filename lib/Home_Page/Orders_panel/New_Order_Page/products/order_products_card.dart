@@ -573,22 +573,24 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
     if (!(widget.order.editable)) {
       return;
     }
-    await showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      insetPadding: EdgeInsets.all(10),
-      backgroundColor: MyColors.mainBg,
-      child: SizedBox(
-        width: 1200,
-        height: 800,
-        child: ProductSelectorPanel(
-          // products: products,
-          orderItems: widget.selectedProducts,
-          select: 'O',
-          search: search,
+    await UiHelper.pushPage(
+      context: context,
+      opaque: false,
+      barrierDismissible: true,
+      page: Dialog(
+        insetPadding: EdgeInsets.all(10),
+        backgroundColor: MyColors.mainBg,
+        child: SizedBox(
+          width: 1200,
+          height: 800,
+          child: ProductSelectorPanel(
+            // products: products,
+            orderItems: widget.selectedProducts,
+            select: 'O',
+            search: search,
+          ),
         ),
       ),
-    ),
     );
     //syncSelectedProducts();
 

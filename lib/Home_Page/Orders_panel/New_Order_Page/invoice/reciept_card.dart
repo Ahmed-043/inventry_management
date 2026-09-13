@@ -235,23 +235,23 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
   }
 
   updateStockDialog(Map<int, int> idMap) async {
-    await showDialog(
+    await UiHelper.pushPage(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: EdgeInsets.all(10),
-          backgroundColor: MyColors.mainBg,
-          child: SizedBox(
-            width: 800,
-            height: 800,
-            child: ProductSelectorPanel(
-              // products: products,
-              idMap: idMap,
-              select: 's',
-            ),
+      opaque: false,
+      barrierDismissible: true,
+      page: Dialog(
+        insetPadding: EdgeInsets.all(10),
+        backgroundColor: MyColors.mainBg,
+        child: SizedBox(
+          width: 800,
+          height: 800,
+          child: ProductSelectorPanel(
+            // products: products,
+            idMap: idMap,
+            select: 's',
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

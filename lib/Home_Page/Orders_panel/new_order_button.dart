@@ -17,7 +17,7 @@ class NewOrder  {
          // margin: EdgeInsets.only(top:10,bottom: 5),
           child: ElevatedButton(onPressed: (){
             // Navigator.push(context, MaterialPageRoute(builder: (context) => ));
-            UiHelper.pushPage(context: context, page: NewOrderPage(sell: sell,callback: callBack));
+            UiHelper.pushPage(context: context, page: NewOrderPage(sell: sell,callback: callBack), blurBackground: false);
           },
               style: ElevatedButton.styleFrom(
                 overlayColor: Colors.white, // 👈 ripple color

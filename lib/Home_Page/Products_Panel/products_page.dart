@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -301,6 +302,46 @@ class _StockDashboardState extends State<StockDashboard> {
                         barrierDismissible: true,
                         barrierLabel: 'SortMenu',
                         transitionDuration: const Duration(milliseconds: 300),
+                        transitionBuilder: (context, animation, secondaryAnimation, child) {
+                          if (performanceMode) {
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(1, 0),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOut,
+                                ),
+                              ),
+                              child: ScaleTransition(
+                                scale: animation,
+                                child: child,
+                              ),
+                            );
+                          }
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1, 0),
+                              end: Offset.zero,
+                            ).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOut,
+                              ),
+                            ),
+                            child: ScaleTransition(
+                              scale: animation,
+                              child: BackdropFilter(
+                                filter: ui.ImageFilter.blur(
+                                  sigmaX: 5.0 * animation.value,
+                                  sigmaY: 5.0 * animation.value,
+                                ),
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
                         pageBuilder: (context, animation, secondaryAnimation) {
                           double dragX = 0;
                           double dragY = 0;
@@ -412,25 +453,7 @@ class _StockDashboardState extends State<StockDashboard> {
                             },
                           );
                         },
-                        transitionBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                              return SlideTransition(
-                                position:
-                                    Tween<Offset>(
-                                      begin: const Offset(1, 0),
-                                      end: Offset.zero,
-                                    ).animate(
-                                      CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.easeOut,
-                                      ),
-                                    ),
-                                child: ScaleTransition(
-                                  scale: animation,
-                                  child: child,
-                                ),
-                              );
-                            },
+
                       );
                     }
                   },

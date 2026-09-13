@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:inventry_management/Database/db_info.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/colors.dart';
@@ -12,6 +13,7 @@ class ExpenseReportBody extends StatelessWidget {
   final double totalIn;
   final double totalOut;
   final double netTotal;
+  final DBInfo? companyInfo;
 
   const ExpenseReportBody({
     super.key,
@@ -22,13 +24,15 @@ class ExpenseReportBody extends StatelessWidget {
     required this.totalIn,
     required this.totalOut,
     required this.netTotal,
+    this.companyInfo,
   });
 
   @override
   Widget build(BuildContext context) {
+    final priceFormat = NumberFormat('#,##0.00');
     bool isMultiDay = fromDate.year != toDate.year || fromDate.month != toDate.month || fromDate.day != toDate.day;
     return Container(
-      width: 800,
+      width: 900,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: MyColors.translucent,
@@ -37,23 +41,18 @@ class ExpenseReportBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: Text(
-              "Expense Tracker",
-              style: MyFont.bold(28, color: Colors.black),
-            ),
-          ),
+          _buildCompanyHeader(),
           const SizedBox(height: 20),
           _buildInfoLine("Date:", !isMultiDay
               ? DateFormat('dd MMMM yyyy').format(fromDate)
-              : "${DateFormat('dd MMM').format(fromDate)} - ${DateFormat('dd MMM yyyy').format(toDate)}"),
+              : "${DateFormat('dd MMM yyyy').format(fromDate)} - ${DateFormat('dd MMM yyyy').format(toDate)}", isBold: true),
           _buildInfoLine(
             "Total:",
-            "Rs. ${netTotal.abs().toStringAsFixed(2)} ${netTotal >= 0 ? '(IN)' : '(OUT)'}",
+            "Rs. ${priceFormat.format(netTotal.abs())} ${netTotal >= 0 ? '(IN)' : '(OUT)'}",
+            isBold: true,
           ),
           const SizedBox(height: 30),
-          _buildTable(totalIn, totalOut, netTotal, isMultiDay),
+          _buildTable(totalIn, totalOut, netTotal, isMultiDay, priceFormat),
           const SizedBox(height: 30),
           Text("Notes:", style: MyFont.medium(16)),
           const SizedBox(height: 8),
@@ -91,12 +90,66 @@ class ExpenseReportBody extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoLine(String label, String value) {
+  Widget _buildCompanyHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (companyInfo?.image != null)
+          Container(
+            margin: const EdgeInsets.only(right: 20),
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.black12, width: 2),
+              image: DecorationImage(
+                image: MemoryImage(companyInfo!.image!),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                companyInfo?.dbName.toUpperCase() ?? "EXPENSE TRACKER",
+                style: MyFont.bold(28, color: Colors.black),
+              ),
+              if (companyInfo?.location.isNotEmpty ?? false)
+                Text(
+                  companyInfo!.location,
+                  style: MyFont.medium(14, color: Colors.black87),
+                ),
+              if (companyInfo?.phone.isNotEmpty ?? false)
+                Text(
+                  "Phone: ${companyInfo!.phone}",
+                  style: MyFont.medium(14, color: Colors.black87),
+                ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            "EXPENSES",
+            style: MyFont.bold(18, color: Colors.black),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoLine(String label, String value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(label, style: MyFont.medium(16)),
+          Text(label, style: isBold ? MyFont.bold(16) : MyFont.medium(16)),
           const SizedBox(width: 10),
           Expanded(
             child: Container(
@@ -111,12 +164,13 @@ class ExpenseReportBody extends StatelessWidget {
     );
   }
 
-  Widget _buildTable(double totalIn, double totalOut, double netTotal, bool isMultiDay) {
+  Widget _buildTable(double totalIn, double totalOut, double netTotal, bool isMultiDay, NumberFormat priceFormat) {
     return Column(
       children: [
         // Table Header
         Container(
           decoration: BoxDecoration(
+            color:MyColors.primary.withAlpha(80),
             border: Border.all(color: Colors.black),
           ),
           child: Row(
@@ -137,8 +191,9 @@ class ExpenseReportBody extends StatelessWidget {
             final e = expenses[index];
             final isIn = e.amount > 0;
             return Container(
-              decoration: const BoxDecoration(
-                border: Border(
+              decoration: BoxDecoration(
+                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(100) : Colors.transparent,
+                border: const Border(
                   left: BorderSide(color: Colors.black),
                   right: BorderSide(color: Colors.black),
                   bottom: BorderSide(color: Colors.black),
@@ -148,23 +203,25 @@ class ExpenseReportBody extends StatelessWidget {
                 children: [
                   if (isMultiDay)
                     _tableCell(
-                      DateFormat('dd MMM yy').format(DateTime.fromMillisecondsSinceEpoch(e.expenseDate)),
+                      DateFormat('dd MMM yy\nhh:mm a').format(DateTime.fromMillisecondsSinceEpoch(e.expenseDate)),
                       flex: 2,
+                      isMedium: true,
                     ),
                   _tableCell(isIn ? "IN" : "OUT", flex: 1, color: isIn ? Colors.green : Colors.red),
                   _tableCell(categoryNames[e.categoryId] ?? 'N/A', flex: 2),
                   _tableCell(e.title, flex: 3),
                   _tableCell(e.personName.isEmpty ? '-' : e.personName, flex: 2),
                   _tableCell(e.paymentMethod, flex: 2),
-                  _tableCell(e.amount.abs().toStringAsFixed(2), flex: 2, isLast: true),
+                  _tableCell(priceFormat.format(e.amount.abs()), flex: 2, isLast: true, color: isIn ? Colors.green : Colors.red),
                 ],
               ),
             );
           } else {
             // Empty rows to fill the space
             return Container(
-              decoration: const BoxDecoration(
-                border: Border(
+              decoration: BoxDecoration(
+                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(100) : Colors.transparent,
+                border: const Border(
                   left: BorderSide(color: Colors.black),
                   right: BorderSide(color: Colors.black),
                   bottom: BorderSide(color: Colors.black),
@@ -186,12 +243,13 @@ class ExpenseReportBody extends StatelessWidget {
         }),
         // Totals at the bottom
         const SizedBox(height: 10),
-        _buildTotalRow("Total Income (IN):", totalIn, color: Colors.green),
-        _buildTotalRow("Total Expense (OUT):", totalOut, color: Colors.red),
+        _buildTotalRow("Total Income (IN):", totalIn, priceFormat, color: Colors.green),
+        _buildTotalRow("Total Expense (OUT):", totalOut, priceFormat, color: Colors.red),
         const Divider(color: Colors.black, thickness: 1),
         _buildTotalRow(
           "Total:",
           netTotal.abs(),
+          priceFormat,
           isBold: true,
           suffix: netTotal >= 0 ? '(IN)' : '(OUT)',
         ),
@@ -199,7 +257,7 @@ class ExpenseReportBody extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount, {Color? color, bool isBold = false, String suffix = ''}) {
+  Widget _buildTotalRow(String label, double amount, NumberFormat priceFormat, {Color? color, bool isBold = false, String suffix = ''}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -212,7 +270,7 @@ class ExpenseReportBody extends StatelessWidget {
             border: Border(bottom: BorderSide(color: Colors.black)),
           ),
           child: Text(
-            "Rs. ${amount.toStringAsFixed(2)} $suffix",
+            "Rs. ${priceFormat.format(amount)} $suffix",
             style: isBold ? MyFont.bold(16, color: color) : MyFont.medium(16, color: color),
             textAlign: TextAlign.right,
           ),
@@ -221,11 +279,11 @@ class ExpenseReportBody extends StatelessWidget {
     );
   }
 
-  Widget _tableCell(String text, {int flex = 1, bool isHeader = false, bool isLast = false, Color? color}) {
+  Widget _tableCell(String text, {int flex = 1, bool isHeader = false, bool isLast = false, Color? color, bool isMedium = false}) {
     return Expanded(
       flex: flex,
       child: Container(
-        height: 35,
+        height: 45,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border(
@@ -234,9 +292,11 @@ class ExpenseReportBody extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: isHeader ? MyFont.bold(14) : MyFont.medium(14, color: color),
+          style: isHeader
+              ? MyFont.bold(16)
+              : (isMedium ? MyFont.medium(14, color: color) : MyFont.semiBold(14, color: color)),
           textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
         ),
       ),
     );

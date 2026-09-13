@@ -741,11 +741,14 @@ class _InputNewProductState extends State<InputNewProduct>
   }
 
   Future<void> _showProductPicker() async {
-    await showDialog(
+    await UiHelper.pushPage(
       context: context,
-      builder: (context) => Dialog(
+      opaque: false,
+      barrierDismissible: true,
+      blurBackground: false,
+      page: Dialog(
         backgroundColor: MyColors.mainBg,
-        insetPadding: EdgeInsets.all(10),
+        insetPadding: EdgeInsets.all(0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: SizedBox(
           width: 1200,

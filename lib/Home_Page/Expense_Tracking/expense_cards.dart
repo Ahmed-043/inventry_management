@@ -61,16 +61,17 @@ class ExpenseCards extends StatelessWidget {
 
   Widget titleBar() {
     List<String> titles = [
-      'EXPENSE ID',
+      'ID',
+      'TYPE',
       'CATEGORY',
       'TITLE',
       'PERSON',
       'AMOUNT',
       'DATE',
-      'PAYMENT',
+      'METHOD',
       'REMARK',
     ];
-    const List<int> flexValues = [1, 2, 2, 1, 1, 1, 1, 2];
+    const List<int> flexValues = [1, 1, 2, 2, 1, 1, 1, 1, 2];
 
     return Container(
       height: 50,
@@ -86,7 +87,7 @@ class ExpenseCards extends StatelessWidget {
             flex: flexValues[i],
             child: Text(
               titles[i],
-              textAlign: i < 4 ? .start : TextAlign.center,
+              textAlign: i == 0 || i == 2 || i == 3 || i == 4 ? .start : TextAlign.center,
               style: MyFont.bold(12, color: MyColors.textSecondary),
             ),
           );
@@ -97,28 +98,16 @@ class ExpenseCards extends StatelessWidget {
 
   Widget expenseCard(BuildContext context, Expense expense) {
     final date = DateTime.fromMillisecondsSinceEpoch(expense.expenseDate);
-    final formattedDate = DateFormat('dd MMM yyyy').format(date);
+    final formattedDate = DateFormat('dd MMM yy').format(date);
     double textSize = 14;
+    final isIn = expense.amount > 0;
 
     final category = categories.firstWhere(
       (c) => c.id == expense.categoryId,
       orElse: () => ExpenseCategory(name: 'Uncategorized', icon: ''),
     );
 
-    Color paymentColor;
-    switch (expense.paymentMethod) {
-      case 'Cash':
-        paymentColor = MyColors.success;
-        break;
-      case 'Digital':
-        paymentColor = MyColors.info;
-        break;
-      case 'Bank':
-        paymentColor = MyColors.blue;
-        break;
-      default:
-        paymentColor = MyColors.grey;
-    }
+    Color statusColor = isIn ? MyColors.success : MyColors.error;
 
     return Material(
       color: Colors.transparent,
@@ -138,6 +127,24 @@ class ExpenseCards extends StatelessWidget {
                 child: Text(
                   expense.id != null ? '#${expense.id}' : '-',
                   style: MyFont.bold(textSize, color: MyColors.textSecondary),
+                ),
+              ),
+              // Type
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: statusColor.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      isIn ? "IN" : "OUT",
+                      style: MyFont.bold(10, color: statusColor),
+                    ),
+                  ),
                 ),
               ),
               // Category
@@ -178,7 +185,7 @@ class ExpenseCards extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Rs. ${NumberFormat.decimalPattern().format(expense.amount.abs())}',
-                    style: MyFont.bold(textSize, color: expense.amount > 0 ? MyColors.success : MyColors.error),
+                    style: MyFont.bold(textSize, color: statusColor),
                   ),
                 ),
               ),
@@ -199,12 +206,12 @@ class ExpenseCards extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: paymentColor.withOpacity(0.1),
+                      color: Colors.grey.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       expense.paymentMethod,
-                      style: MyFont.bold(12, color: paymentColor),
+                      style: MyFont.bold(12, color: MyColors.textSecondary),
                     ),
                   ),
                 ),

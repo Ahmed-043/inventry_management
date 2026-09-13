@@ -214,11 +214,19 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                       children: [
                        if(!(widget.select == 's'|| widget.select == 'S')) SizedBox(
                           height: 50,
-                          child: TextField(
+                          child: UiHelper.myTextField(
                             focusNode: _searchFocus,
                             autofocus: true,
                             controller: searchController,
-                            onChanged: (e) {
+                            fontSize: 20,
+                            borderRadius: 20,
+                            borderColor: MyColors.darkBlue.withAlpha(150),
+                            prefix: Icon(
+                              Icons.search_rounded,
+                              color: MyColors.darkBlue,
+                            ),
+                            hint: "Search (Name, SKU, Description)",
+                            onChange: () {
                               _searchTimer?.cancel();
                               _searchTimer = Timer(
                                 const Duration(milliseconds: 500),
@@ -227,45 +235,6 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                                 },
                               );
                             },
-                            style: MyFont.semiBold(
-                              20,
-                              color: MyColors.darkBlue,
-                            ),
-                            decoration: InputDecoration(
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: MyColors.darkBlue,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: MyColors.darkBlue,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide(
-                                  width: 2,
-                                  color: MyColors.darkBlue,
-                                ),
-                              ),
-                              labelStyle: MyFont.semiBold(
-                                20,
-                                color: MyColors.darkBlue.withAlpha(230),
-                              ),
-                              hint: Text(
-                                "Search (Name, SKU, Description)",
-                                style: MyFont.normal(20, color: MyColors.grey),
-                              ),
-                            ),
                           ),
                         ),
                         SizedBox(
