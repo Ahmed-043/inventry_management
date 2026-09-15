@@ -65,26 +65,7 @@ class LedgerReportBody extends StatelessWidget {
           ),
           const SizedBox(height: 30),
           _buildTable(context, isMultiDay, priceFormat),
-          // const SizedBox(height: 30),
-          // Text("Notes:", style: MyFont.medium(16)),
-          // const SizedBox(height: 8),
-          // Container(
-          //   height: 30,
-          //   width: double.infinity,
-          //   decoration: const BoxDecoration(
-          //     border: Border(bottom: BorderSide(color: Colors.black)),
-          //   ),
-          // ),
-          // const SizedBox(height: 10),
-          // Container(
-          //   height: 30,
-          //   width: double.infinity,
-          //   decoration: const BoxDecoration(
-          //     border: Border(bottom: BorderSide(color: Colors.black)),
-          //   ),
-          // ),
-          // const SizedBox(height: 40),
-          // const Divider(color: Colors.black),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -250,7 +231,7 @@ class LedgerReportBody extends StatelessWidget {
 
             return Container(
               decoration: BoxDecoration(
-                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(100) : Colors.transparent,
+                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(75) : Colors.transparent,
                 border: const Border(
                   left: BorderSide(color: Colors.black),
                   right: BorderSide(color: Colors.black),
@@ -271,7 +252,7 @@ class LedgerReportBody extends StatelessWidget {
           } else {
             return Container(
               decoration: BoxDecoration(
-                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(100) : Colors.transparent,
+                color: index % 2 != 0 ? MyColors.mainBg.withAlpha(75) : Colors.transparent,
                 border: const Border(
                   left: BorderSide(color: Colors.black),
                   right: BorderSide(color: Colors.black),

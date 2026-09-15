@@ -209,6 +209,7 @@ Future<void> distributePayments(
       );
 
       double remainingPay = pay;
+      double totalDistributedPay = 0;
       for (var row in outgoing) {
         if (remainingPay <= 0) break;
 
@@ -216,17 +217,20 @@ Future<void> distributePayments(
         final amount = (row['amount'] as num).toDouble();
         final currentPaid = (row['paid_amount'] as num).toDouble();
         final orderId = row['order_id'] as int;
+        String currentRemark = row['remark'] as String? ?? '';
 
         final needed = (amount - currentPaid).abs();
         final toApply = remainingPay < needed ? remainingPay : needed;
 
         final newPaid = currentPaid - toApply; // More negative
         remainingPay -= toApply;
+        totalDistributedPay += toApply;
 
         String newStatus = row['payment_status'] as String;
         final Map<String, dynamic> transUpdate = {
           'paid_amount': newPaid,
           'payment_status': newStatus,
+          'remark': currentRemark.contains('[ledger_synced]') ? currentRemark : '$currentRemark [ledger_synced]'.trim(),
         };
 
         if (newPaid.abs() >= amount.abs() - 0.01) { // small epsilon for double precision
@@ -242,9 +246,6 @@ Future<void> distributePayments(
           whereArgs: [id],
         );
 
-        // Sync to Ledger
-        await LedgerHelper.processPaymentTransaction(txn, id, source: 'person');
-
         if (orderId > 0) {
           final Map<String, dynamic> orderUpdate = {
             'paid_amount': newPaid,
@@ -259,6 +260,20 @@ Future<void> distributePayments(
           );
         }
       }
+
+      if (totalDistributedPay > 0) {
+        // Log directly to ledger without creating a dummy payment_transaction record
+        await LedgerHelper.syncTransactionToLedger(
+          txn,
+          personId: personId,
+          transactionId: 0, // standalone bulk payment
+          orderId: 0,
+          source: 'person',
+          targetAmount: totalDistributedPay,
+          entryType: 'debit', // Pay is outgoing/debit
+          remark: 'Bulk Payment',
+        );
+      }
     }
 
     // 2️⃣ Handle RECEIVE (Incoming/Positive Transactions)
@@ -271,6 +286,7 @@ Future<void> distributePayments(
       );
 
       double remainingReceive = receive;
+      double totalDistributedReceive = 0;
       for (var row in incoming) {
         if (remainingReceive <= 0) break;
 
@@ -278,17 +294,20 @@ Future<void> distributePayments(
         final amount = (row['amount'] as num).toDouble();
         final currentPaid = (row['paid_amount'] as num).toDouble();
         final orderId = row['order_id'] as int;
+        String currentRemark = row['remark'] as String? ?? '';
 
         final needed = amount - currentPaid;
         final toApply = remainingReceive < needed ? remainingReceive : needed;
 
         final newPaid = currentPaid + toApply;
         remainingReceive -= toApply;
+        totalDistributedReceive += toApply;
 
         String newStatus = row['payment_status'] as String;
         final Map<String, dynamic> transUpdate = {
           'paid_amount': newPaid,
           'payment_status': newStatus,
+          'remark': currentRemark.contains('[ledger_synced]') ? currentRemark : '$currentRemark [ledger_synced]'.trim(),
         };
 
         if (newPaid >= amount - 0.01) {
@@ -304,9 +323,6 @@ Future<void> distributePayments(
           whereArgs: [id],
         );
 
-        // Sync to Ledger
-        await LedgerHelper.processPaymentTransaction(txn, id, source: 'person');
-
         if (orderId > 0) {
           final Map<String, dynamic> orderUpdate = {
             'paid_amount': newPaid,
@@ -320,6 +336,20 @@ Future<void> distributePayments(
             whereArgs: [orderId],
           );
         }
+      }
+
+      if (totalDistributedReceive > 0) {
+        // Log directly to ledger without creating a dummy payment_transaction record
+        await LedgerHelper.syncTransactionToLedger(
+          txn,
+          personId: personId,
+          transactionId: 0, // standalone bulk receipt
+          orderId: 0,
+          source: 'person',
+          targetAmount: totalDistributedReceive,
+          entryType: 'credit', // Receive is incoming/credit
+          remark: 'Bulk Receipt',
+        );
       }
     }
   });

@@ -152,7 +152,7 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    if (performanceMode) {
+    if (performanceMode || !cursorOverlay) {
       return widget.child;
     } else {
       final cursorAsset = _activeAssetPath ?? widget.assetPath;

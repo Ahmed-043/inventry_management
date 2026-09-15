@@ -13,7 +13,7 @@ Database? currentDB;
 int? productsPerPage, transactionsPerPage, personsPerPage, ordersPerPage;
 double? cardSize;
 double? personCardSize;
-bool performanceMode = false, plainUi = true, tileUi = false;
+bool performanceMode = false, cursorOverlay = true, blurEffects = true, plainUi = true, tileUi = false;
 bool hideDashboard = false,
     hideProducts = false,
     hideCustomers = false,

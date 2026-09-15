@@ -303,7 +303,7 @@ class _StockDashboardState extends State<StockDashboard> {
                         barrierLabel: 'SortMenu',
                         transitionDuration: const Duration(milliseconds: 300),
                         transitionBuilder: (context, animation, secondaryAnimation, child) {
-                          if (performanceMode) {
+                          if (performanceMode || !blurEffects) {
                             return SlideTransition(
                               position: Tween<Offset>(
                                 begin: const Offset(1, 0),
@@ -334,8 +334,8 @@ class _StockDashboardState extends State<StockDashboard> {
                               scale: animation,
                               child: BackdropFilter(
                                 filter: ui.ImageFilter.blur(
-                                  sigmaX: 5.0 * animation.value,
-                                  sigmaY: 5.0 * animation.value,
+                                  sigmaX: 4.0,
+                                  sigmaY: 4.0,
                                 ),
                                 child: child,
                               ),

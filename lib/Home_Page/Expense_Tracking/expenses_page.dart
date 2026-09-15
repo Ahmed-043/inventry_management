@@ -183,6 +183,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     callback: () {
                       UiHelper.pushPage(
                         context: context,
+                        blurBackground: false,
                         page: const DailyExpenseTracker(),
                       );
                     },

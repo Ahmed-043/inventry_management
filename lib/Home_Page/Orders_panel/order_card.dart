@@ -33,6 +33,7 @@ class OrderCard extends StatelessWidget {
       order.adjustment = payment-order.totalAmount;
       UiHelper.pushPage(
         context: context,
+        blurBackground: false,
         page: NewOrderPage(
           sell: order.orderType == 'sell' ? true : false,
           order: order,
@@ -74,7 +75,7 @@ class OrderCard extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
+                  blurRadius: 12,
                   offset: const Offset(0, 5),
                 ),
               ],

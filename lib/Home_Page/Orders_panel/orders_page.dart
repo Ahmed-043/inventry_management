@@ -259,70 +259,82 @@ class _OrdersPageState extends State<OrdersPage> {
               /// Person Selector Button
               if (selectedPerson != null)
                 ScaledContainer(
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        selectedPerson = null;
-                        _loadOrders();
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+                  child: Hero(
+                    tag: "person_card",
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            selectedPerson = null;
+                            _loadOrders();
+                          });
+                        },
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: MyColors.sidebarSelected.withAlpha(125)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (selectedPerson!.image != null)
-                            ClipOval(
-                              child: Image.memory(
-                                selectedPerson!.image!,
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          else
-                            const Icon(Icons.person, size: 28, color: MyColors.textSecondary),
-                          const SizedBox(width: 8),
-                          Text(
-                            selectedPerson!.name,
-                            style: MyFont.medium(14, color: MyColors.textMain),
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: MyColors.sidebarSelected.withAlpha(125)),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.close, size: 16, color: MyColors.textSecondary),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (selectedPerson!.image != null)
+                                ClipOval(
+                                  child: Image.memory(
+                                    selectedPerson!.image!,
+                                    width: 28,
+                                    height: 28,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              else
+                                const Icon(Icons.person, size: 28, color: MyColors.textSecondary),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedPerson!.name,
+                                style: MyFont.medium(14, color: MyColors.textMain),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.close, size: 16, color: MyColors.textSecondary),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 )
               else
                 ScaledContainer(
-                  child: InkWell(
-                    onTap: _choosePerson,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
+                  child: Hero(
+                    tag: "person_card",
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _choosePerson,
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person_add_alt_1, size: 20, color: MyColors.textSecondary),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Select Person",
-                            style: MyFont.medium(14, color: MyColors.textMain),
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.person_add_alt_1, size: 20, color: MyColors.textSecondary),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Select Person",
+                                style: MyFont.medium(14, color: MyColors.textMain),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

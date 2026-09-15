@@ -80,7 +80,7 @@ class ReusableTopBar extends StatelessWidget {
         children: [
           if(applyBlur) ClipRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 3),
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 2),
               child: Container(color: backgroundColor),
             ),
           ),

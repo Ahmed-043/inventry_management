@@ -237,7 +237,6 @@ class _PersonsPageState extends State<PersonsPage> {
         opaque: false,
         barrierColor: Colors.black54,
         barrierDismissible: true,
-
         page: UpdatePersonPanel(
       person: person,
       callback: () {

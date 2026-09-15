@@ -17,18 +17,21 @@ class LedgerHelper {
   }) async {
     if (targetAmount.abs() < 0.01) return;
 
-    // 1. Get existing sum for this transaction and type in the ledger
-    // We always check the real transactionId to maintain sync integrity
-    final sumResult = await txn.rawQuery(
-      'SELECT SUM(amount) as total FROM ledger WHERE transaction_id = ? AND entry_type = ?',
-      [transactionId, entryType],
-    );
-    double existingAmount = (sumResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    double amountToAdd = targetAmount.abs();
 
-    double amountToAdd = targetAmount.abs() - existingAmount;
+    if (transactionId != 0) {
+      // 1. Get existing sum for this transaction and type in the ledger
+      // We always check the real transactionId to maintain sync integrity
+      final sumResult = await txn.rawQuery(
+        'SELECT SUM(amount) as total FROM ledger WHERE transaction_id = ? AND entry_type = ?',
+        [transactionId, entryType],
+      );
+      double existingAmount = (sumResult.first['total'] as num?)?.toDouble() ?? 0.0;
+      amountToAdd = targetAmount.abs() - existingAmount;
 
-    // Only add if there's a significant new amount
-    if (amountToAdd < 0.01) return;
+      // Only add if there's a significant new amount
+      if (amountToAdd < 0.01) return;
+    }
 
     // 2. Get the latest balance for this person
     final latestEntry = await txn.query(
@@ -144,8 +147,13 @@ class LedgerHelper {
 
     // Case 2: The transaction represents a payment (Initial or Standalone)
     if (paidAmount != 0) {
+      // Check if this payment has already been synced to the ledger (e.g., via bulk distribution)
+      if (remark.contains('[ledger_synced]')) {
+        return;
+      }
+
       String payType = paidAmount > 0 ? 'Payment Received' : 'Payment Made';
-      String methodStr = ' ($method)';
+      String methodStr = '';
       String orderStr = (orderId != null && orderId != 0) ? ' for #$orderId' : '';
 
       // If user provided a remark, we append the payment details for clarity.

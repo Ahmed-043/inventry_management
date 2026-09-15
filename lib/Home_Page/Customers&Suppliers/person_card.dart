@@ -46,15 +46,16 @@ class _PersonCardState extends State<PersonCard> {
   Widget build(BuildContext context) {
     final avatarColor = MyColors.palette[widget.num % MyColors.palette.length];
 
-    return ScaledContainer(
-      child: Container(
+    return RepaintBoundary(
+      child: ScaledContainer(
+        child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
+              blurRadius: 12,
               offset: const Offset(0, 5),
             ),
           ],
@@ -67,14 +68,14 @@ class _PersonCardState extends State<PersonCard> {
             onTapDown: (TapDownDetails details) async {
               final tapPosition = details.globalPosition;
               final screenSize = MediaQuery.of(context).size;
-              const double dialogWidth = 350;
-              const double dialogHeight = 180;
+              const double dialogWidth = 570;
+              const double dialogHeight = 220;
 
-              double left = (tapPosition.dx - 100).clamp(10.0, screenSize.width - dialogWidth - 10.0);
+              double left = (tapPosition.dx - (dialogWidth / 2)).clamp(10.0, screenSize.width - dialogWidth - 10.0);
               double top = tapPosition.dy;
 
               if (top + dialogHeight > screenSize.height) {
-                top = tapPosition.dy - dialogHeight + 50;
+                top = tapPosition.dy - dialogHeight - 10;
               }
               top = top.clamp(10.0, screenSize.height - dialogHeight - 10.0);
 
@@ -115,6 +116,8 @@ class _PersonCardState extends State<PersonCard> {
                                     child: Image.memory(
                                       widget.person.image!,
                                       fit: BoxFit.cover,
+                                      cacheHeight: (50 * factor * MediaQuery.of(context).devicePixelRatio).toInt().clamp(50, 400),
+                                      filterQuality: FilterQuality.medium,
                                     ),
                                   )
                                 : Center(
@@ -170,7 +173,7 @@ class _PersonCardState extends State<PersonCard> {
                                   ),
                                   SizedBox(height: 4 * factor),
                                   Text(
-                                    NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.incoming),
+                                    "Rs. ${NumberFormat().format(widget.person.incoming)}",
                                     style: MyFont.bold(15 * factor,
                                         color: MyColors.success),
                                     maxLines: 1,
@@ -189,7 +192,7 @@ class _PersonCardState extends State<PersonCard> {
                                   ),
                                   SizedBox(height: 4 * factor),
                                   Text(
-                                    NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.outgoing),
+                                    "Rs. ${NumberFormat().format(widget.person.outgoing)}",
                                     style: MyFont.bold(15 * factor,
                                       color:  MyColors.error),
                                     maxLines: 1,
@@ -208,6 +211,6 @@ class _PersonCardState extends State<PersonCard> {
             ),
           ),
         ),
-    );
+    ));
   }
 }

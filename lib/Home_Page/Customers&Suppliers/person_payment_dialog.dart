@@ -74,8 +74,34 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if(performanceMode){
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.pop(context),
+        child: Container(
+           color: Colors.black54,
+          child: Stack(
+            children: [
+              Positioned(
+                left: widget.left,
+                top: widget.top,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: Material(
+                    elevation: 6,
+                    borderRadius: BorderRadius.circular(25),
+                    child: _buildPaymentOptions(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
       child: Stack(
         children: [
           Positioned(
@@ -93,8 +119,9 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
   }
 
   Widget _buildPaymentOptions() {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
-      width: 570,
+      width: 570.clamp(0.0, screenWidth - 20).toDouble(),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -155,7 +182,7 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
                         style: MyFont.bold(14, color: MyColors.textSecondary),
                       ),
                       Text(
-                        NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.incoming),
+                        "Rs. ${NumberFormat().format(widget.person.incoming)}",
                         style: MyFont.bold(16, color: MyColors.success),
                       ),
                     ],
@@ -169,7 +196,7 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
                         style: MyFont.bold(14, color: MyColors.textSecondary),
                       ),
                       Text(
-                        NumberFormat.simpleCurrency(name: 'Rs. ', decimalDigits: 0).format(widget.person.outgoing),
+                        "Rs. ${NumberFormat().format(widget.person.outgoing)}",
                         style: MyFont.bold(16, color: MyColors.error),
                       ),
                     ],
@@ -236,7 +263,7 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
                           UiHelper.pushPage(
                             context: context,
                             blurBackground: false,
-                            page: LedgerPage(initialPerson: widget.person),
+                            page: LedgerPage(initialPerson: widget.person, onBack: widget.onPaymentSaved,),
                           );
                         },
                       ),

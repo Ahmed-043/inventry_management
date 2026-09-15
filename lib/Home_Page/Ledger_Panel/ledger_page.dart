@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Database/ledger.dart';
+import 'package:inventry_management/Database/payment_transactions.dart';
+import 'package:inventry_management/Home_Page/home_page.dart';
 import 'package:inventry_management/Shared_Widgets/sliding_segment_control.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/Database/pdf.dart';
@@ -14,17 +17,21 @@ import 'package:inventry_management/colors.dart';
 
 import 'package:inventry_management/Database/db_info.dart';
 import '../../Database/orders.dart';
+import '../Customers&Suppliers/person_payment_dialog.dart';
+import '../Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'ledger_report_body.dart';
+import 'ledger_side_panel.dart';
 
 class LedgerPage extends StatefulWidget {
   final Person? initialPerson;
-  const LedgerPage({super.key, this.initialPerson});
+  final VoidCallback? onBack;
+  const LedgerPage({super.key, this.initialPerson, this.onBack});
 
   @override
   State<LedgerPage> createState() => _LedgerPageState();
 }
 
-class _LedgerPageState extends State<LedgerPage> {
+class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateMixin {
   Person? selectedPerson;
   List<Map<String, dynamic>> ledgerEntries = [];
   bool isLoading = false;
@@ -38,12 +45,45 @@ class _LedgerPageState extends State<LedgerPage> {
   bool isSaving = false;
   final GlobalKey _reportKey = GlobalKey();
 
+  final TextEditingController payController = TextEditingController();
+  final TextEditingController receiveController = TextEditingController();
+
+  late final AnimationController _topControlsController;
+  late final Animation<double> _topControlsAnimation;
+
+  @override
+  void dispose() {
+    payController.dispose();
+    receiveController.dispose();
+    _topControlsController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     selectedPerson = widget.initialPerson;
     _loadCompanyInfo();
     
+    _topControlsController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _topControlsAnimation = Tween<double>(begin: -40.0, end: 0.0).animate(
+      CurvedAnimation(parent: _topControlsController, curve: Curves.easeOut),
+    );
+
+    if (!performanceMode) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _topControlsController.forward();
+        }
+      });
+    } else {
+      _topControlsController.value = 1.0;
+    }
+
     if (selectedPerson != null) {
       _loadLedger();
     }
@@ -107,20 +147,6 @@ class _LedgerPageState extends State<LedgerPage> {
     _loadLedger();
   }
 
-  String _getPeriodLabel() {
-    switch (_selectedView) {
-      case 'Daily':
-        return DateFormat('dd MMM yyyy').format(_fromDate);
-      case 'Weekly':
-        return "${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM yyyy').format(_toDate)}";
-      case 'Monthly':
-        return DateFormat('MMMM yyyy').format(_fromDate);
-      case 'Yearly':
-        return DateFormat('yyyy').format(_fromDate);
-      default:
-        return "";
-    }
-  }
 
   void _onRangeHoverScroll(int delta) {
     setState(() {
@@ -224,144 +250,248 @@ class _LedgerPageState extends State<LedgerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: MyColors.mainBg,
-      child: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: MyColors.mainBg,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: MyColors.textMain),
-                  onPressed: () => Navigator.pop(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (!performanceMode) {
+          _topControlsController.reverse().then((_) {
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          });
+        } else {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Material(
+        color: MyColors.sidebarBg,
+        child: Stack(
+          children: [
+          Hero(
+            tag: "sidebar",
+            child: Material(
+              color: Colors.transparent,
+              child: Align(
+                alignment: .topLeft,
+                child: Container(
+                  color: MyColors.sidebarBg,
+                  width: 370,
+                  child: LedgerSidePanel(
+                    selectedPerson: selectedPerson,
+                    fromDate: _fromDate,
+                    toDate: _toDate,
+                    payController: payController,
+                    receiveController: receiveController,
+                    onChoosePerson: _choosePerson,
+                    onSelectFromDate: _selectFromDate,
+                    onSelectToDate: _selectToDate,
+                    onDateScrollFrom: (delta) => _onDateScroll(delta, true),
+                    onDateScrollTo: (delta) => _onDateScroll(delta, false),
+                    onBack: widget.onBack,
+                    onAutoFill: () {
+                      setState(() {
+                        payController.text = selectedPerson!.outgoing.clamp(0, selectedPerson!.incoming).toString();
+                        receiveController.text = payController.text;
+                      });
+                    },
+                    onSavePayment: (pay, receive) async {
+                      if (pay > 0 || receive > 0) {
+                        await distributePayments(
+                          currentDB!,
+                          personId: selectedPerson!.id!,
+                          pay: pay,
+                          receive: receive,
+                        );
+
+                        if (mounted) {
+                          UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                          payController.clear();
+                          receiveController.clear();
+
+                          // Refresh person data to update balances
+                          final updatedPersons = await getPersons(
+                            currentDB!,
+                            personType: selectedPerson!.personType,
+                            page: 0,
+                            pageSize: 100
+                          );
+                          final p = updatedPersons.firstWhere(
+                            (element) => element.id == selectedPerson!.id,
+                            orElse: () => selectedPerson!
+                          );
+
+                          setState(() {
+                            selectedPerson = p;
+                          });
+
+                          _loadLedger();
+                        }
+                      } else {
+                        if (mounted) {
+                          UiHelper.showToast(context, "Please enter an amount", type: 2);
+                        }
+                      }
+                    },
+                  ),
                 ),
-                titleSpacing: 0,
-                title: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 370,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            child: Hero(
+              tag: "main_page",
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: Container(
+                  color: MyColors.mainBg,
+                  height: double.infinity,
+                  width: double.infinity,
+                  child: Stack(
                     children: [
-                      Text(
-                        selectedPerson != null ? "${selectedPerson!.name}'s Ledger" : "Account Ledger",
-                        style: MyFont.bold(20, color: MyColors.textMain),
-                      ),
-                      if (selectedPerson != null)
-                        Row(
-                          children: [
-                            StatusSegmentedControl(
-                              fontSize: 14,
-                              selected: _selectedView,
-                              options: const [
-                                TwoValue(first: 'Daily', second: MyColors.sidebarSelected),
-                                TwoValue(first: 'Weekly', second: MyColors.sidebarSelected),
-                                TwoValue(first: 'Monthly', second: MyColors.sidebarSelected),
-                                TwoValue(first: 'Yearly', second: MyColors.sidebarSelected),
-                              ],
-                              onChanged: (view) => _updateDatesForView(view),
-                            ),
-                            const SizedBox(width: 16),
-                            HoverScroll(
-                              onScroll: _onRangeHoverScroll,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.chevron_left, color: MyColors.grey),
-                                    onPressed: () => _navigatePeriod(-1),
+                      CustomScrollView(
+                        slivers: [
+                          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+
+                          if (isLoading)
+                            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                          else
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: Center(
+                                  child: RepaintBoundary(
+                                    key: _reportKey,
+                                    child: _buildLedgerView(),
                                   ),
-                                  Container(
-                                    constraints: const BoxConstraints(minWidth: 120),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      _getPeriodLabel(),
-                                      style: MyFont.bold(14, color: MyColors.grey),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.chevron_right, color: MyColors.grey),
-                                    onPressed: () => _navigatePeriod(1),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
-                          ],
+                          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                        ],
+                      ),
+                      if (selectedPerson != null)
+                        Align(
+                            alignment: .topCenter,
+                            child: _buildTopControls()),
+                      if (selectedPerson != null)
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: _buildBottomActions(),
                         ),
-                      const SizedBox(),
                     ],
                   ),
                 ),
-                centerTitle: false,
-                actions: [
-                  if (selectedPerson != null) ...[
-                    DateButton(
-                      label: 'From: ${DateFormat('dd MMM yyyy').format(_fromDate)}',
-                      onTap: _selectFromDate,
-                      onScroll: (delta) => _onDateScroll(delta, true),
-                    ),
-                    const SizedBox(width: 8),
-                    DateButton(
-                      label: 'To: ${DateFormat('dd MMM yyyy').format(_toDate)}',
-                      onTap: _selectToDate,
-                      onScroll: (delta) => _onDateScroll(delta, false),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
-                ],
               ),
-              if (selectedPerson == null)
-                SliverFillRemaining(child: _buildPersonSelector())
-              else if (isLoading)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-              else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Center(
-                      child: RepaintBoundary(
-                        key: _reportKey,
-                        child: _buildLedgerView(),
-                      ),
-                    ),
+            ),
+          ),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildTopControls() {
+    final Widget controls = Container(
+      height: 40,
+      width: 550,
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        color: MyColors.sidebarBg,
+      ),
+      child: Row(
+        mainAxisAlignment: .center,
+        children: [
+          StatusSegmentedControl(
+            fontSize: 14,
+            selected: _selectedView,
+            options: const [
+              TwoValue(first: 'Daily', second: MyColors.sidebarSelected),
+              TwoValue(first: 'Weekly', second: MyColors.sidebarSelected),
+              TwoValue(first: 'Monthly', second: MyColors.sidebarSelected),
+              TwoValue(first: 'Yearly', second: MyColors.sidebarSelected),
+            ],
+            onChanged: (view) => _updateDatesForView(view),
+          ),
+          const SizedBox(width: 20),
+          HoverScroll(
+            onScroll: _onRangeHoverScroll,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: MyColors.translucent),
+                  onPressed: () => _navigatePeriod(-1),
+                ),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 120),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _getPeriodLabel(),
+                    style: MyFont.bold(14, color: MyColors.translucent),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
-          ),
-          if (selectedPerson != null)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: _buildBottomActions(),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: MyColors.translucent),
+                  onPressed: () => _navigatePeriod(1),
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );
-  }
 
-  Widget _buildPersonSelector() {
-    return FutureBuilder<List<Person>>(
-      future: getPersons(currentDB!, pageSize: 100, personType: 'Customer', page: 1),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final persons = snapshot.data!;
-        return ListView.builder(
-          itemCount: persons.length,
-          itemBuilder: (context, index) {
-            final p = persons[index];
-            return ListTile(
-              title: Text(p.name, style: MyFont.medium(16)),
-              subtitle: Text(p.personType, style: MyFont.normal(14, color: MyColors.grey)),
-              onTap: () {
-                setState(() => selectedPerson = p);
-                _loadLedger();
-              },
-            );
-          },
+    if (performanceMode) {
+      return controls;
+    }
+
+    return AnimatedBuilder(
+      animation: _topControlsAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _topControlsAnimation.value),
+          child: child,
         );
       },
+      child: controls,
     );
+  }
+
+
+  Future<void> _choosePerson() async {
+    final person = await UiHelper.pushPage<Person?>(
+      context: context,
+      opaque: false,
+      barrierDismissible: true,
+      page: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Hero(
+            tag: "person_card",
+            child: Container(
+              width: 400,
+              height: 600,
+              decoration: UiHelper.myDecoration(),
+              child: ChoosePerson(
+                filter: 0,
+                person: selectedPerson,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (person != null) {
+      setState(() {
+        selectedPerson = person;
+      });
+      _loadLedger();
+    }
   }
 
   Widget _buildLedgerView() {
@@ -429,5 +559,20 @@ class _LedgerPageState extends State<LedgerPage> {
         ],
       ),
     );
+  }
+
+  String _getPeriodLabel() {
+    switch (_selectedView) {
+      case 'Daily':
+        return DateFormat('dd MMM yyyy').format(_fromDate);
+      case 'Weekly':
+        return "${DateFormat('dd MMM').format(_fromDate)} - ${DateFormat('dd MMM yyyy').format(_toDate)}";
+      case 'Monthly':
+        return DateFormat('MMMM yyyy').format(_fromDate);
+      case 'Yearly':
+        return DateFormat('yyyy').format(_fromDate);
+      default:
+        return "";
+    }
   }
 }

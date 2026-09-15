@@ -194,26 +194,29 @@ class HomePageState extends State<HomePage> {
                   child: Stack(
                     children: [
                       if(!collapsed)
-                      Align(
-                        alignment: .topLeft,
-                        child: SizedBox(
-                          width: collapse || collapseSideBar ? 60 : 175,
-                          height: double.infinity,
-                          child: SidebarPanel(
-                            collaps: collapse || collapseSideBar,
-                            selectedIndex: selectedIndex,
-                            info: widget.info,
-                            onItemSelected: (index) {
-                              if(index == pagesCount-1){
-                                _handleLogout();
-                              }else {
-                                setState(() {
-                                  selectedIndex = index % pagesCount;
-                                  filterPerson = null; // reset filter on manual switch
-                                });
-                              }
-                            },
-                            vCollaps: vCollapse,
+                      Hero(
+                        tag: "sidebar",
+                        child: Align(
+                          alignment: .topLeft,
+                          child: SizedBox(
+                            width: collapse || collapseSideBar ? 60 : 175,
+                            height: double.infinity,
+                            child: SidebarPanel(
+                              collaps: collapse || collapseSideBar,
+                              selectedIndex: selectedIndex,
+                              info: widget.info,
+                              onItemSelected: (index) {
+                                if(index == pagesCount-1){
+                                  _handleLogout();
+                                }else {
+                                  setState(() {
+                                    selectedIndex = index % pagesCount;
+                                    filterPerson = null; // reset filter on manual switch
+                                  });
+                                }
+                              },
+                              vCollaps: vCollapse,
+                            ),
                           ),
                         ),
                       ),
@@ -225,12 +228,26 @@ class HomePageState extends State<HomePage> {
                         bottom: 0,
                         child: ClipRRect(
                             borderRadius: BorderRadius.circular(25),
-                            child: Container(
-                                color: MyColors.mainBg,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left:10,right: 10),
-                                  child: _getPage(selectedIndex),
-                                ))),
+                            child: Stack(
+                              children: [
+                                Hero(
+                                  tag: "main_page",
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: MyColors.mainBg,
+                                      borderRadius: BorderRadius.circular(25),
+
+                                    ),
+                                  ),
+                                ),
+                                Positioned.fill(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left:10,right: 10),
+                                    child: _getPage(selectedIndex),
+                                  ),
+                                ),
+                              ],
+                            )),
                       ),
                     ],
                   ),

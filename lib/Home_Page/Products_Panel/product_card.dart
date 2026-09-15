@@ -80,8 +80,9 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    return ScaledContainer(
-      child: InkWell(
+    return RepaintBoundary(
+      child: ScaledContainer(
+        child: InkWell(
         onTap: widget.onTap,
         onDoubleTap: widget.onDoubleTap,
         onSecondaryTap: widget.onSecondaryTap,
@@ -105,7 +106,7 @@ class _ProductCardState extends State<ProductCard> {
           ],
         ),
       ),
-    );
+      ));
   }
 
   Widget productGridCard() {
@@ -142,6 +143,8 @@ class _ProductCardState extends State<ProductCard> {
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: double.infinity,
+                                cacheWidth: (constraints.maxWidth * factor * MediaQuery.of(context).devicePixelRatio).toInt().clamp(100, 1000),
+                                filterQuality: FilterQuality.medium,
                               ),
                             )
                             : Icon(Icons.inventory_2_outlined,
@@ -260,8 +263,12 @@ class _ProductCardState extends State<ProductCard> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12 * factor),
                       child: widget.product.imageData != null
-                          ? Image.memory(widget.product.imageData!,
-                              fit: BoxFit.cover)
+                          ? Image.memory(
+                              widget.product.imageData!,
+                              fit: BoxFit.cover,
+                              cacheHeight: (h * MediaQuery.of(context).devicePixelRatio).toInt().clamp(50, 800),
+                              filterQuality: FilterQuality.medium,
+                            )
                           : Icon(Icons.inventory_2_outlined,
                               size: h * 0.4, color: MyColors.textSecondary.withAlpha(125)),
                     ),

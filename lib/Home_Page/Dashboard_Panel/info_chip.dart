@@ -150,7 +150,7 @@ class _DashboardChip extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
+            blurRadius: 12,
             offset: const Offset(0, 5),
           ),
         ],

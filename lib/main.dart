@@ -16,6 +16,8 @@ import 'utils/linux_dependencies.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<double> uiScaleNotifier = ValueNotifier<double>(1.0);
 final ValueNotifier<bool> performanceModeNotifier = ValueNotifier<bool>(false);
+final ValueNotifier<bool> cursorOverlayNotifier = ValueNotifier<bool>(true);
+final ValueNotifier<bool> blurEffectsNotifier = ValueNotifier<bool>(true);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -135,12 +137,17 @@ class MyApp extends StatelessWidget {
             return ValueListenableBuilder<bool>(
               valueListenable: performanceModeNotifier,
               builder: (context, perfMode, _) {
-                return AppCursorOverlay(
-                  assetPath: 'assets/images/app_cursor.png',
-                  clickCursorAssetPath: 'assets/images/hand_cursor.png',
-                  textCursorAssetPath: 'assets/images/text_cursor.png',
-                  size: 35.0,
-                  child: scaledApp,
+                return ValueListenableBuilder<bool>(
+                  valueListenable: cursorOverlayNotifier,
+                  builder: (context, cursorVal, _) {
+                    return AppCursorOverlay(
+                      assetPath: 'assets/images/app_cursor.png',
+                      clickCursorAssetPath: 'assets/images/hand_cursor.png',
+                      textCursorAssetPath: 'assets/images/text_cursor.png',
+                      size: 35.0,
+                      child: scaledApp,
+                    );
+                  },
                 );
               },
             );
@@ -188,6 +195,18 @@ Future<void> loadPreferences() async {
   }
   performanceMode = prefs.getBool('performanceMode')!;
   performanceModeNotifier.value = performanceMode;
+
+  if(prefs.getBool('cursorOverlay') == null ) {
+    await prefs.setBool('cursorOverlay', false);
+  }
+  cursorOverlay = prefs.getBool('cursorOverlay')!;
+  cursorOverlayNotifier.value = cursorOverlay;
+
+  if(prefs.getBool('blurEffects') == null ) {
+    await prefs.setBool('blurEffects', true);
+  }
+  blurEffects = prefs.getBool('blurEffects')!;
+  blurEffectsNotifier.value = blurEffects;
 
   if(prefs.getBool('plainUi') == null ) {
     await prefs.setBool('plainUi', false);

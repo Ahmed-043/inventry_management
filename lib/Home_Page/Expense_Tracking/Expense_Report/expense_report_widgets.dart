@@ -8,11 +8,15 @@ class DateButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final ValueChanged<int>? onScroll;
+  final Color color;
+  final Color textColor;
 
   const DateButton({
     super.key,
     required this.label,
     required this.onTap,
+    this.color = MyColors.translucent,
+    this.textColor = MyColors.textMain,
     this.onScroll,
   });
 
@@ -24,7 +28,7 @@ class DateButton extends StatelessWidget {
         child: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: color,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: MyColors.lightGrey, width: 1),
           ),
@@ -32,13 +36,15 @@ class DateButton extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(10),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .center,
+                mainAxisAlignment: .center,
                 children: [
                   Text(
                     label,
-                    style: MyFont.medium(14, color: MyColors.textMain),
+                    style: MyFont.medium(14, color: textColor),
                   ),
                   const SizedBox(width: 8),
                   const Icon(Icons.calendar_today, color: MyColors.textSecondary, size: 14),

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,36 +40,75 @@ class _PerformanceSettingsState extends State<PerformanceSettings> {
             style: MyFont.semiBold(12,color: MyColors.grey),
 
           ),
-          performanceModeToggle(),
+          if (!performanceMode) ...[
+            UiHelper.switchTile(
+              title: 'Cursor Overlay',
+              subtitle: 'Enable custom cursor and trail effects.',
+              value: cursorOverlay,
+              decoration: const BoxDecoration(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              onChanged: (val) {
+                cursorOverlay = val;
+                cursorOverlayNotifier.value = val;
+                _saveSetting('cursorOverlay', val);
+                setState(() {});
+              },
+            ),
+            UiHelper.switchTile(
+              title: 'Blur Effects',
+              subtitle: 'Enable background blur effects for dialogs and transitions.',
+              value: blurEffects,
+              decoration: const BoxDecoration(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              onChanged: (val) {
+                blurEffects = val;
+                blurEffectsNotifier.value = val;
+                _saveSetting('blurEffects', val);
+                setState(() {});
+              },
+            ),
+          ],
+          UiHelper.switchTile(
+            title: 'Performance Mode',
+            subtitle: 'Enable a streamlined experience by reducing visual effects and background processes.',
+            value: performanceMode,
+            decoration: const BoxDecoration(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            onChanged: (val) {
+              performanceMode = val;
+              performanceModeNotifier.value = val;
+              if (val) {
+                cursorOverlay = false;
+                blurEffects = false;
+                cursorOverlayNotifier.value = false;
+                blurEffectsNotifier.value = false;
+              } else {
+                cursorOverlay = true;
+                blurEffects = true;
+                cursorOverlayNotifier.value = true;
+                blurEffectsNotifier.value = true;
+              }
+              _savePerformanceSettings();
+              setState(() {});
+            },
+          ),
         ],
       ),
     );
   }
-  Widget performanceModeToggle() {
-    return ListTile(
-      contentPadding: const EdgeInsets.all(16),
-      title: Text(
-        'Performance Mode',
-        style: MyFont.semiBold(16,color: MyColors.dark),
-      ),
-      subtitle:  Text(
-        'Enable a streamlined experience by reducing visual effects and background processes.',
-        style: MyFont.semiBold(12,color: MyColors.grey),
-      ),
-      trailing: Switch(
-        value: performanceMode,
-        onChanged: (val) {
-          performanceMode = val;
-          performanceModeNotifier.value = val;
-          SharedPreferences.getInstance().then((prefs) {
-            prefs.setBool('performanceMode', performanceMode);
-          });
-          setState(() {});
-        },
-        activeColor: Colors.white,
-        activeTrackColor: MyColors.primary, // Matches the orange in your image
-      ),
-    );
+
+  void _saveSetting(String key, bool value) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool(key, value);
+    });
+  }
+
+  void _savePerformanceSettings() {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('performanceMode', performanceMode);
+      prefs.setBool('cursorOverlay', cursorOverlay);
+      prefs.setBool('blurEffects', blurEffects);
+    });
   }
 }
 

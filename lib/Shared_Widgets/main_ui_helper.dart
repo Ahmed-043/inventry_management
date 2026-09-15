@@ -363,12 +363,13 @@ class UiHelper {
 
   static Widget switchTile({
     required String title,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
-    double height = 50,
+    double? height,
     double switchScale = 0.85,
     Decoration? decoration,
-    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 16),
+    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   }) {
     return MouseRegion(
       child: Container(
@@ -380,7 +381,7 @@ class UiHelper {
             color: Colors.transparent,
             child: InkWell(
               onTap: () => onChanged(!value),
-              hoverColor: Colors.transparent,
+              hoverColor: MyColors.primary.withAlpha(25),
               splashColor: MyColors.primary.withAlpha(50),
               highlightColor: Colors.transparent,
               focusColor: Colors.transparent,
@@ -388,17 +389,32 @@ class UiHelper {
                 padding: padding,
                 child: Row(
                   children: [
-                    Text(
-                      title,
-                      style: MyFont.bold(16, color: MyColors.dark),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: MyFont.bold(16, color: MyColors.dark),
+                          ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              style: MyFont.semiBold(12, color: MyColors.grey),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 16),
                     Transform.scale(
                       scale: switchScale,
                       child: Switch(
                         value: value,
                         activeTrackColor: MyColors.primary,
-                        activeColor: MyColors.translucent,
+                        activeThumbColor: Colors.white,
                         onChanged: onChanged,
                       ),
                     ),
@@ -758,25 +774,25 @@ class UiHelper {
       BoxShadow(
         color: Colors.black.withOpacity(0.05),
         spreadRadius: 0,
-        blurRadius: 20,
+        blurRadius: 12,
         offset: const Offset(0, 5),
       ),
     ];
   }
 
-  static BoxDecoration myDecoration({bool isHovered = false, BoxBorder? border}) {
+  static BoxDecoration myDecoration({bool isHovered = false, BoxBorder? border, Color color = MyColors.translucent}) {
     return BoxDecoration(
       border: border,
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(isHovered ? 0.1 : 0.05),
           spreadRadius: 0,
-          blurRadius: isHovered ? 30 : 20,
+          blurRadius: isHovered ? 18 : 12,
           offset: isHovered ? const Offset(0, 10) : const Offset(0, 5),
         ),
       ],
       borderRadius: BorderRadius.circular(20),
-      color: Colors.white,
+      color: color,
     );
   }
 
@@ -808,18 +824,20 @@ class UiHelper {
           barrierColor: barrierColor,
           barrierDismissible: barrierDismissible,
           transitionDuration: const Duration(milliseconds: 500), // slower transition
-          reverseTransitionDuration: const Duration(milliseconds: 500), // pop
+          reverseTransitionDuration: const Duration(milliseconds: 350), // pop
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,
-              child: blurBackground
-                  ? BackdropFilter(
-                      filter: ui.ImageFilter.blur(
-                        sigmaX: 5.0 * animation.value,
-                        sigmaY: 5.0 * animation.value,
+              child: (blurBackground && blurEffects)
+                  ? ClipRect(
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(
+                          sigmaX: 4.0,
+                          sigmaY: 4.0,
+                        ),
+                        child: child,
                       ),
-                      child: child,
                     )
                   : child,
             );
