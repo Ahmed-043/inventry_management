@@ -231,7 +231,7 @@ class _ReportsPageState extends State<ReportsPage> {
               title: "Export to Excel",
               textSize: 14,
               filled: true,
-              color: MyColors.sidebarSelected,
+              color: Colors.blueGrey,
               borderRadius: 10,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),

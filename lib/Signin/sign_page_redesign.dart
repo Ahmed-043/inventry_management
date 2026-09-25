@@ -68,13 +68,6 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
 
       final info = await getDBInfo(currentDB!);
 
-      // optional: auto backup check
-      await checkAndBackupDatabase(currentDB!);
-
-      int i = await pushCurrentStockAsOpeningStock(currentDB!);
-      debugPrint("Daily Opening Stock Noted: $i");
-      startDailyOpeningStockScheduler(currentDB!);
-
       gotoHomePage(path, info);
       return true;
     } catch (e) {
@@ -505,17 +498,7 @@ class _SigninPageRedsignState extends State<SigninPageRedsign> {
         '${info?.image?.lengthInBytes}',
       );
 
-      await checkAndBackupDatabase(currentDB!);
-
       await pref.setString('dbPath', path);
-
-      int i = await pushCurrentStockAsOpeningStock(currentDB!);
-
-      debugPrint(
-        "Daily Opening Stock Noted: $i",
-      );
-
-      startDailyOpeningStockScheduler(currentDB!);
 
       gotoHomePage(path, info);
 

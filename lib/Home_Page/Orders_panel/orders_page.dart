@@ -153,14 +153,23 @@ class _OrdersPageState extends State<OrdersPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Orders",
-                style: MyFont.bold(24, color: MyColors.textMain),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      "Orders",
+                      style: MyFont.bold(24, color: MyColors.textMain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  actionButtons(),
+
+                ],
               ),
               Row(
                 children: [
-                  actionButtons(),
-                  const SizedBox(width: 12),
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
@@ -529,7 +538,7 @@ class _OrdersPageState extends State<OrdersPage> {
             ? const Center(child: Text("No Buying Orders"))
             : ListView.builder(
                 itemCount: buyingOrders.length,
-                clipBehavior: Clip.none,
+                clipBehavior: Clip.hardEdge,
                 physics: const BouncingScrollPhysics(),
                 itemBuilder: (context, index) {
                   return OrderCard(

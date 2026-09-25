@@ -44,7 +44,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   Widget build(BuildContext context) {
     return Container(
       width: 800,
-      height: 650,
+      height: 600,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -101,8 +101,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Transaction Type', style: MyFont.bold(16, color: MyColors.dark)),
-              const SizedBox(height: 12),
+
               Row(
                 children: [
                   _typeButton('Expense', !controller.isIncome, MyColors.error),
@@ -130,7 +129,15 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                 ],
               ),
               const SizedBox(height: 24),
-              _buildCategoryDropdown(),
+              UiHelper.myTextArea(
+                label: 'Remark',
+                controller: controller.remark,
+                hint: 'Additional notes...',
+                maxLines: 3,
+                fontSize: 15,
+              ),
+              const SizedBox(height: 24),
+              _buildTransactionCheckbox(),
             ],
           ),
         ),
@@ -140,21 +147,15 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Details', style: MyFont.bold(16, color: MyColors.dark)),
-              const SizedBox(height: 12),
+
               _buildDatePicker(),
+              const SizedBox(height: 24),
+              _buildCategoryDropdown(),
               const SizedBox(height: 24),
               _buildPersonPicker(),
               const SizedBox(height: 24),
               _buildPaymentMethodPicker(),
-              const SizedBox(height: 24),
-              UiHelper.myTextArea(
-                label: 'Remark',
-                controller: controller.remark,
-                hint: 'Additional notes...',
-                maxLines: 3,
-                fontSize: 15,
-              ),
+
             ],
           ),
         ),
@@ -300,7 +301,10 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
             border: Border.all(width: 2, color: MyColors.lightGrey),
           ),
           child: DropdownButtonHideUnderline(
+            
             child: DropdownButton<String>(
+              borderRadius: .circular(10),
+              dropdownColor: MyColors.translucent,
               value: controller.paymentMethod,
               isExpanded: true,
               icon: const Icon(Icons.keyboard_arrow_down),
@@ -313,11 +317,40 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
     );
   }
 
+  Widget _buildTransactionCheckbox() {
+    return InkWell(
+      onTap: () => controller.updateRecordAsTransaction(!controller.recordAsTransaction),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              height: 24,
+              width: 24,
+              child: Checkbox(
+                value: controller.recordAsTransaction,
+                onChanged: (val) => controller.updateRecordAsTransaction(val!),
+                activeColor: MyColors.darkBlue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Record as transaction also',
+              style: MyFont.semiBold(14, color: MyColors.darkBlue.withOpacity(0.8)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoryDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Category', style: MyFont.bold(16, color: MyColors.dark)),
+        Text('Category', style:  MyFont.semiBold(14, color: MyColors.darkBlue.withOpacity(0.8))),
         const SizedBox(height: 12),
         Row(
           children: [

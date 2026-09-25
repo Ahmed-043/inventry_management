@@ -25,7 +25,7 @@ bool hideDashboard = false,
     hideSettings = false;
 int lowStockLimit = 50, sortCategory = 0,sort = 9;
 int searchSubstringLen = 3;
-double uiScale = 0.5;
+double uiScale = 1.0;
 
 Future<bool> createDatabase({required String dbName, Directory? path, Uint8List? image}) async {
   await initDatabaseFactory();
@@ -116,6 +116,16 @@ Future<bool> validateDatabaseSchema(Database db) async {
 
 Future<void> ensureDatabaseSchema(Database db) async {
   print("Correcting the DATABASE");
+  
+  // Enable Write-Ahead Logging (WAL) to allow concurrent reads and writes.
+  // This significantly reduces "Database is locked" errors when background tasks run.
+  try {
+    await db.execute("PRAGMA journal_mode=WAL;");
+    debugPrint("✅ WAL Mode Enabled");
+  } catch (e) {
+    debugPrint("⚠️ Could not enable WAL mode: $e");
+  }
+
   for (final entry in dbSchema.entries) {
     final table = entry.key;
     final cols = entry.value;

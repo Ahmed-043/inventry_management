@@ -7,8 +7,11 @@ final Map<String, Map<String, String>> dbSchema = {
     'phone' : 'TEXT DEFAULT ""',
     'backupDir' : 'TEXT DEFAULT ""', // backup Folder
     'lastBackup' : 'INTEGER DEFAULT 0',
-    'backupFreq' : 'INTEGER DEFAULT 0 CHECK(backupFreq IN (0,1,2,3))' // 0: None, 1: Daily, 2: Weekly, 3: Monthly
+    'backupFreq' : 'INTEGER DEFAULT 0 CHECK(backupFreq IN (0,1,2,3))', // 0: None, 1: Daily, 2: Weekly, 3: Monthly
+    'googleBackup' : 'INTEGER DEFAULT 0', // 0: Disabled, 1: Enabled
+    'lastCloudBackup' : 'INTEGER DEFAULT 0',
   },
+
   'products': {
     'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
     'name': 'TEXT NOT NULL DEFAULT ""',
@@ -55,6 +58,7 @@ final Map<String, Map<String, String>> dbSchema = {
     'order_timestamp': 'INTEGER NOT NULL',
     'due_date': 'INTEGER DEFAULT 0',
     'remark': 'TEXT DEFAULT ""',
+    'refPage': "INTEGER DEFAULT NULL"
   },
   'order_items': {
     'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',

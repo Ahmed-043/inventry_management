@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/upload_circle.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../Database/database.dart';
 import '../Shared_Widgets/main_ui_helper.dart';
 
@@ -23,9 +25,20 @@ class _CreateNewDatabaseState extends State<CreateNewDatabase> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     image = null;
+    _setDefaultLocation();
+  }
+
+  Future<void> _setDefaultLocation() async {
+    try {
+      Directory docsDir = await getApplicationDocumentsDirectory();
+      setState(() {
+        locationController.text = p.join(docsDir.path, "Odventory");
+      });
+    } catch (e) {
+      debugPrint("Error setting default location: $e");
+    }
   }
   @override
   void dispose() {
@@ -109,12 +122,14 @@ class _CreateNewDatabaseState extends State<CreateNewDatabase> {
                                Expanded(
                                  flex: 4,
                                  child: SizedBox(
-                                   height: 50,
+                                   height: 40,
                                    child: UiHelper.myTextField(
-                                     label: 'Location',
+                                     label: 'Select Folder',
                                      controller: locationController,
                                      hint: 'Default',
                                      readOnly: true,
+                                     fontSize: 12,
+                                     padding: EdgeInsets.symmetric(horizontal: 5)
                                    ),
                                  ),
                                ),
@@ -122,7 +137,7 @@ class _CreateNewDatabaseState extends State<CreateNewDatabase> {
                                Expanded(
                                  flex: 1,
                                  child: SizedBox(
-                                   height: 50,
+                                   height: 40,
                                    child: UiHelper.myFilePicker(callBack: () async {
                                      String? selectedDir =
                                      await FilePicker.platform

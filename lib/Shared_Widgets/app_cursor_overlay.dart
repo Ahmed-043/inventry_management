@@ -169,17 +169,23 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> with TickerProvider
             key: _stackKey,
             fit: StackFit.expand,
             children: [
-              widget.child,
+              RepaintBoundary(
+                child: widget.child,
+              ),
               IgnorePointer(
-                child: CustomPaint(
-                  painter: _TrailPainter(_trail),
-                  size: Size.infinite,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _TrailPainter(_trail),
+                    size: Size.infinite,
+                  ),
                 ),
               ),
               IgnorePointer(
-                child: CustomPaint(
-                  painter: _ClickPainter(_clicks),
-                  size: Size.infinite,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _ClickPainter(_clicks),
+                    size: Size.infinite,
+                  ),
                 ),
               ),
               Positioned.fill(
@@ -194,10 +200,12 @@ class _AppCursorOverlayState extends State<AppCursorOverlay> with TickerProvider
                   left: (_position!.dx - (isTextCursor ? (widget.size / 2) : ((widget.size / 2) - 5))),
                   top: (_position!.dy - (widget.size / 2) + 17),
                   child: IgnorePointer(
-                    child: Image.asset(
-                      cursorAsset,
-                      width: widget.size,
-                      height: widget.size,
+                    child: RepaintBoundary(
+                      child: Image.asset(
+                        cursorAsset,
+                        width: widget.size,
+                        height: widget.size,
+                      ),
                     ),
                   ),
                 ),

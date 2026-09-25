@@ -29,6 +29,7 @@ class Order {
    int paymentTimestamp = 0; // epoch
    int dueDateTimestamp = 0; // epoch
    String remark;
+   int? refPage;
    double adjustment; // manual adjustment to total amount , not used in table
    TwoValue tax = TwoValue(first: '%', second: 0.0); // not to use
    TwoValue discount = TwoValue(first: 'Rs', second: 0.0); //not to use
@@ -50,6 +51,7 @@ class Order {
     required this.orderTimestamp,
     this.dueDateTimestamp = 0,
     this.remark = '',
+    this.refPage,
     this.adjustment = 0.0,
     this.editable = true,
     this.update = false,
@@ -70,6 +72,7 @@ class Order {
     orderTimestamp: map['order_timestamp'],
     dueDateTimestamp: map['due_date'],
     remark: map['remark'] ?? '',
+    refPage: map['refPage'] as int?,
   );
 
   Map<String, dynamic> toMap() => {
@@ -85,6 +88,7 @@ class Order {
     'order_timestamp': orderTimestamp,
     'due_date' :  dueDateTimestamp,
     'remark': remark,
+    'refPage': refPage,
   };
 }
 
@@ -109,6 +113,7 @@ Future<int> registerOrder(Order order, List<OrderItem> items, Database db) async
       'order_timestamp': order.orderTimestamp,
       'due_date' : order.paymentStatus == 'Overdue' ? order.dueDateTimestamp : 0,
       'remark': order.remark,
+      'refPage': order.refPage,
     });
 
     // 2️⃣ Insert Order Items
@@ -350,6 +355,7 @@ Future<List<Order>> fetchFilteredOrders(
 
       orderTimestamp: row['order_timestamp'] as int? ?? 0,
       remark: row['remark'] as String? ?? '',
+      refPage: row['refPage'] as int?,
       adjustment: 0.0,
     );
 
@@ -534,4 +540,19 @@ Future<bool> updatePendingOrderFromObject(
 
     return true;
   });
+}
+
+/// Fetch the last order's refPage to suggest the next one
+Future<int?> getLastOrderRefPage(Database db) async {
+  final result = await db.query(
+    'orders',
+    columns: ['refPage'],
+    orderBy: 'id DESC',
+    limit: 1,
+  );
+
+  if (result.isNotEmpty) {
+    return result.first['refPage'] as int?;
+  }
+  return null;
 }

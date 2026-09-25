@@ -58,8 +58,9 @@ class OrderCard extends StatelessWidget {
     }
     double percent = payment > 0 ? (1 - (order.paidAmount.abs() / payment)) : 0.0;
 
-    return ScaledContainer(
-      child: Hero(
+    return RepaintBoundary(
+      child: ScaledContainer(
+        child: Hero(
         tag: "${order.id}",
         child: Material(
           color: Colors.transparent,
@@ -102,7 +103,7 @@ class OrderCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '#${order.id}',
+                            '#${order.id}${order.refPage != null ? ' (Page: ${order.refPage})' : ''}',
                             style: MyFont.medium(12, color: MyColors.textSecondary),
                           ),
                           Row(
@@ -128,7 +129,7 @@ class OrderCard extends StatelessWidget {
                         DateFormat('dd MMM yyyy - hh:mm a').format(
                           DateTime.fromMillisecondsSinceEpoch(order.orderTimestamp),
                         ),
-                        style: MyFont.medium(12, color: MyColors.textSecondary),
+                        style: MyFont.medium(12, color: MyColors.grey),
                       ),
                       // Progress
                       Padding(
@@ -176,6 +177,7 @@ class OrderCard extends StatelessWidget {
           ),
         ),
       ),
+    )
     );
   }
 

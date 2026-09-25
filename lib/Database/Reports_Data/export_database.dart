@@ -1,14 +1,41 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 
+/// Export database to Excel in the background to avoid UI freezing.
 Future<String?> exportDatabaseToExcel(
   Database db,
   String folderPath, {
   String? fileName,
 }) async {
+  // Since we can't pass a Database object to an isolate, 
+  // we pass the path and let the isolate open its own connection.
+  final dbPath = db.path;
+  
+  return compute(_exportTask, {
+    'dbPath': dbPath,
+    'folderPath': folderPath,
+    'fileName': fileName,
+  });
+}
+
+Future<String?> _exportTask(Map<String, dynamic> params) async {
+  final String dbPath = params['dbPath'];
+  final String folderPath = params['folderPath'];
+  final String? fileName = params['fileName'];
+
+  Database? db;
   try {
+    // Initialize FFI for the isolate
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
+    db = await openDatabase(dbPath, readOnly: true);
+    
     final workbook = xlsio.Workbook();
 
     final tables = await db.rawQuery(
@@ -119,6 +146,8 @@ Future<String?> exportDatabaseToExcel(
   } catch (e) {
     stderr.writeln("Error exporting database: $e");
     return null;
+  } finally {
+    await db?.close();
   }
 }
 

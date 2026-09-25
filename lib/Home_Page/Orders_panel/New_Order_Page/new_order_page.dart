@@ -62,8 +62,18 @@ class _NewOrderPageState extends State<NewOrderPage> {
         // add defaults for other fields
       );
       _loadInfo();
+      _suggestRefPage();
     }
     totalNotifier = ValueNotifier(0);
+  }
+
+  Future<void> _suggestRefPage() async {
+    final lastPage = await getLastOrderRefPage(currentDB!);
+    if (lastPage != null) {
+      setState(() {
+        order.refPage = lastPage + 1;
+      });
+    }
   }
 
   Future<void> _initAsync() async {

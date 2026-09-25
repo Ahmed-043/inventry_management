@@ -7,6 +7,8 @@ import 'package:inventry_management/colors.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
 import '../Database/person.dart';
+import '../Database/backup.dart';
+import '../Database/product_stock.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/expenses_page.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/orders_page.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/reports_page.dart';
@@ -61,6 +63,15 @@ class HomePageState extends State<HomePage> {
 
     final FocusNode _focusNode = FocusNode();
 
+  void _handleLogout() {
+    stopBackupScheduler();
+    stopDailyOpeningStockScheduler();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => SigninPageRedsign()),
+      (route) => false,
+    );
+  }
+
   Widget _getPage(int index) {
     switch (index) {
       case 0:
@@ -110,6 +121,33 @@ class HomePageState extends State<HomePage> {
     // TODO: implement initState
     super.initState();
     _focusNode.requestFocus(); // ensure focus is set for keyboard events
+
+    // Start schedulers after the first frame to ensure the home page is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (currentDB != null) {
+        debugPrint("🏗️ STARTING HOME PAGE MAINTENANCE TASKS");
+        
+        // 1. First, perform the one-time stock push (Highest priority, held in a transaction)
+        try {
+          int i = await pushCurrentStockAsOpeningStock(currentDB!);
+          debugPrint("✅ Daily Opening Stock Noted: $i");
+        } catch (e) {
+          debugPrint("❌ Error pushing opening stock: $e");
+        }
+
+        // 2. Start the daily stock scheduler (Checks every 30 mins)
+        startDailyOpeningStockScheduler(currentDB!);
+
+        // 3. DELAY the backup scheduler to allow the app to settle and avoid initial lock contention
+        // This ensures the backup task doesn't collide with startup writes.
+        Future.delayed(const Duration(seconds: 10), () {
+          if (mounted && currentDB != null) {
+            debugPrint("🚀 STARTING BACKUP SCHEDULER");
+            startBackupScheduler(currentDB!);
+          }
+        });
+      }
+    });
   }
   @override
   Widget build(BuildContext context) {
@@ -167,11 +205,7 @@ class HomePageState extends State<HomePage> {
                             info: widget.info,
                             onItemSelected: (index) {
                               if(index == pagesCount-1){
-                                //Navigator.pop(context);
-                                 Navigator.of(context).pushAndRemoveUntil(
-                                   MaterialPageRoute(builder: (_) => SigninPageRedsign()),
-                                       (route) => false,
-                                 );
+                                _handleLogout();
                               }else {
                                 setState(() {
                                   selectedIndex = index % pagesCount;
@@ -208,7 +242,7 @@ class HomePageState extends State<HomePage> {
                   info: widget.info,
                   onItemSelected: (index) {
                     if(index == pagesCount-1){
-                      Navigator.pop(context);
+                      _handleLogout();
                     }else {
                       setState(() {
                         selectedIndex = index % pagesCount;

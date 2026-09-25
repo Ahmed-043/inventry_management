@@ -46,7 +46,7 @@ pw.Widget buildReceiptBoxPdf({
           ),
           pw.Center(
             child: pw.Text(
-              "Order Invoice #${order.id}",
+              "Order Invoice #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}",
               style: const pw.TextStyle(fontSize: 8),
             ),
           ),
@@ -58,7 +58,7 @@ pw.Widget buildReceiptBoxPdf({
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                "Order ID: #${order.id}\nDate: ${DateFormat('dd-MMM-yyyy, hh:mm a').format(DateTime.fromMillisecondsSinceEpoch(order.orderTimestamp))}",
+                "Order ID: #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}\nDate: ${DateFormat('dd-MMM-yyyy, hh:mm a').format(DateTime.fromMillisecondsSinceEpoch(order.orderTimestamp))}",
                 style: const pw.TextStyle(fontSize: 7),
               ),
               pw.RichText(
@@ -186,7 +186,7 @@ pw.Widget buildReceiptBoxPdf({
       ),
     ),
     pw.Positioned.fill(
-      child: UiHelper.pdfWaterMark(text: info.dbName),
+      child: UiHelper.pdfWaterMark(text: " ${order.totalAmount - order.adjustment}"),
     ),
   ]);
 }

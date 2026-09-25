@@ -27,7 +27,7 @@ class AddNewProduct {
           //   ),
           // );
         },
-        child: const Icon(Icons.add, color: Colors.white, size: 18),
+       // child: const Icon(Icons.add, color: Colors.white, size: 18),
         title: "Add New Product",
         padding: const EdgeInsets.symmetric(
           horizontal: 16,

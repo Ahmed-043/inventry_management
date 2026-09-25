@@ -133,7 +133,7 @@ Future<void> updateAndDeductDirectComponentsOnly(
     Database db,
     {String productName = ""}
     ) async {
-  print("DEDUCTING DIRECT COMPONENTS ONLY");
+  debugPrint("DEDUCTING DIRECT COMPONENTS ONLY");
 
   // Step 1: Check shortages (must already be non-recursive)
   final shortages = await getComponentStock(orderMap, db);
@@ -304,7 +304,7 @@ Timer? _dailyStockTimer;
 /// app remains open across midnight.
 void startDailyOpeningStockScheduler(Database db) {
   _dailyStockTimer?.cancel();
-  _dailyStockTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+  _dailyStockTimer = Timer.periodic(const Duration(minutes: 10), (timer) async {
     try {
       if (db.isOpen) {
         debugPrint("SCHEDULER CHECKING");
@@ -317,6 +317,13 @@ void startDailyOpeningStockScheduler(Database db) {
       debugPrint("Error in DailyOpeningStockScheduler: $e");
     }
   });
+}
+
+/// Stops the periodic opening stock timer.
+void stopDailyOpeningStockScheduler() {
+  _dailyStockTimer?.cancel();
+  _dailyStockTimer = null;
+  debugPrint("🛑 DAILY OPENING STOCK SCHEDULER STOPPED");
 }
 
 

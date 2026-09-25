@@ -3,6 +3,7 @@ import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense_category.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Database/person.dart';
+import 'package:inventry_management/Database/payment_transactions.dart';
 
 class AddExpenseController extends ChangeNotifier {
   final title = TextEditingController();
@@ -13,6 +14,7 @@ class AddExpenseController extends ChangeNotifier {
 
   bool isLoading = false;
   bool isIncome = false;
+  bool recordAsTransaction = true;
   String paymentMethod = 'Cash';
   int expenseDate = DateTime.now().millisecondsSinceEpoch;
   Person? selectedPerson;
@@ -37,12 +39,15 @@ class AddExpenseController extends ChangeNotifier {
 
   void _onCategoryTextChanged() {
     final text = categoryController.text.trim();
-    final exists = categories.any((c) => c.name.toLowerCase() == text.toLowerCase());
-    final hasSelectedMatch = selectedCategoryId != null &&
-        categories.any((c) => c.id == selectedCategoryId && c.name == text);
+    final index = categories.indexWhere((c) => c.name.toLowerCase() == text.toLowerCase());
 
-    showAddCategoryIcon = text.isNotEmpty && !exists && !hasSelectedMatch;
-    if (!hasSelectedMatch) selectedCategoryId = null;
+    if (index != -1) {
+      selectedCategoryId = categories[index].id;
+      showAddCategoryIcon = false;
+    } else {
+      selectedCategoryId = null;
+      showAddCategoryIcon = text.isNotEmpty;
+    }
     notifyListeners();
   }
 
@@ -76,6 +81,11 @@ class AddExpenseController extends ChangeNotifier {
 
   void updatePaymentMethod(String method) {
     paymentMethod = method;
+    notifyListeners();
+  }
+
+  void updateRecordAsTransaction(bool value) {
+    recordAsTransaction = value;
     notifyListeners();
   }
 
@@ -113,6 +123,26 @@ class AddExpenseController extends ChangeNotifier {
       );
 
       final id = await Expense.insert(currentDB!, expense);
+
+      if (id != -1 && recordAsTransaction) {
+        await insertTransaction(
+          currentDB!,
+          PaymentTransaction(
+            personId: selectedPerson?.id ?? 0,
+            name: selectedPerson?.name ?? title.text.trim(),
+            orderId: 0,
+            amount: isIncome ? amt : -amt,
+            paidAmount: isIncome ? amt : -amt,
+            paymentStatus: 'Paid',
+            dueDate: expenseDate,
+            paymentMethod: paymentMethod,
+            timestamp: now,
+            paymentTimestamp: expenseDate,
+            remark: remark.text.trim(),
+          ),
+        );
+      }
+
       isLoading = false;
       notifyListeners();
 

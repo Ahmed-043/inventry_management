@@ -184,7 +184,7 @@ class UpdateProductDialogState extends State<UpdateProductDialog> {
                 SizedBox(height: 8),
                 Container(
                   height: 280,
-                  clipBehavior: Clip.none,
+                  clipBehavior: Clip.hardEdge,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                    // border: Border.all(color: MyColors.lightGrey),

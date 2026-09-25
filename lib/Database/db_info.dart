@@ -12,7 +12,9 @@ class DBInfo {
   String phone;
   String backupDir;
   int lastBackup;
+  int lastCloudBackup;
   int backupFreq;
+  int googleBackup;
 
   DBInfo({
     this.id,
@@ -23,7 +25,9 @@ class DBInfo {
     this.phone = '',
     this.backupDir = '',
     this.lastBackup = 0,
-    this.backupFreq = 0
+    this.lastCloudBackup = 0,
+    this.backupFreq = 0,
+    this.googleBackup = 0,
   });
 
   // Convert from DB row to Info object
@@ -37,7 +41,9 @@ class DBInfo {
       phone: map['phone'] ?? '',
       backupDir: map['backupDir'] ?? '',
       lastBackup: map['lastBackup'] ?? 0,
+      lastCloudBackup: map['lastCloudBackup'] ?? 0,
       backupFreq: map['backupFreq'] ?? 0,
+      googleBackup: map['googleBackup'] ?? 0,
     );
   }
 
@@ -52,7 +58,9 @@ class DBInfo {
       'phone': phone,
       'backupDir': backupDir,
       'lastBackup': lastBackup,
+      'lastCloudBackup': lastCloudBackup,
       'backupFreq': backupFreq,
+      'googleBackup': googleBackup,
     };
   }
 }
@@ -92,7 +100,7 @@ Future<DBInfo> getDBInfo(Database db) async {
   try {
     final result = await db.query(
       'info',
-      columns: ['db_name', 'description', 'image','phone','location','backupDir','lastBackup','backupFreq'],
+      columns: ['db_name', 'description', 'image','phone','location','backupDir','lastBackup','lastCloudBackup','backupFreq','googleBackup'],
       limit: 1,
     );
     final i = DBInfo.fromMap(result.first);

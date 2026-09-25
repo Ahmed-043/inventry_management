@@ -258,10 +258,31 @@ class _PersonsPageState extends State<PersonsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                widget.isCustomer ? "Customers" : "Suppliers",
-                style: MyFont.bold(24, color: MyColors.textMain),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      widget.isCustomer ? "Customers" : "Suppliers",
+                      style: MyFont.bold(24, color: MyColors.textMain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AddNewPerson.addNew(
+                    context: context,
+                    isCustomer: widget.isCustomer,
+                    action: AddNewPersonPanel(
+                      isCustomer: widget.isCustomer,
+                      callback: () {
+                        setState(() {
+                          _loadPersons();
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
+
               Row(
                 children: [
                   SingleChildScrollView(
@@ -276,19 +297,6 @@ class _PersonsPageState extends State<PersonsPage> {
                         const SizedBox(width: 8),
                         _filterChip('Local', 3),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  AddNewPerson.addNew(
-                    context: context,
-                    isCustomer: widget.isCustomer,
-                    action: AddNewPersonPanel(
-                      isCustomer: widget.isCustomer,
-                      callback: () {
-                        setState(() {
-                          _loadPersons();
-                        });
-                      },
                     ),
                   ),
                   const SizedBox(width: 9),

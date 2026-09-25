@@ -1,48 +1,116 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'db_info.dart';
 import 'Reports_Data/export_database.dart';
+import '../utils/google_drive_service.dart';
 
 /// Check frequency and trigger backup for a single DB
 Future<void> checkAndBackupDatabase(Database db) async {
+  debugPrint("🔄 BACKUP SCHEDULER CHECKING");
+  
   DBInfo info = await getDBInfo(db);
   final now = DateTime.now();
   final lastBackup = DateTime.fromMillisecondsSinceEpoch(info.lastBackup);
+  final lastCloudBackup = DateTime.fromMillisecondsSinceEpoch(info.lastCloudBackup);
 
   // Always perform Excel backups (Daily, Weekly, Monthly)
   await _handleExcelBackups(db, info, lastBackup, now);
 
-  bool shouldBackup = false;
+  bool shouldBackupLocal = false;
+  bool shouldBackupCloud = false;
 
-  switch (info.backupFreq) {
-    case 1: // daily
-      shouldBackup = !isSameDay(lastBackup, now);
-      break;
-    case 2: // weekly
-      shouldBackup = now.difference(lastBackup).inDays >= 7;
-      break;
-    case 3: // monthly
-      shouldBackup = (now.year > lastBackup.year) || (now.month > lastBackup.month);
-      break;
-    default:
-      return; // no backup
+  if (info.backupFreq != 0) {
+    switch (info.backupFreq) {
+      case 1: // daily
+        shouldBackupLocal = !isSameDay(lastBackup, now);
+        shouldBackupCloud = info.googleBackup == 1 && !isSameDay(lastCloudBackup, now);
+        break;
+      case 2: // weekly
+        shouldBackupLocal = now.difference(lastBackup).inDays >= 7;
+        shouldBackupCloud = info.googleBackup == 1 && now.difference(lastCloudBackup).inDays >= 7;
+        break;
+      case 3: // monthly
+        shouldBackupLocal = (now.year > lastBackup.year) || (now.month > lastBackup.month);
+        shouldBackupCloud = info.googleBackup == 1 && ((now.year > lastCloudBackup.year) || (now.month > lastCloudBackup.month));
+        break;
+    }
   }
 
-  if (shouldBackup) {
+  if (!shouldBackupLocal && !shouldBackupCloud) {
+    debugPrint("✅ Already backed up for today / Frequency not met");
+    return;
+  }
+
+  // Handle Local Backup
+  if (shouldBackupLocal) {
+    debugPrint("📂 Starting Scheduled Local Backup...");
     final success = await backupDatabase(db, info);
-
-    debugPrint('🪢Backup success: $success');
-
+    debugPrint('🪢Local Backup success: $success');
     if (success) {
-      // Only update DB info if backup succeeded
       info.lastBackup = now.millisecondsSinceEpoch;
       await updateDBBackupInfo(db, info);
     }
   }
+
+  // Handle Cloud Backup independently if enabled
+  if (shouldBackupCloud) {
+    debugPrint("☁️ Starting Scheduled Cloud Backup...");
+    final googleService = GoogleDriveService();
+    final user = await googleService.getCurrentUser();
+    if (user != null) {
+      final dbFile = File(db.path);
+      final cloudSuccess = await googleService.uploadFile(dbFile);
+      if (cloudSuccess) {
+        debugPrint('☁️Cloud Backup success');
+        info.lastCloudBackup = now.millisecondsSinceEpoch;
+        await updateDBBackupInfo(db, info);
+        await addBackupLog(info.dbName, true, "Cloud backup completed successfully", type: "Cloud");
+      } else {
+        debugPrint('☁️Cloud Backup failed');
+        await addBackupLog(info.dbName, false, "Cloud upload failed", type: "Cloud");
+      }
+    } else {
+      debugPrint('☁️Cloud Backup failed: User not logged in');
+      await addBackupLog(info.dbName, false, "Cloud backup failed: Google account not connected", type: "Cloud");
+    }
+  }
+}
+
+Timer? _backupTimer;
+
+/// Starts a periodic timer that checks every hour if a backup is due.
+/// This handles the case where the app remains open across midnight.
+void startBackupScheduler(Database db) {
+  _backupTimer?.cancel();
+  // Check once immediately
+  checkAndBackupDatabase(db);
+  
+  // Then check every 30 minutes
+  _backupTimer = Timer.periodic(const Duration(minutes: 30), (timer) async {
+    try {
+      if (db.isOpen) {
+        await checkAndBackupDatabase(db);
+      } else {
+        timer.cancel();
+        _backupTimer = null;
+      }
+    } catch (e) {
+      debugPrint("Error in BackupScheduler: $e");
+    }
+  });
+}
+
+/// Stops the periodic backup timer.
+void stopBackupScheduler() {
+  _backupTimer?.cancel();
+  _backupTimer = null;
+  debugPrint("🛑 BACKUP SCHEDULER STOPPED");
 }
 
 /// Handles Excel backups (Daily, Weekly, Monthly) based on lastBackup timestamp
@@ -105,20 +173,28 @@ Future<bool> backupDatabase(Database db, DBInfo info) async {
     final dir = Directory(backupDir);
     if (!await dir.exists()) await dir.create(recursive: true);
 
-    final dbFile = File(db.path); // Correct: actual DB file path
-    if (!await dbFile.exists()) {
-      await addBackupLog(info.dbName, false, "Source database file not found");
-      return false;
+    final String dbPath = db.path;
+    final String backupPath = p.join(backupDir, p.basename(dbPath));
+
+    // SQLite's VACUUM INTO requires the destination file to NOT exist.
+    final backupFile = File(backupPath);
+    if (await backupFile.exists()) {
+      await backupFile.delete();
     }
 
-    final backupPath = p.join(backupDir, p.basename(db.path));
-    await dbFile.copy(backupPath);
+    // Use a SEPARATE connection for the backup to avoid locking the main "live" connection.
+    // This implements the "backup with copy of database" approach.
+    final Database backupConnection = await openDatabase(
+      dbPath,
+      readOnly: true,
+      singleInstance: false, // Ensure we get a fresh connection
+    );
 
-    // Verify backup file exists
-    final backupFile = File(backupPath);
-    if (!await backupFile.exists()) {
-      await addBackupLog(info.dbName, false, "Backup file verification failed");
-      return false;
+    try {
+      final escapedPath = backupPath.replaceAll("'", "''");
+      await backupConnection.execute("VACUUM INTO '$escapedPath'");
+    } finally {
+      await backupConnection.close();
     }
 
     // Save backupDir to info if it was empty
@@ -134,12 +210,13 @@ Future<bool> backupDatabase(Database db, DBInfo info) async {
 }
 
 /// Adds a log entry for the backup process to SharedPreferences
-Future<void> addBackupLog(String dbName, bool success, String? error) async {
+Future<void> addBackupLog(String dbName, bool success, String? error, {String type = "Local"}) async {
   final log = {
     'dbName': dbName,
     'datetime': DateTime.now().toIso8601String(),
     'status': success ? 'Success' : 'Failed',
     'error': error ?? '',
+    'type': type,
   };
   try {
     final prefs = await SharedPreferences.getInstance();
@@ -172,6 +249,7 @@ Future<void> updateDBBackupInfo(Database db, DBInfo info) async {
     {
       'backupDir': info.backupDir,
       'lastBackup': info.lastBackup,
+      'lastCloudBackup': info.lastCloudBackup,
     },
     where: 'db_name = ?',
     whereArgs: [info.dbName],

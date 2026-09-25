@@ -11,31 +11,30 @@ class AddNewPerson {
     // Generate a unique tag if you have multiple buttons on one screen
     final String heroTag = 'newPersonHero_${isCustomer ? "customer" : "supplier"}';
 
-    return Container(
-      height: 30,
-      //margin: const EdgeInsets.only(top: 5),
-      width: 200,
-      child: Hero(
-        tag: heroTag,
-        child: UiHelper.myButton(
-          callback: () {
-            // Using pushPage (as per your AddNewProduct logic) for the Hero transition
-            UiHelper.pushPage(
-              context: context,
-              opaque: false,
-              barrierColor: Colors.black54,
-              barrierDismissible: true,
-              page: _AddNewPersonDialog(
-                action: action,
-                heroTag: heroTag,
-              ),
-            );
-          },
-          filled: true,
-          textSize: 15,
-          borderRadius: 10,
-          title: "Add New ${isCustomer ? 'Customer' : 'Supplier'}",
+    return Hero(
+      tag: heroTag,
+      child: UiHelper.myButton(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
         ),
+        callback: () {
+          // Using pushPage (as per your AddNewProduct logic) for the Hero transition
+          UiHelper.pushPage(
+            context: context,
+            opaque: false,
+            barrierColor: Colors.black54,
+            barrierDismissible: true,
+            page: _AddNewPersonDialog(
+              action: action,
+              heroTag: heroTag,
+            ),
+          );
+        },
+        filled: true,
+        textSize: 15,
+        borderRadius: 10,
+        title: "Add New ${isCustomer ? 'Customer' : 'Supplier'}",
       ),
     );
   }

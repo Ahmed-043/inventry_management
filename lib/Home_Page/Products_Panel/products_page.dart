@@ -471,12 +471,16 @@ class _StockDashboardState extends State<StockDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Products",
-                style: MyFont.bold(24, color: MyColors.textMain),
-              ),
               Row(
                 children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      "Products",
+                      style: MyFont.bold(24, color: MyColors.textMain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   AddNewProduct.addNew(
                     context: context,
                     action: InputNewProduct(onSave: (){
@@ -484,7 +488,10 @@ class _StockDashboardState extends State<StockDashboard> {
                       _loadCategoryNames();
                     }),
                   ),
-                  const SizedBox(width: 12),
+                ],
+              ),
+              Row(
+                children: [
                   IconButton(
                     onPressed: () {},
                     icon: Icon(
@@ -719,7 +726,7 @@ class _ProductGridItemState extends State<_ProductGridItem> {
           curve: Curves.easeOutCubic,
           transform: Matrix4.identity()..scale(isHovered ? 1.03 : 1.0),
           transformAlignment: Alignment.center,
-          child: card,
+          child: RepaintBoundary(child: card),
         ),
       );
     }

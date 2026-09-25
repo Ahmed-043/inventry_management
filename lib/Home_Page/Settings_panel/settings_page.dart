@@ -6,7 +6,6 @@ import 'package:inventry_management/Home_Page/Settings_panel/backup_settings.dar
 import 'package:inventry_management/Home_Page/Settings_panel/pagination_settings.dart';
 import 'package:inventry_management/Home_Page/Settings_panel/performance_settings.dart';
 import 'package:inventry_management/Home_Page/Settings_panel/sidebar_settings.dart';
-import 'package:inventry_management/Home_Page/Settings_panel/theme_settings.dart';
 import 'package:inventry_management/Home_Page/Settings_panel/scalling_settings.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
@@ -20,7 +19,6 @@ class SettingsPanel extends StatefulWidget {
 }
 
 class _SettingsPanelState extends State<SettingsPanel> {
-  Timer? timer;
   TextEditingController pageSizeController = TextEditingController(
     text: productsPerPage.toString(),
   );
@@ -71,6 +69,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
                     ),
                   ),
                 ),
+                SizedBox(
+                  height: 50,
+                )
               ],
             ),
           ),

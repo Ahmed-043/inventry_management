@@ -63,6 +63,11 @@ dependencies:
   syncfusion_flutter_xlsio: ^34.1.30
   local_auth: ^3.0.2
   two_dimensional_scrollables: ^0.5.4
+  google_sign_in_all_platforms: ^2.0.3
+  googleapis: ^14.0.0
+  googleapis_auth: ^2.0.1
+  http: ^1.2.2
+  jwt_decoder: ^2.0.1
 
 dev_dependencies:
   flutter_test:

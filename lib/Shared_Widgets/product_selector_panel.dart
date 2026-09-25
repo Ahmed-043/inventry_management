@@ -340,7 +340,7 @@ class _ProductSelectorPanelState extends State<ProductSelectorPanel> {
                                                 "Selected Id: ${widget.productIndexes.map((e) => e).toList()}",
                                               );
                                             },
-                                            child: productCard(p),
+                                            child: RepaintBoundary(child: productCard(p)),
                                           );
                                         },
                                       ),

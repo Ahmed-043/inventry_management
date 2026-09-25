@@ -50,7 +50,7 @@ class _DashboardChipsWidgetState extends State<DashboardChipsWidget> {
         children: List.generate(pairCount, (i) {
           final first = i * 2;
           final second = first + 1;
-          if(i>0) {
+          if(i>=0) {
             return _DashboardChip(
             primary: widget.chips[first],
             alternate: second < widget.chips.length

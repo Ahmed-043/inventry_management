@@ -8,6 +8,7 @@ import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/sectio
 import '../../../../Database/orders.dart';
 import '../../../../Shared_Widgets/date_time.dart';
 import '../../../../Shared_Widgets/fonts.dart';
+import '../../../../Shared_Widgets/main_ui_helper.dart';
 import '../../../../colors.dart';
 import 'widgets/order_payment_card.dart';
 
@@ -37,11 +38,21 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
   late String date;
   late String time;
   bool render = performanceMode;
+  late TextEditingController refPageController;
 
   @override
   void initState() {
     super.initState();
+    refPageController = TextEditingController(
+      text: widget.order.refPage?.toString() ?? '',
+    );
     initData();
+  }
+
+  @override
+  void dispose() {
+    refPageController.dispose();
+    super.dispose();
   }
 
   initData() async {
@@ -113,8 +124,56 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
           onChanged: widget.onOrderChanged,
           selectedProducts: widget.selectedProducts,
         ),
+
+        SizedBox(width: double.infinity, child: _refPageCard()),
         SizedBox(width: double.infinity, child: dateTimeCard()),
       ],
+    );
+  }
+
+  Widget _refPageCard() {
+    // Sync controller if refPage changes externally (e.g. from new order suggestion)
+    final refPageStr = widget.order.refPage?.toString() ?? '';
+    if (refPageController.text != refPageStr) {
+      refPageController.text = refPageStr;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: MyColors.lightGrey.withAlpha(60),
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              "Page No (optional)",
+              textAlign: TextAlign.start,
+              style: MyFont.semiBold(15, color: MyColors.darkBlue),
+            ),
+          ),
+          SizedBox(height: 10,),
+          SizedBox(
+            height: 40,
+            child: UiHelper.myTextField(
+              controller: refPageController,
+              hint: "Enter Page No",
+              readOnly: !widget.order.editable,
+              textType: TextInputType.number,
+              fontSize: 15,
+              borderRadius: 15,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              onChange: () {
+                widget.order.refPage = int.tryParse(refPageController.text);
+                widget.onOrderChanged.call();
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 

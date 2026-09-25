@@ -131,12 +131,17 @@ class _ExpensesPageState extends State<ExpensesPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Expenses",
-                style: MyFont.bold(24, color: MyColors.textMain),
-              ),
               Row(
                 children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      "Expenses",
+                      style: MyFont.bold(24, color: MyColors.textMain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
                   Hero(
                     tag: 'addExpense',
                     child: UiHelper.myButton(
@@ -160,7 +165,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
                       },
 
-                      child: const Icon(Icons.add, color: Colors.white, size: 18),
+                     // child: const Icon(Icons.add, color: Colors.white, size: 18),
                       title: "Add Expense",
                       textSize: 14,
                       filled: true,
@@ -169,7 +174,11 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                ],
+              ),
+              Row(
+                children: [
+
                   UiHelper.myButton(
                     callback: () {
                       UiHelper.pushPage(

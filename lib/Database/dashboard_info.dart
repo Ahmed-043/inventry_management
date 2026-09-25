@@ -37,10 +37,10 @@ Future<List<ChipData>> loadDashboardChipData(
       (SELECT COUNT(*) FROM orders WHERE order_type='buy' AND order_status!='Canceled') AS purchaseAll,
       (SELECT COUNT(*) FROM orders WHERE order_type='buy' AND order_status!='Canceled' AND order_timestamp BETWEEN ? AND ?) AS purchasePeriod,
 
-      (SELECT SUM(amount) FROM payment_transactions WHERE amount>0) AS incomeAll,
-      (SELECT SUM(amount) FROM payment_transactions WHERE amount>0 AND timestamp BETWEEN ? AND ?) AS incomePeriod,
-      (SELECT SUM(amount) FROM payment_transactions WHERE amount<0) AS outAll,
-      (SELECT SUM(amount) FROM payment_transactions WHERE amount<0 AND timestamp BETWEEN ? AND ?) AS outPeriod,
+      (SELECT SUM(paid_amount) FROM payment_transactions WHERE amount>0 AND (payment_status = 'Paid' OR paid_amount != 0)) AS incomeAll,
+      (SELECT SUM(paid_amount) FROM payment_transactions WHERE amount>0 AND (payment_status = 'Paid' OR paid_amount != 0) AND timestamp BETWEEN ? AND ?) AS incomePeriod,
+      (SELECT SUM(paid_amount) FROM payment_transactions WHERE amount<0 AND (payment_status = 'Paid' OR paid_amount != 0)) AS outAll,
+      (SELECT SUM(paid_amount) FROM payment_transactions WHERE amount<0 AND (payment_status = 'Paid' OR paid_amount != 0) AND timestamp BETWEEN ? AND ?) AS outPeriod,
 
       (SELECT COUNT(*) FROM orders WHERE order_status IN ('Pending','Overdue')) AS pendingOrdersAll,
       (SELECT COUNT(*) FROM orders WHERE order_status IN ('Pending','Overdue') AND order_timestamp BETWEEN ? AND ?) AS pendingOrdersPeriod,
@@ -227,9 +227,9 @@ Future<List<SalesData>> getDailyPayments({
 
   final rows = await db.rawQuery('''
     SELECT strftime('%Y-%m-%d', datetime(timestamp / 1000, 'unixepoch')) AS yd,
-           SUM(ABS(amount)) AS total
+           SUM(ABS(paid_amount)) AS total
     FROM payment_transactions
-    WHERE payment_status = 'Paid'
+    WHERE (payment_status = 'Paid' OR paid_amount != 0)
       AND timestamp BETWEEN ? AND ?
       AND amount ${positiveOnly ? '>= 0' : '< 0'}
     GROUP BY yd
@@ -277,9 +277,9 @@ Future<List<SalesData>> getMonthlyPayments({
   // Fetch totals per month based on flag
   final rows = await db.rawQuery('''
     SELECT strftime('%Y-%m', datetime(timestamp / 1000, 'unixepoch')) AS ym,
-           SUM(ABS(amount)) AS total
+           SUM(ABS(paid_amount)) AS total
     FROM payment_transactions
-    WHERE payment_status = 'Paid'
+    WHERE (payment_status = 'Paid' OR paid_amount != 0)
       AND timestamp BETWEEN ? AND ?
       AND amount ${positiveOnly ? '>= 0' : '< 0'}
     GROUP BY ym

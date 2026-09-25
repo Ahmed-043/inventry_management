@@ -69,6 +69,9 @@ class _SplashScreenState extends State<SplashScreen> {
       currentDB?.close();
       currentDB = await openDatabase(path);
 
+      // Auto-migrate schema if needed
+      await ensureDatabaseSchema(currentDB!);
+
       final isValid = await validateDatabaseSchema(currentDB!);
       if (!isValid) {
         await currentDB?.close();
@@ -78,14 +81,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
       final info = await getDBInfo(currentDB!);
 
-      // optional: auto backup check
+      gotoHomePage(path, info);
       await checkAndBackupDatabase(currentDB!);
 
-      int i = await pushCurrentStockAsOpeningStock(currentDB!);
-      debugPrint("Daily Opening Stock Noted: $i");
-      startDailyOpeningStockScheduler(currentDB!);
-
-      gotoHomePage(path, info);
       return true;
     } catch (e) {
       await currentDB?.close();

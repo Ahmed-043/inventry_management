@@ -531,7 +531,7 @@ class _DashboardState extends State<Dashboard> {
         }
       },
       child: PageView(
-        clipBehavior: Clip.none,
+        clipBehavior: Clip.hardEdge,
         controller: pageController,
         scrollDirection: Axis.horizontal,
         children: [lineChart(), pieBarCharts()],

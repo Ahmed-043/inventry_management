@@ -100,24 +100,26 @@ class MyApp extends StatelessWidget {
                 if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS))
                   const WindowTitleBar(),
                 Expanded(
-                  child: SizedBox(
-                    width: realSize.width,
-                    height: realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0),
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      minWidth: realSize.width / scale,
-                      maxWidth: realSize.width / scale,
-                      minHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
-                      maxHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
-                      child: Transform.scale(
-                        scale: scale,
+                  child: RepaintBoundary(
+                    child: SizedBox(
+                      width: realSize.width,
+                      height: realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0),
+                      child: OverflowBox(
                         alignment: Alignment.topLeft,
-                        child: MediaQuery(
-                          data: mediaQuery.copyWith(
-                            size: Size(realSize.width / scale, (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale),
-                            devicePixelRatio: mediaQuery.devicePixelRatio * scale,
+                        minWidth: realSize.width / scale,
+                        maxWidth: realSize.width / scale,
+                        minHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
+                        maxHeight: (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale,
+                        child: Transform.scale(
+                          scale: scale,
+                          alignment: Alignment.topLeft,
+                          child: MediaQuery(
+                            data: mediaQuery.copyWith(
+                              size: Size(realSize.width / scale, (realSize.height - ( (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) ? 32 : 0)) / scale),
+                              devicePixelRatio: mediaQuery.devicePixelRatio * scale,
+                            ),
+                            child: child,
                           ),
-                          child: child,
                         ),
                       ),
                     ),
@@ -227,6 +229,8 @@ Future<void> loadPreferences() async {
   hideSuppliers = prefs.getBool('hideSuppliers') ?? false;
   hideOrders = prefs.getBool('hideOrders') ?? false;
   hideTransactions = prefs.getBool('hideTransactions') ?? false;
+  hideExpenses = prefs.getBool('hideExpenses') ?? false;
+
   hideReports = prefs.getBool('hideReports') ?? false;
   hideSettings = false;
 

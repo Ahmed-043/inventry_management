@@ -45,7 +45,7 @@ class ReceiptBox extends StatelessWidget {
                         ),
                       ),
                 Text(info.dbName, style: MyFont.bold(22, color: MyColors.info)),
-                Text("Order Invoice #${order.id}", style: MyFont.normal(16)),
+                Text("Order Invoice #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}", style: MyFont.normal(16)),
                 const SizedBox(height: 8),
                 Text(info.location, textAlign: TextAlign.center, style: MyFont.normal(14)),
                 Text("Phone: ${info.phone}", style: MyFont.normal(14)),
@@ -70,7 +70,7 @@ class ReceiptBox extends StatelessWidget {
             ),
           ),
           Positioned.fill(
-            child: UiHelper.waterMark(text: info.dbName),
+            child: UiHelper.waterMark(text: "${order.totalAmount + order.adjustment}"),
           ),
         ],
       ),
@@ -83,7 +83,7 @@ class ReceiptBox extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            "Order ID: #${order.id}\nDate: ${DateFormat('dd-MMM-yyyy, hh:mm a').format(DateTime.fromMillisecondsSinceEpoch(order.orderTimestamp))},",
+            "Order ID: #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}\nDate: ${DateFormat('dd-MMM-yyyy, hh:mm a').format(DateTime.fromMillisecondsSinceEpoch(order.orderTimestamp))},",
             style: MyFont.normal(14),
           ),
           Expanded(

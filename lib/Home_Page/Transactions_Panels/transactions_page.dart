@@ -144,12 +144,16 @@ class _TransactionsPageState extends State<TransactionsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Transactions",
-                style: MyFont.bold(24, color: MyColors.textMain),
-              ),
               Row(
                 children: [
+                  SizedBox(
+                    width: 150,
+                    child: Text(
+                      "Transactions",
+                      style: MyFont.bold(24, color: MyColors.textMain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Hero(
                     tag: 'newTransaction',
                     child: UiHelper.myButton(
@@ -165,7 +169,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                           ),
                         );
                       },
-                      child: const Icon(Icons.add, color: Colors.white, size: 18),
+                      //   child: const Icon(Icons.add, color: Colors.white, size: 18),
                       title: "Add Transaction",
                       textSize: 14,
                       filled: true,
@@ -174,7 +178,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                ],
+              ),
+              Row(
+                children: [
+
                   IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),

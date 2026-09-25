@@ -454,14 +454,10 @@ class UiHelper {
     Color color = MyColors.light,
     Widget? child,
   }) {
-    return ElevatedButton(
-      onPressed: callBack,
-      style: ElevatedButton.styleFrom(
-        elevation: 4,
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      ),
-      child: child ?? Icon(Icons.file_open, color: MyColors.primary),
+    return UiHelper.myButton(
+        callback:  callBack,
+        filled: true,
+      child: child ?? Icon(Icons.file_open, color: MyColors.translucent),
     );
   }
 
@@ -659,7 +655,7 @@ class UiHelper {
         builder: (context, constraints) {
           final height = constraints.maxHeight;
           final repeats =
-              repeat ?? (height / 200).round(); // prevent infinity or 0
+              repeat ?? (height / 170).round(); // prevent infinity or 0
 
           return Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -669,7 +665,7 @@ class UiHelper {
               (_) => SizedBox(
                 child: Center(
                   child: Transform.rotate(
-                    angle: -0.785398, // 45 degrees
+                    angle: - 0.523598, // 30 degrees
                     child: Text(
                       text,
                       textAlign: TextAlign.center,
@@ -693,7 +689,7 @@ class UiHelper {
       builder: (context, constraints) {
         final height =
             constraints?.maxHeight ?? 600; // use 800 or any default page height
-        final repeats = repeat ?? (height / 100).round().clamp(1, 10);
+        final repeats = repeat ?? (height / 80).round().clamp(1, 10);
 
         // Light gray (similar to black with 5% opacity)
         //final watermarkColor = pdf.PdfColor(0.90, 0.9, 0.9); // light gray
@@ -704,7 +700,7 @@ class UiHelper {
             repeats,
             (_) => pw.Center(
               child: pw.Transform.rotate(
-                angle: 0.785398, // 45 degrees
+                angle:  0.523598, // 30 degrees
                 child: pw.Opacity(
                   opacity: 0.06,
                   child: pw.Text(
