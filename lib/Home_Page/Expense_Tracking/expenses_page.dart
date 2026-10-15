@@ -10,7 +10,9 @@ import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialog
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/filter_button.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import '../../Database/database.dart';
 import '../../Database/person.dart';
@@ -119,7 +121,107 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
   @override
   Widget build(BuildContext context) {
-    compress = MediaQuery.of(context).size.width < 1100;
+    final isPhone = context.isPhone;
+    compress = context.isCompact;
+
+    if (isPhone) {
+      return Column(
+        children: [
+          MobilePageHeader(
+            title: "Expenses",
+            actionButton: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Hero(
+                  tag: 'addExpense',
+                  child: UiHelper.myButton(
+                    callback: () {
+                      UiHelper.pushPage(
+                        context: context,
+                        opaque: false,
+                        barrierColor: Colors.black54,
+                        page: Center(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: AddExpenseDialog(
+                              onSave: () => _loadData(),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    title: "Add",
+                    textSize: 13,
+                    filled: true,
+                    color: MyColors.sidebarSelected,
+                    borderRadius: 10,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.receipt_long_rounded, color: MyColors.primary, size: 22),
+                  onPressed: () {
+                    UiHelper.pushPage(
+                      context: context,
+                      blurBackground: false,
+                      page: const DailyExpenseTracker(),
+                    );
+                  },
+                ),
+              ],
+            ),
+            searchController: searchController,
+            searchHint: "Search expenses...",
+            onSearchChanged: (_) {
+              _debounce?.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () => _loadData());
+            },
+            filterWidget: _topBar(),
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ExpenseCards(
+                          expenses: expenses,
+                          categories: categories,
+                          onSave: () => _loadData(),
+                        ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  left: 12,
+                  right: 12,
+                  child: PaginationBar(
+                    page: pageNo,
+                    pageSize: pageSize,
+                    itemCount: expenseCount,
+                    onPrevious: () {
+                      if (pageNo > 0) {
+                        setState(() {
+                          pageNo--;
+                          _loadData();
+                        });
+                      }
+                    },
+                    onNext: () {
+                      setState(() {
+                        pageNo++;
+                        _loadData();
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     padding = 12.0;
     spacing = compress ? 6 : 12;
 
@@ -307,14 +409,14 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
     return Column(
       children: [
-        if(compress)
+        if (compress && !context.isPhone)
           ...[
             searchBar(),
             SizedBox(height: spacing),
           ],
         Row(
           children: [
-            if (!compress)
+            if (!compress && !context.isPhone)
             Expanded(
               child: searchBar(),
             ),

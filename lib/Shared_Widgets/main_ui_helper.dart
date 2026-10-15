@@ -821,7 +821,7 @@ class UiHelper {
       return Navigator.of(context).push<T>(
         PageRouteBuilder(
           opaque: opaque,
-          barrierColor: barrierColor,
+          barrierColor: blurBackground ? Colors.transparent : barrierColor,
           barrierDismissible: barrierDismissible,
           transitionDuration: const Duration(milliseconds: 500), // slower transition
           reverseTransitionDuration: const Duration(milliseconds: 350), // pop
@@ -911,6 +911,93 @@ class UiHelper {
             ?child
           ],
         ),
+      ),
+    );
+  }
+
+  static Widget mobileCard({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? margin,
+    VoidCallback? onTap,
+    Color color = MyColors.translucent,
+    double borderRadius = 16,
+  }) {
+    final cardContent = Container(
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: padding ?? const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: myBoxShadow(),
+        border: Border.all(color: MyColors.lightGrey.withOpacity(0.5), width: 1),
+      ),
+      child: child,
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: cardContent,
+      );
+    }
+    return cardContent;
+  }
+
+  static Widget mobileStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    Color iconColor = MyColors.primary,
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
+    return mobileCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: MyFont.medium(12, color: MyColors.grey),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: MyFont.bold(18, color: MyColors.darkBlue),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: MyFont.medium(10, color: MyColors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Shared_Widgets/horizontal_scroll.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../../Shared_Widgets/fonts.dart';
@@ -11,8 +12,9 @@ import '../Products_Panel/update_product/update_product_stock.dart';
 class StockAlerts extends StatelessWidget {
   final List<Product> lowStockProducts;
   final VoidCallback onSave;
-  StockAlerts({super.key, required this.lowStockProducts,required this.onSave});
+  StockAlerts({super.key, required this.lowStockProducts, required this.onSave});
   final ScrollController controller = ScrollController();
+
   @override
   Widget build(BuildContext context) {
     stockUpdateDialog(Product product) {
@@ -21,21 +23,22 @@ class StockAlerts extends StatelessWidget {
         opaque: false,
         barrierColor: Colors.black54,
         barrierDismissible: true,
-
-        page:  UpdateProductStock(
+        page: UpdateProductStock(
           id: product.id,
           onSave: onSave,
         ),
       );
     }
 
+    final isPhone = context.isPhone;
+
     return HorizontalScroll(
       speed: 1.5,
       physics: const BouncingScrollPhysics(),
       enableOuterScroll: false,
-      controller: controller ,
+      controller: controller,
       child: SizedBox(
-        height: 60, // box height (74) + vertical margins/padding
+        height: isPhone ? 42 : 60,
         child: ListView.builder(
           controller: controller,
           scrollDirection: Axis.horizontal,
@@ -49,7 +52,7 @@ class StockAlerts extends StatelessWidget {
               focusColor: Colors.transparent,
               highlightColor: Colors.transparent,
               onTap: () => stockUpdateDialog(p),
-              child: box(p),
+              child: box(context, p),
             );
           },
         ),
@@ -57,21 +60,21 @@ class StockAlerts extends StatelessWidget {
     );
   }
 
-
-  Widget box(Product product) {
+  Widget box(BuildContext context, Product product) {
+    final isPhone = context.isPhone;
     return ScaledContainer(
       child: Hero(
         tag: 'product_${product.id}',
         child: Container(
-          width: 363,
-          height: 74,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          margin: const EdgeInsets.symmetric(horizontal: 16,vertical: 8),
+          width: isPhone ? 210 : 363,
+          height: isPhone ? 38 : 74,
+          padding: EdgeInsets.symmetric(horizontal: isPhone ? 8 : 16, vertical: isPhone ? 2 : 5),
+          margin: EdgeInsets.symmetric(horizontal: isPhone ? 4 : 16, vertical: isPhone ? 1 : 8),
           decoration: BoxDecoration(
-            color: MyColors.error.withAlpha(20), // #EF44441A
-            borderRadius: BorderRadius.circular(10),
+            color: MyColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: MyColors.error, // #EF4444
+              color: MyColors.error,
               width: 1,
             ),
           ),
@@ -79,52 +82,24 @@ class StockAlerts extends StatelessWidget {
             children: [
               (product.imageData != null)
                   ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Stack(
-                    children: [
-                      Center(child: Image.memory(product.imageData!)),
-                      SizedBox.expand(
-                        child: Container(
-                          color: MyColors.error.withAlpha(50),
-                        ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Image.memory(product.imageData!, fit: BoxFit.cover),
                       ),
-                    ],
-                  ),
-                ),
-              )
-                  : const Icon(
-                Icons.warning_amber_rounded,
-                color: MyColors.error,
-              ),
-              const SizedBox(width: 10),
+                    )
+                  : Icon(
+                      Icons.warning_amber_rounded,
+                      color: MyColors.error,
+                      size: isPhone ? 18 : 24,
+                    ),
+              SizedBox(width: isPhone ? 6 : 10),
               Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: MyFont.semiBold(14, color: MyColors.error),
-                    children: [
-                      TextSpan(
-                        text: product.name.split(' ').take(3).join(' '),
-                        style: MyFont.semiBold(16, color: MyColors.error),
-                      ),
-                      if (product.stock == 0)
-                        TextSpan(
-                          text: ' is Out of Stock',
-                          style: MyFont.semiBold(
-                            16,
-                            color: MyColors.error,
-                          ), // size 18
-                        )
-                      else ...[
-                        TextSpan(text: ' is low in stock\nOnly '),
-                        TextSpan(
-                          text: '${product.stock} units remaining.',
-                          style: MyFont.bold(16, color: MyColors.error),
-                        ),
-                      ],
-                    ],
-                  ),
+                child: Text(
+                  '${product.name.split(' ').first}: ${product.stock == 0 ? "Out of Stock" : "${product.stock} left"}',
+                  style: MyFont.semiBold(isPhone ? 11 : 14, color: MyColors.error),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

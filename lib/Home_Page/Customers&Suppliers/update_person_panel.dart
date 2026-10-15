@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/upload_circle.dart';
 import '../../Database/database.dart';
 import '../../Database/person.dart';
@@ -79,10 +80,10 @@ class _UpdatePersonPanelState extends State<UpdatePersonPanel> {
             },
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: 500,
-                maxHeight: 680,
-                minWidth: 400,
-                minHeight: 400,
+                maxWidth: context.isPhone ? (MediaQuery.of(context).size.width - 24) : 500,
+                maxHeight: context.isPhone ? (MediaQuery.of(context).size.height * 0.88) : 680,
+                minWidth: context.isPhone ? 280 : 400,
+                minHeight: context.isPhone ? 350 : 400,
               ),
               decoration: BoxDecoration(
                 color: MyColors.translucent,

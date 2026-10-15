@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Home_Page/Customers&Suppliers/person_card.dart';
 import 'package:inventry_management/Home_Page/Customers&Suppliers/update_person_panel.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
@@ -135,7 +137,7 @@ class _PersonsPageState extends State<PersonsPage> {
                 automaticallyImplyLeading: false,
                 backgroundColor: Colors.transparent,
                 forceMaterialTransparency: true,
-                toolbarHeight: 120,
+                toolbarHeight: context.isPhone ? 150 : 120,
                 flexibleSpace: topBar(),
               ),
               if (persons.isEmpty)
@@ -148,15 +150,15 @@ class _PersonsPageState extends State<PersonsPage> {
                   padding: const EdgeInsets.only(top: 5, bottom: 10, left: 5, right: 5),
                   child: Center(
                     child: Wrap(
-                      spacing: cSize / 12,
-                      runSpacing: cSize / 12,
+                      spacing: context.isPhone ? 8 : cSize / 12,
+                      runSpacing: context.isPhone ? 8 : cSize / 12,
                       children: List.generate(
                         persons.length,
                         (index) => Hero(
                           tag: "person_${persons[index].id}",
                           child: SizedBox(
-                            width: (cSize * 2.5) - 50,
-                            height: cSize,
+                            width: context.isPhone ? (MediaQuery.of(context).size.width - 20) : ((cSize * 2.5) - 50),
+                            height: context.isPhone ? 120.0 : cSize,
                             child: PersonCard(
                               person: persons[index],
                               num: index,
@@ -175,8 +177,9 @@ class _PersonsPageState extends State<PersonsPage> {
 
             ],
           ),
+          if(!context.isPhone)
           Positioned(
-            bottom: 10,
+            bottom: 80,
             right: 10,
             child: MouseRegion(
               onEnter: (_)  {
@@ -250,6 +253,46 @@ class _PersonsPageState extends State<PersonsPage> {
   }
 
   Widget topBar() {
+    if (context.isPhone) {
+      return MobilePageHeader(
+        title: widget.isCustomer ? "Customers" : "Suppliers",
+        actionButton: AddNewPerson.addNew(
+          context: context,
+          isCustomer: widget.isCustomer,
+          action: AddNewPersonPanel(
+            isCustomer: widget.isCustomer,
+            callback: () {
+              setState(() {
+                _loadPersons();
+              });
+            },
+          ),
+        ),
+        searchController: searchController,
+        searchHint: 'Search Name, Phone, Address...',
+        onSearchChanged: (_) {
+          _searchTimer?.cancel();
+          _searchTimer = Timer(const Duration(milliseconds: 500), () {
+            _loadPersons();
+          });
+        },
+        filterWidget: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _filterChip('All', 0),
+              const SizedBox(width: 8),
+              _filterChip('Pending', 1),
+              const SizedBox(width: 8),
+              _filterChip('Major', 2),
+              const SizedBox(width: 8),
+              _filterChip('Local', 3),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.only(top: 12),
       child: Column(

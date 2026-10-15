@@ -1,9 +1,8 @@
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/reports_utils.dart';
 import 'package:inventry_management/Home_Page/Reports_Page/stock_movements.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
@@ -23,7 +22,8 @@ class VirtualizedDataCell extends StatelessWidget {
   final int originalLowStock;
   final VoidCallback onChange;
 
-  const VirtualizedDataCell({super.key,
+  const VirtualizedDataCell({
+    super.key,
     required this.db,
     required this.productId,
     required this.productName,
@@ -36,6 +36,7 @@ class VirtualizedDataCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
     final textColor = ReportsUtils.getTextColor(info.stockAtEnd, limit, originalLowStock);
     String sp = "${info.sold.toStringAsFixed(0)}${info.purchased.toStringAsFixed(0)}";
 
@@ -45,23 +46,23 @@ class VirtualizedDataCell extends StatelessWidget {
         onTap: db == null
             ? null
             : () {
-          getProductMovementsForDate(db!, productId: productId, date: date).then((value) {
-            if (!context.mounted) return;
-            UiHelper.pushPage(
-              context: context,
-              opaque: false,
-              barrierDismissible: true,
-              instantOpen: true,
-              page: StockMovements(
-                movements: value,
-                productId: productId,
-                productName: productName,
-                date: date,
-                onChange: onChange,
-              ),
-            );
-          });
-        },
+                getProductMovementsForDate(db!, productId: productId, date: date).then((value) {
+                  if (!context.mounted) return;
+                  UiHelper.pushPage(
+                    context: context,
+                    opaque: false,
+                    barrierDismissible: true,
+                    instantOpen: true,
+                    page: StockMovements(
+                      movements: value,
+                      productId: productId,
+                      productName: productName,
+                      date: date,
+                      onChange: onChange,
+                    ),
+                  );
+                });
+              },
         child: MouseRegion(
           cursor: db == null ? MouseCursor.defer : SystemMouseCursors.click,
           onEnter: (_) => isClickable = true,
@@ -74,32 +75,32 @@ class VirtualizedDataCell extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: info.stockAtEnd == 0 ? '__' : info.stockAtEnd.toStringAsFixed(0),
-                    style: MyFont.bold(15, color: textColor),
+                    style: MyFont.bold(isPhone ? 11 : 15, color: textColor),
                   ),
                   if (info.sold != 0 || info.purchased != 0)
                     TextSpan(
                       text: '\n',
-                      style: MyFont.normal(12, color: MyColors.black),
+                      style: MyFont.normal(isPhone ? 9 : 12, color: MyColors.black),
                     ),
                   if (info.sold != 0)
                     TextSpan(
                       text: 'Sell: -${info.sold.toStringAsFixed(0)}',
-                      style: MyFont.normal(12, color: MyColors.black),
+                      style: MyFont.normal(isPhone ? 9 : 12, color: MyColors.black),
                     ),
                   if (info.sold != 0 && info.purchased != 0)
                     TextSpan(
                       text: (sp.length > 8) ? '\n' : ' | ',
-                      style: MyFont.normal(12, color: MyColors.black),
+                      style: MyFont.normal(isPhone ? 9 : 12, color: MyColors.black),
                     ),
                   if (info.purchased != 0)
                     TextSpan(
                       text: 'Buy: +${info.purchased.toStringAsFixed(0)}',
-                      style: MyFont.normal(12, color: MyColors.black),
+                      style: MyFont.normal(isPhone ? 9 : 12, color: MyColors.black),
                     ),
                   if (info.adjustment != 0)
                     TextSpan(
                       text: '\nAdj: ${info.adjustment > 0 ? '+' : ''}${info.adjustment.toStringAsFixed(0)}',
-                      style: MyFont.normal(14, color: MyColors.black),
+                      style: MyFont.normal(isPhone ? 9 : 14, color: MyColors.black),
                     ),
                 ],
               ),
@@ -118,7 +119,8 @@ class VirtualizedCurrentStockCell extends StatelessWidget {
   final int productId;
   final VoidCallback onChange;
 
-  const VirtualizedCurrentStockCell({super.key,
+  const VirtualizedCurrentStockCell({
+    super.key,
     required this.stock,
     required this.limit,
     required this.originalLowStock,
@@ -128,6 +130,7 @@ class VirtualizedCurrentStockCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
     final textColor = ReportsUtils.getTextColor(stock, limit, originalLowStock);
 
     return Material(
@@ -150,7 +153,7 @@ class VirtualizedCurrentStockCell extends StatelessWidget {
           child: Center(
             child: Text(
               NumberFormat.decimalPattern().format(stock),
-              style: MyFont.bold(16, color: textColor),
+              style: MyFont.bold(isPhone ? 11 : 16, color: textColor),
             ),
           ),
         ),

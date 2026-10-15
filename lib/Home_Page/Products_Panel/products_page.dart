@@ -12,6 +12,8 @@ import 'package:inventry_management/Home_Page/Products_Panel/update_product/upda
 import 'package:inventry_management/Home_Page/Products_Panel/update_product/update_product_panel.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/add_new_product_button.dart';
 import '../../Database/category.dart';
@@ -127,6 +129,7 @@ class _StockDashboardState extends State<StockDashboard> {
   }
 
   List<Widget> _buildCategorySections() {
+    final isPhone = context.isPhone;
     final grouped = _groupProductsByCategory(products);
     final List<Widget> slivers = [];
 
@@ -145,7 +148,7 @@ class _StockDashboardState extends State<StockDashboard> {
             child: Text(
               title,
               style: MyFont.bold(
-                cSize > 200 ? 24 : 20,
+                isPhone ? 18 : (cSize > 200 ? 24 : 20),
                 color: MyColors.blue,
               ),
             ),
@@ -154,16 +157,21 @@ class _StockDashboardState extends State<StockDashboard> {
       );
 
       final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
-      final tileWidth = tileUi ? size * 1.6 : size * 0.85;
-      final tileHeight = tileUi ? size * 0.4 : size * 1.2;
+      final screenWidth = MediaQuery.of(context).size.width;
+      final tileWidth = isPhone
+          ? (tileUi ? screenWidth - 8 : (screenWidth / 2) - 6)
+          : (tileUi ? size * 1.6 : size * 0.85);
+      final tileHeight = isPhone
+          ? (tileUi ? 76.0 : 280.0)
+          : (tileUi ? size * 0.4 : size * 1.2);
       final childAspect = tileWidth / tileHeight;
 
       slivers.add(
         SliverGrid(
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: tileWidth,
-            mainAxisSpacing: 15,
-            crossAxisSpacing: 15,
+            mainAxisSpacing: isPhone ? 4 : 15,
+            crossAxisSpacing: isPhone ? 4 : 15,
             childAspectRatio: childAspect,
           ),
           delegate: SliverChildBuilderDelegate(
@@ -175,7 +183,7 @@ class _StockDashboardState extends State<StockDashboard> {
                 tileHeight: tileHeight,
                 onTap: () => stockUpdateDialog(product),
                 onSecondaryTap: () => updateDialog(product),
-                showHoverEffect: true,
+                showHoverEffect: !isPhone,
               );
             },
             childCount: items.length,
@@ -183,22 +191,28 @@ class _StockDashboardState extends State<StockDashboard> {
         ),
       );
 
-      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 25)));
+      slivers.add(SliverToBoxAdapter(child: SizedBox(height: isPhone ? 10 : 25)));
     }
     return slivers;
   }
 
   Widget _buildSliverGrid() {
+    final isPhone = context.isPhone;
     final size = (Platform.isAndroid || Platform.isIOS) ? cSize / 1.7 : cSize;
-    final tileWidth = tileUi ? size * 1.5 : size * 0.85;
-    final tileHeight = tileUi ? size * 0.4 : size * 1.2;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tileWidth = isPhone
+        ? (tileUi ? screenWidth - 8 : (screenWidth / 2) - 6)
+        : (tileUi ? size * 1.5 : size * 0.85);
+    final tileHeight = isPhone
+        ? (tileUi ? 76.0 : 280.0)
+        : (tileUi ? size * 0.4 : size * 1.2);
     final childAspect = tileWidth / tileHeight;
 
     return SliverGrid(
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: tileWidth,
-        mainAxisSpacing: cSize / 17,
-        crossAxisSpacing: cSize / 17,
+        mainAxisSpacing: isPhone ? 4 : cSize / 17,
+        crossAxisSpacing: isPhone ? 4 : cSize / 17,
         childAspectRatio: childAspect,
       ),
       delegate: SliverChildBuilderDelegate(
@@ -243,249 +257,288 @@ class _StockDashboardState extends State<StockDashboard> {
         }
         return KeyEventResult.ignored;
       },
-      child: Stack(
-        clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the page Stack
-        children: [
-          CustomScrollView(
-            controller: scrollController,
-            physics: _isTopBarHovered
-                ? const NeverScrollableScrollPhysics()
-                : const BouncingScrollPhysics(),
-            clipBehavior:
-                Clip.none, // 🔑 Allows slivers to overflow the Viewport
-            slivers: [
-              SliverAppBar(
-                floating: true,
-                snap: true,
-                pinned: performanceMode,
-                automaticallyImplyLeading: false,
-                backgroundColor: MyColors.mainBg,
-                forceMaterialTransparency: true,
-                toolbarHeight: 120,
-                flexibleSpace: MouseRegion(
-                  onEnter: (_) => setState(() => _isTopBarHovered = true),
-                  onExit: (_) => setState(() => _isTopBarHovered = false),
-                  child: topBar(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: Stack(
+          clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the page Stack
+          children: [
+            CustomScrollView(
+              controller: scrollController,
+              physics: _isTopBarHovered
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
+              clipBehavior:
+                  Clip.none, // 🔑 Allows slivers to overflow the Viewport
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  snap: true,
+                  pinned: performanceMode,
+                  automaticallyImplyLeading: false,
+                  backgroundColor: MyColors.mainBg,
+                  forceMaterialTransparency: true,
+                  toolbarHeight: context.isPhone ? 150 : 120,
+                  flexibleSpace: MouseRegion(
+                    onEnter: (_) => setState(() => _isTopBarHovered = true),
+                    onExit: (_) => setState(() => _isTopBarHovered = false),
+                    child: topBar(),
+                  ),
                 ),
-              ),
-              if (products.isEmpty)
-                SliverFillRemaining(hasScrollBody: false, child: emptyState()),
-              if (sortCategory == 1 || sortCategory == 2)
-                ..._buildCategorySections()
-              else
-                _buildSliverGrid(),
-              const SliverToBoxAdapter(child: SizedBox(height: 45)),
-            ],
-          ),
-          Positioned(
-            bottom: 10,
-            right: 10,
-            child: Builder(
-              builder: (context) => MouseRegion(
-                onEnter: (_) {
-                  isClickable = true;
-                },
-                onExit: (_) {
-                  isClickable = false;
-                },
-                child: FloatingActionButton(
-                  heroTag: null,
-                  elevation: 0,
-                  backgroundColor: MyColors.primary,
-                  child: Icon(Icons.sort, color: MyColors.light),
-                  onPressed: () async {
-                    await _loadCategoryNames();
-                    if (mounted) {
-                      showGeneralDialog(
-                        context: context,
-                        barrierColor: Colors.transparent,
-                        barrierDismissible: true,
-                        barrierLabel: 'SortMenu',
-                        transitionDuration: const Duration(milliseconds: 300),
-                        transitionBuilder: (context, animation, secondaryAnimation, child) {
-                          if (performanceMode || !blurEffects) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(1, 0),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
-                                  parent: animation,
-                                  curve: Curves.easeOut,
-                                ),
-                              ),
-                              child: ScaleTransition(
-                                scale: animation,
-                                child: child,
-                              ),
-                            );
-                          }
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOut,
-                              ),
-                            ),
-                            child: ScaleTransition(
-                              scale: animation,
-                              child: BackdropFilter(
-                                filter: ui.ImageFilter.blur(
-                                  sigmaX: 4.0,
-                                  sigmaY: 4.0,
-                                ),
-                                child: child,
-                              ),
-                            ),
-                          );
-                        },
-                        pageBuilder: (context, animation, secondaryAnimation) {
-                          double dragX = 0;
-                          double dragY = 0;
-                          bool isDragging = false;
-                          return StatefulBuilder(
-                            builder: (context, setStateDialog) {
-                              return Stack(
-                                children: [
-                                  AnimatedPositioned(
-                                    duration: isDragging
-                                        ? Duration.zero
-                                        : const Duration(milliseconds: 200),
-                                    curve: Curves.easeOut,
-                                    right: 4 - dragX,
-                                    bottom: 4 - dragY,
-                                    child: GestureDetector(
-                                      onPanStart: (_) => setStateDialog(
-                                        () => isDragging = true,
-                                      ),
-                                      onPanUpdate: (details) {
-                                        setStateDialog(() {
-                                          dragX += details.delta.dx;
-                                          dragY += details.delta.dy;
-                                          if (dragX < 0) dragX = 0;
-                                          if (dragY < 0) dragY = 0;
-                                        });
-                                      },
-                                      onPanEnd: (details) {
-                                        setStateDialog(
-                                          () => isDragging = false,
-                                        );
-                                        if (dragX > 120 ||
-                                            dragY > 120 ||
-                                            details
-                                                    .velocity
-                                                    .pixelsPerSecond
-                                                    .dx >
-                                                500 ||
-                                            details
-                                                    .velocity
-                                                    .pixelsPerSecond
-                                                    .dy >
-                                                500) {
-                                          Navigator.of(context).pop();
-                                        } else {
-                                          setStateDialog(() {
-                                            dragX = 0;
-                                            dragY = 0;
-                                          });
-                                        }
-                                      },
-                                      child: SingleChildScrollView(
-                                        physics: const BouncingScrollPhysics(),
-                                        child: SortMenu(
-                                          categories: categories,
-                                          currentSortCategory: sortCategory,
-                                          currentSort: sort,
-                                          cSize: cSize,
-                                          onChange: () => setState(() {}),
-                                          onSizeChange: () {
-                                            setState(() {
-                                              cSize += 50;
-                                              if (cSize > 400) cSize = 150;
-                                              cardSize = cSize;
-                                              SharedPreferences.getInstance()
-                                                  .then(
-                                                    (prefs) => prefs.setDouble(
-                                                      'cardSize',
-                                                      cSize,
-                                                    ),
-                                                  );
-                                            });
-                                          },
-                                          onApply:
-                                              (
-                                                newCategory,
-                                                newSort,
-                                                updatedCategories,
-                                              ) async {
-                                                categories = updatedCategories;
-                                                await updateAllSequences(
-                                                  currentDB!,
-                                                  categories,
-                                                );
-
-                                                setState(() {
-                                                  sortCategory = newCategory;
-                                                  sort = newSort;
-                                                  SharedPreferences.getInstance()
-                                                      .then((prefs) {
-                                                        prefs.setInt(
-                                                          'sortCategory',
-                                                          sortCategory,
-                                                        );
-                                                        prefs.setInt(
-                                                          'sort',
-                                                          sort,
-                                                        );
-                                                      });
-                                                  _loadProducts();
-                                                });
-                                              },
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-
-                      );
-                    }
+                if (products.isEmpty)
+                  SliverFillRemaining(hasScrollBody: false, child: emptyState()),
+                if (sortCategory == 1 || sortCategory == 2)
+                  ..._buildCategorySections()
+                else
+                  _buildSliverGrid(),
+                SliverToBoxAdapter(child: SizedBox(height: context.isPhone ? 80 : 45)),
+              ],
+            ),
+            Positioned(
+              bottom: context.isPhone ? 80 : 10,
+              right: 12,
+              child: Builder(
+                builder: (context) => MouseRegion(
+                  onEnter: (_) {
+                    isClickable = true;
                   },
+                  onExit: (_) {
+                    isClickable = false;
+                  },
+                  child: FloatingActionButton(
+                    heroTag: null,
+                    elevation: 2,
+                    backgroundColor: MyColors.primary,
+                    child: const Icon(Icons.sort_rounded, color: MyColors.light),
+                    onPressed: () async {
+                      await _loadCategoryNames();
+                      if (mounted) _openSortMenu();
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
-
-          PaginationBar(
-            page: page,
-            pageSize: pSize,
-            itemCount: products.length,
-            scrollController: scrollController,
-            onPrevious: () {
-              setState(() {
-                page--;
-                _loadProducts();
-              });
-            },
-            onNext: () {
-              setState(() {
-                page++;
-                _loadProducts();
-              });
-            },
-          ),
-        ],
+            Positioned(
+              bottom: 8,
+              left: 12,
+              right: 12,
+              child: PaginationBar(
+                page: page,
+                pageSize: pSize,
+                itemCount: products.length,
+                scrollController: scrollController,
+                onPrevious: () {
+                  setState(() {
+                    page--;
+                    _loadProducts();
+                  });
+                },
+                onNext: () {
+                  setState(() {
+                    page++;
+                    _loadProducts();
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  void _openSortMenu() {
+    showGeneralDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      barrierDismissible: true,
+      barrierLabel: 'SortMenu',
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        if (performanceMode || !blurEffects) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
+            ),
+            child: ScaleTransition(
+              scale: animation,
+              child: child,
+            ),
+          );
+        }
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            ),
+          ),
+          child: ScaleTransition(
+            scale: animation,
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(
+                sigmaX: 4.0,
+                sigmaY: 4.0,
+              ),
+              child: child,
+            ),
+          ),
+        );
+      },
+      pageBuilder: (context, animation, secondaryAnimation) {
+        double dragX = 0;
+        double dragY = 0;
+        bool isDragging = false;
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: isDragging ? Duration.zero : const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  right: 4 - dragX,
+                  bottom: 4 - dragY,
+                  child: GestureDetector(
+                    onPanStart: (_) => setStateDialog(() => isDragging = true),
+                    onPanUpdate: (details) {
+                      setStateDialog(() {
+                        dragX += details.delta.dx;
+                        dragY += details.delta.dy;
+                        if (dragX < 0) dragX = 0;
+                        if (dragY < 0) dragY = 0;
+                      });
+                    },
+                    onPanEnd: (details) {
+                      setStateDialog(() => isDragging = false);
+                      if (dragX > 120 ||
+                          dragY > 120 ||
+                          details.velocity.pixelsPerSecond.dx > 500 ||
+                          details.velocity.pixelsPerSecond.dy > 500) {
+                        Navigator.of(context).pop();
+                      } else {
+                        setStateDialog(() {
+                          dragX = 0;
+                          dragY = 0;
+                        });
+                      }
+                    },
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: SortMenu(
+                        categories: categories,
+                        currentSortCategory: sortCategory,
+                        currentSort: sort,
+                        cSize: cSize,
+                        onChange: () => setState(() {}),
+                        onSizeChange: () {
+                          setState(() {
+                            cSize += 50;
+                            if (cSize > 400) cSize = 150;
+                            cardSize = cSize;
+                            SharedPreferences.getInstance().then(
+                              (prefs) => prefs.setDouble('cardSize', cSize),
+                            );
+                          });
+                        },
+                        onApply: (newCategory, newSort, updatedCategories) async {
+                          categories = updatedCategories;
+                          await updateAllSequences(currentDB!, categories);
+                          setState(() {
+                            sortCategory = newCategory;
+                            sort = newSort;
+                          });
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setInt('sortCategory', sortCategory);
+                          await prefs.setInt('sort', sort);
+                          _loadProducts();
+                          _loadCategoryNames();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget topBar() {
+    if (context.isPhone) {
+      return MobilePageHeader(
+        title: "Products",
+        actionButton: AddNewProduct.addNew(
+          context: context,
+          action: InputNewProduct(
+            onSave: () {
+              _loadProducts();
+              _loadCategoryNames();
+            },
+          ),
+        ),
+        searchController: searchController,
+        searchHint: 'Search Name, SKU, Description...',
+        onSearchChanged: (_) {
+          _searchTimer?.cancel();
+          _searchTimer = Timer(const Duration(milliseconds: 500), () {
+            _loadProducts();
+          });
+        },
+        filterWidget: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () async {
+                    await _loadCategoryNames();
+                    if (mounted) _openSortMenu();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: MyColors.sidebarSelected,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.sort_rounded, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Sort",
+                          style: MyFont.bold(12, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _statusFilterChip('All', 0),
+                _statusFilterChip('In Stock', 1),
+                _statusFilterChip('Low Stock', 2),
+                _statusFilterChip('Out of Stock', 3),
+                _statusFilterChip('Inactive', 4),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       color: MyColors.mainBg,
       padding: const EdgeInsets.only(top: 12,right: 0),

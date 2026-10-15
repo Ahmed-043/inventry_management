@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../../colors.dart';
 import '../Database/database.dart';
 import '../Database/db_info.dart';
@@ -37,165 +38,189 @@ class _ProfileSettingsState extends State<ProfileSettings> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    descController.dispose();
+    locController.dispose();
+    phoneController.dispose();
+    nameFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width < 780 ? 500 :  750,
-      height: MediaQuery.of(context).size.width < 780 ? 750 : 500,
-      padding: const EdgeInsets.only(top: 24, left: 24, right: 24,bottom: 10),
-      decoration: BoxDecoration(
-        color: MyColors.translucent,
-        border: UiHelper.myBorder(),
-        boxShadow: UiHelper.myBoxShadow(),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Profile Settings', style: MyFont.semiBold(22, color: MyColors.darkBlue)),
-              IconButton(
-                  onPressed: () {
-                    if(mounted){
-                      Navigator.pop(context);
-                    }
-                  },
-                  icon:  Icon(Icons.close, color: MyColors.grey, size: 25)),
-            ],
+    final isPhone = context.isPhone;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final formWidth = isPhone ? (screenWidth - 60) : 450.0;
+
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: isPhone ? (screenWidth-24) : (screenWidth < 780 ? 500 : 750),
+          constraints: BoxConstraints(
+            maxHeight: isPhone ? (MediaQuery.of(context).size.height * 0.88) : 750,
           ),
-          const Divider(height: 40),
-          Expanded(
-            child: Center(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 40,
-                  runSpacing: 20,
-                  crossAxisAlignment: .start,
-                  alignment: .center,
-                  children: [
-                    /// Left Side: Image and Photo Actions
-                    SizedBox(
-                      height: 200,
-                      width: 200,
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: UploadCircle(
-                          image: selectedImage,
-                          onFileSelected: (file) => setState(() => selectedImage = file),
-                        ),
-                      ),
-                    ),
-
-                    /// Right Side: Form Fields
-                    SizedBox(
-                      width: 450,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel("DB Name", isRequired: true),
-                          UiHelper.myTextField(
-                          focusNode: nameFocus,
-                          controller: nameController,hint: 'ProductCatalog_DB'),
-                          const SizedBox(height: 15),
-
-                          _buildLabel("Address"),
-                          UiHelper.myTextArea(
-                              controller: locController,
-                              hint: 'Town, City, Country',
-                            maxLines: 3
+          padding: EdgeInsets.symmetric(
+            horizontal: isPhone ? 12 : 24,
+            vertical: isPhone ? 12 : 24,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: UiHelper.myBorder(),
+            boxShadow: UiHelper.myBoxShadow(),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Profile Settings',
+                    style: MyFont.semiBold(isPhone ? 18 : 22, color: MyColors.darkBlue),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      if (mounted) Navigator.pop(context);
+                    },
+                    icon: Icon(Icons.close, color: MyColors.grey, size: isPhone ? 20 : 25),
+                  ),
+                ],
+              ),
+              Divider(height: isPhone ? 16 : 40),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: Wrap(
+                      spacing: isPhone ? 12 : 40,
+                      runSpacing: isPhone ? 12 : 20,
+                      crossAxisAlignment: WrapCrossAlignment.start,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        SizedBox(
+                          height: isPhone ? 150 : 200,
+                          width: isPhone ? 150 : 200,
+                          child: UploadCircle(
+                            image: selectedImage,
+                            onFileSelected: (file) => setState(() => selectedImage = file),
                           ),
-                          const SizedBox(height: 15),
-
-                          Row(
+                        ),
+                        SizedBox(
+                          width: formWidth,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel("Description"),
-                                    UiHelper.myTextField(
-                                      controller: descController,
-                                      hint: 'Description',
-                                    ),
-                                  ],
-                                ),
+                              _buildLabel("DB Name", isRequired: true),
+                              UiHelper.myTextField(
+                                focusNode: nameFocus,
+                                controller: nameController,
+                                hint: 'ProductCatalog_DB',
+                                fontSize: isPhone ? 13 : 15,
                               ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLabel("Phone"),
-                                    UiHelper.myTextField(
-                                        controller: phoneController,
-                                        hint: '+92',
-                                      textType: TextInputType.phone,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*')),
-                                        LengthLimitingTextInputFormatter(15),
+                              const SizedBox(height: 12),
+                              _buildLabel("Address"),
+                              UiHelper.myTextArea(
+                                controller: locController,
+                                hint: 'Town, City, Country',
+                                maxLines: 2,
+                                fontSize: isPhone ? 13 : 15,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel("Description"),
+                                        UiHelper.myTextField(
+                                          controller: descController,
+                                          hint: 'Description',
+                                          fontSize: isPhone ? 13 : 15,
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildLabel("Phone"),
+                                        UiHelper.myTextField(
+                                          controller: phoneController,
+                                          hint: '+92',
+                                          textType: TextInputType.phone,
+                                          fontSize: isPhone ? 13 : 15,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*')),
+                                            LengthLimitingTextInputFormatter(15),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(height: 10,),
-          /// Action Buttons
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: .end,
-              children: [
-                SizedBox(
-                  width: 140,
-                  height: 50,
-                  child: UiHelper.myButton(
-                    callback: () => Navigator.pop(context),
-                    filled: false,
-                    title: 'Close',
-                    textSize: 14
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    flex: isPhone ? 1 : 0,
+                    child: SizedBox(
+                      width: isPhone ? null : 130,
+                      height: 40,
+                      child: UiHelper.myButton(
+                        callback: () => Navigator.pop(context),
+                        filled: false,
+                        title: 'Close',
+                        textSize: isPhone ? 13 : 14,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 140,
-                  height: 50,
-                  child: UiHelper.myButton(
-                    callback: () {
-                      save();
-                    },
-                    filled: true,
-                    color: MyColors.primary,
-                    title: 'Save',
-                    textSize: 14
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: isPhone ? 1 : 0,
+                    child: SizedBox(
+                      width: isPhone ? null : 130,
+                      height: 40,
+                      child: UiHelper.myButton(
+                        callback: save,
+                        filled: true,
+                        color: MyColors.primary,
+                        title: 'Save',
+                        textSize: isPhone ? 13 : 14,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildLabel(String text, {bool isRequired = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4),
       child: RichText(
         text: TextSpan(
           text: text,
-          style: MyFont.normal(14, color: MyColors.black),
+          style: MyFont.normal(13, color: MyColors.black),
           children: isRequired
               ? [const TextSpan(text: ' *', style: TextStyle(color: MyColors.error))]
               : [],
@@ -204,24 +229,24 @@ class _ProfileSettingsState extends State<ProfileSettings> {
     );
   }
 
-  save() async {
-    if(nameController.text.trim().isEmpty){
-      UiHelper.showToast(context, "Name can't be empty!",type:2);
+  Future<void> save() async {
+    if (nameController.text.trim().isEmpty) {
+      UiHelper.showToast(context, "Name can't be empty!", type: 2);
       FocusScope.of(context).requestFocus(nameFocus);
       return;
     }
-    widget.info.dbName = nameController.text;
-    widget.info.description = descController.text;
-    widget.info.location = locController.text;
-    widget.info.phone = phoneController.text;
+    widget.info.dbName = nameController.text.trim();
+    widget.info.description = descController.text.trim();
+    widget.info.location = locController.text.trim();
+    widget.info.phone = phoneController.text.trim();
     widget.info.image = selectedImage;
     bool success = await updateDBInfo(currentDB!, widget.info);
-    if(success && mounted){
-      UiHelper.showToast(context, 'Updated Successfully',type:1);
+    if (success && mounted) {
+      UiHelper.showToast(context, 'Updated Successfully', type: 1);
       widget.onSave();
-    }else{
-      UiHelper.showToast(context, 'Failed to Update !',type:3);
+      Navigator.pop(context);
+    } else if (mounted) {
+      UiHelper.showToast(context, 'Failed to Update!', type: 3);
     }
   }
-
 }

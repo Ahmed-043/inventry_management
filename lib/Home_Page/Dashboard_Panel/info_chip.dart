@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 
 import '../../Shared_Widgets/fonts.dart';
 import '../../colors.dart';
@@ -18,6 +19,7 @@ class ChipData {
     this.trendText = '',
   });
 }
+
 class DashboardChipsWidget extends StatefulWidget {
   final List<ChipData> chips;
   final List<bool> current;
@@ -50,32 +52,28 @@ class _DashboardChipsWidgetState extends State<DashboardChipsWidget> {
         children: List.generate(pairCount, (i) {
           final first = i * 2;
           final second = first + 1;
-          if(i>=0) {
+          if (i >= 0) {
             return _DashboardChip(
-            primary: widget.chips[first],
-            alternate: second < widget.chips.length
-                ? widget.chips[second]
-                : null,
-            showAlternate: widget.current[i],
-            onToggle: () {
+              primary: widget.chips[first],
+              alternate: second < widget.chips.length
+                  ? widget.chips[second]
+                  : null,
+              showAlternate: widget.current[i],
+              onToggle: () {
                 widget.current[i] = !widget.current[i];
-                if(i == 0){
+                if (i == 0) {
                   widget.onChange.call();
-                }
-                else if (i == 1){
+                } else if (i == 1) {
                   widget.onChange1.call();
-                }
-                else if(i == 2){
+                } else if (i == 2) {
                   widget.onChange2.call();
-                }
-                else if(i == 3){
+                } else if (i == 3) {
                   widget.onChange3.call();
                 }
-
-            },
-          );
+              },
+            );
           }
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }),
       ),
     );
@@ -110,7 +108,8 @@ class _DashboardChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = _active;
-    
+    final isPhone = context.isPhone;
+
     IconData icon;
     Color iconColor;
     Color iconBgColor;
@@ -119,37 +118,34 @@ class _DashboardChip extends StatelessWidget {
       icon = Icons.shopping_cart_outlined;
       iconColor = MyColors.primary;
       iconBgColor = const Color(0xFFF4F7FE);
-    }
-    else if(data.title.toLowerCase().contains('income') || data.title.toLowerCase().contains('spending')){
+    } else if (data.title.toLowerCase().contains('income') || data.title.toLowerCase().contains('spending')) {
       icon = Icons.attach_money_rounded;
       iconColor = MyColors.success;
       iconBgColor = const Color(0xFFE6FAF5);
-    }
-    else if (data.title.toLowerCase().contains('order')) {
+    } else if (data.title.toLowerCase().contains('order')) {
       icon = Icons.access_time_rounded;
       iconColor = MyColors.primary;
       iconBgColor = const Color(0xFFFFF8ED);
-    } else if(data.title.toLowerCase().contains('pending') || data.title.toLowerCase().contains('low')){
+    } else if (data.title.toLowerCase().contains('pending') || data.title.toLowerCase().contains('low')) {
       icon = Icons.warning_amber_rounded;
       iconColor = MyColors.warning;
       iconBgColor = const Color(0xFFFFF8ED);
-    }
-    else{
+    } else {
       icon = Icons.warning_amber_rounded;
       iconColor = MyColors.error;
       iconBgColor = const Color(0xFFFFEDED);
     }
 
     return Container(
-      height: 120,
-      width: 300,
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      height: isPhone ? 85 : 120,
+      width: isPhone ? 220 : 300,
+      margin: EdgeInsets.symmetric(horizontal: isPhone ? 5 : 10, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isPhone ? 16 : 20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -159,23 +155,23 @@ class _DashboardChip extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onToggle,
-          hoverColor: MyColors.primary.withOpacity(0.1),
-          splashColor: MyColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
+          hoverColor: MyColors.primary.withValues(alpha: 0.1),
+          splashColor: MyColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(isPhone ? 16 : 20),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isPhone ? 10 : 20),
             child: Row(
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: isPhone ? 40 : 56,
+                  height: isPhone ? 40 : 56,
                   decoration: BoxDecoration(
                     color: iconBgColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: iconColor, size: 24),
+                  child: Icon(icon, color: iconColor, size: isPhone ? 20 : 24),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isPhone ? 10 : 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,17 +179,23 @@ class _DashboardChip extends StatelessWidget {
                     children: [
                       Text(
                         data.title,
-                        style: MyFont.medium(14, color: MyColors.textSecondary),
+                        style: MyFont.medium(isPhone ? 11 : 14, color: MyColors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         '${data.prefix}${_format(data.value)} ${data.title.contains('Items') || data.title.contains('Orders') ? (data.value == 1 ? (data.title.contains('Items') ? 'Item' : 'Order') : (data.title.contains('Items') ? 'Items' : 'Orders')) : ''}',
-                        style: MyFont.bold(20, color: MyColors.textMain),
+                        style: MyFont.bold(isPhone ? 15 : 20, color: MyColors.textMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (data.trendText.isNotEmpty)
                         Text(
                           data.trendText,
-                          style: MyFont.medium(12, color: MyColors.textSecondary),
+                          style: MyFont.medium(isPhone ? 10 : 12, color: MyColors.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                     ],
                   ),
@@ -206,4 +208,3 @@ class _DashboardChip extends StatelessWidget {
     );
   }
 }
-

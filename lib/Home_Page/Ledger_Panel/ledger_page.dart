@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/database.dart';
 import 'package:inventry_management/Database/ledger.dart';
 import 'package:inventry_management/Database/payment_transactions.dart';
-import 'package:inventry_management/Home_Page/home_page.dart';
-import 'package:inventry_management/Shared_Widgets/sliding_segment_control.dart';
-import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/Database/pdf.dart';
 import 'package:inventry_management/Database/person.dart';
 import 'package:inventry_management/Home_Page/Expense_Tracking/Expense_Report/expense_report_widgets.dart';
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/colors.dart';
 
 import 'package:inventry_management/Database/db_info.dart';
 import '../../Database/orders.dart';
-import '../Customers&Suppliers/person_payment_dialog.dart';
+import '../../Shared_Widgets/sliding_segment_control.dart';
 import '../Orders_panel/New_Order_Page/dialogs/choose_person.dart';
 import 'ledger_report_body.dart';
 import 'ledger_side_panel.dart';
@@ -64,7 +61,7 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
     super.initState();
     selectedPerson = widget.initialPerson;
     _loadCompanyInfo();
-    
+
     _topControlsController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -147,7 +144,6 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
     _loadLedger();
   }
 
-
   void _onRangeHoverScroll(int delta) {
     setState(() {
       _fromDate = _fromDate.add(Duration(days: delta));
@@ -161,11 +157,10 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
   Future<void> _loadLedger() async {
     if (selectedPerson == null || currentDB == null) return;
     setState(() => isLoading = true);
-    
+
     final start = DateTime(_fromDate.year, _fromDate.month, _fromDate.day, 0, 0, 0).millisecondsSinceEpoch;
     final end = DateTime(_toDate.year, _toDate.month, _toDate.day, 23, 59, 59).millisecondsSinceEpoch;
 
-    // Calculate opening balance if a start date is provided
     _openingBalance = await LedgerHelper.getOpeningBalance(
       currentDB!,
       personId: selectedPerson!.id!,
@@ -179,7 +174,6 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
       endDate: end,
     );
 
-    // Calculate running balances on the fly to handle backdating correctly
     double currentBal = _openingBalance;
     final List<Map<String, dynamic>> processedEntries = [];
     for (var entry in entries) {
@@ -189,7 +183,7 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
       } else {
         currentBal -= amount;
       }
-      
+
       final Map<String, dynamic> newEntry = Map.from(entry);
       newEntry['calculated_balance'] = currentBal;
       processedEntries.add(newEntry);
@@ -248,8 +242,217 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
     if (mounted) setState(() => isSaving = false);
   }
 
+  void _showMobileSidePanel(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: MyColors.sidebarBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: LedgerSidePanel(
+            selectedPerson: selectedPerson,
+            fromDate: _fromDate,
+            toDate: _toDate,
+            payController: payController,
+            receiveController: receiveController,
+            onChoosePerson: () async {
+              Navigator.pop(ctx);
+              await _choosePerson();
+            },
+            onSelectFromDate: _selectFromDate,
+            onSelectToDate: _selectToDate,
+            onDateScrollFrom: (delta) => _onDateScroll(delta, true),
+            onDateScrollTo: (delta) => _onDateScroll(delta, false),
+            onBack: widget.onBack,
+            onAutoFill: () {
+              setState(() {
+                payController.text = selectedPerson!.outgoing.clamp(0, selectedPerson!.incoming).toString();
+                receiveController.text = payController.text;
+              });
+            },
+            onSavePayment: (pay, receive) async {
+              if (pay > 0 || receive > 0) {
+                await distributePayments(
+                  currentDB!,
+                  personId: selectedPerson!.id!,
+                  pay: pay,
+                  receive: receive,
+                );
+                if (mounted) {
+                  UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                  payController.clear();
+                  receiveController.clear();
+                  Navigator.pop(ctx);
+                  _loadLedger();
+                }
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobilePeriodBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _periodChip('Daily'),
+                  const SizedBox(width: 4),
+                  _periodChip('Weekly'),
+                  const SizedBox(width: 4),
+                  _periodChip('Monthly'),
+                  const SizedBox(width: 4),
+                  _periodChip('Yearly'),
+                ],
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left_rounded, size: 20, color: MyColors.darkBlue),
+                onPressed: () => _navigatePeriod(-1),
+              ),
+              Text(
+                _getPeriodLabel(),
+                style: MyFont.medium(11, color: MyColors.darkBlue),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right_rounded, size: 20, color: MyColors.darkBlue),
+                onPressed: () => _navigatePeriod(1),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _periodChip(String label) {
+    final isSelected = _selectedView == label;
+    return InkWell(
+      onTap: () => _updateDatesForView(label),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? MyColors.sidebarSelected : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          style: MyFont.bold(11, color: isSelected ? Colors.white : MyColors.textSecondary),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
+
+    if (isPhone) {
+      return Scaffold(
+        backgroundColor: MyColors.mainBg,
+        appBar: AppBar(
+          title: Text(
+            selectedPerson == null ? "Select Person" : selectedPerson!.name,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: MyColors.darkBlue),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: MyColors.darkBlue),
+            onPressed: () {
+              if (widget.onBack != null) widget.onBack!();
+              Navigator.pop(context);
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.person_search_rounded, color: MyColors.darkBlue),
+              onPressed: _choosePerson,
+            ),
+            IconButton(
+              icon: const Icon(Icons.tune_rounded, color: MyColors.primary),
+              onPressed: () => _showMobileSidePanel(context),
+            ),
+          ],
+        ),
+        body: selectedPerson == null
+            ? LedgerSidePanel(
+                selectedPerson: selectedPerson,
+                fromDate: _fromDate,
+                toDate: _toDate,
+                payController: payController,
+                receiveController: receiveController,
+                onChoosePerson: _choosePerson,
+                onSelectFromDate: _selectFromDate,
+                onSelectToDate: _selectToDate,
+                onDateScrollFrom: (delta) => _onDateScroll(delta, true),
+                onDateScrollTo: (delta) => _onDateScroll(delta, false),
+                onBack: widget.onBack,
+                onAutoFill: () {
+                  setState(() {
+                    payController.text = selectedPerson!.outgoing.clamp(0, selectedPerson!.incoming).toString();
+                    receiveController.text = payController.text;
+                  });
+                },
+                onSavePayment: (pay, receive) async {
+                  if (pay > 0 || receive > 0) {
+                    await distributePayments(
+                      currentDB!,
+                      personId: selectedPerson!.id!,
+                      pay: pay,
+                      receive: receive,
+                    );
+                    if (mounted) {
+                      UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                      payController.clear();
+                      receiveController.clear();
+                      _loadLedger();
+                    }
+                  }
+                },
+              )
+            : Column(
+                children: [
+                  _buildMobilePeriodBar(),
+                  Expanded(
+                    child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: RepaintBoundary(
+                                key: _reportKey,
+                                child: _buildLedgerView(),
+                              ),
+                            ),
+                          ),
+                  ),
+                  _buildBottomActions(),
+                ],
+              ),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -268,130 +471,130 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
         color: MyColors.sidebarBg,
         child: Stack(
           children: [
-          Hero(
-            tag: "sidebar",
-            child: Material(
-              color: Colors.transparent,
-              child: Align(
-                alignment: .topLeft,
-                child: Container(
-                  color: MyColors.sidebarBg,
-                  width: 370,
-                  child: LedgerSidePanel(
-                    selectedPerson: selectedPerson,
-                    fromDate: _fromDate,
-                    toDate: _toDate,
-                    payController: payController,
-                    receiveController: receiveController,
-                    onChoosePerson: _choosePerson,
-                    onSelectFromDate: _selectFromDate,
-                    onSelectToDate: _selectToDate,
-                    onDateScrollFrom: (delta) => _onDateScroll(delta, true),
-                    onDateScrollTo: (delta) => _onDateScroll(delta, false),
-                    onBack: widget.onBack,
-                    onAutoFill: () {
-                      setState(() {
-                        payController.text = selectedPerson!.outgoing.clamp(0, selectedPerson!.incoming).toString();
-                        receiveController.text = payController.text;
-                      });
-                    },
-                    onSavePayment: (pay, receive) async {
-                      if (pay > 0 || receive > 0) {
-                        await distributePayments(
-                          currentDB!,
-                          personId: selectedPerson!.id!,
-                          pay: pay,
-                          receive: receive,
-                        );
-
-                        if (mounted) {
-                          UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
-                          payController.clear();
-                          receiveController.clear();
-
-                          // Refresh person data to update balances
-                          final updatedPersons = await getPersons(
+            Hero(
+              tag: "sidebar",
+              child: Material(
+                color: Colors.transparent,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    color: MyColors.sidebarBg,
+                    width: 370,
+                    child: LedgerSidePanel(
+                      selectedPerson: selectedPerson,
+                      fromDate: _fromDate,
+                      toDate: _toDate,
+                      payController: payController,
+                      receiveController: receiveController,
+                      onChoosePerson: _choosePerson,
+                      onSelectFromDate: _selectFromDate,
+                      onSelectToDate: _selectToDate,
+                      onDateScrollFrom: (delta) => _onDateScroll(delta, true),
+                      onDateScrollTo: (delta) => _onDateScroll(delta, false),
+                      onBack: widget.onBack,
+                      onAutoFill: () {
+                        setState(() {
+                          payController.text = selectedPerson!.outgoing.clamp(0, selectedPerson!.incoming).toString();
+                          receiveController.text = payController.text;
+                        });
+                      },
+                      onSavePayment: (pay, receive) async {
+                        if (pay > 0 || receive > 0) {
+                          await distributePayments(
                             currentDB!,
-                            personType: selectedPerson!.personType,
-                            page: 0,
-                            pageSize: 100
-                          );
-                          final p = updatedPersons.firstWhere(
-                            (element) => element.id == selectedPerson!.id,
-                            orElse: () => selectedPerson!
+                            personId: selectedPerson!.id!,
+                            pay: pay,
+                            receive: receive,
                           );
 
-                          setState(() {
-                            selectedPerson = p;
-                          });
+                          if (mounted) {
+                            UiHelper.showToast(context, "Payment Saved Successfully", type: 1);
+                            payController.clear();
+                            receiveController.clear();
 
-                          _loadLedger();
+                            final updatedPersons = await getPersons(
+                              currentDB!,
+                              personType: selectedPerson!.personType,
+                              page: 0,
+                              pageSize: 100,
+                            );
+                            final p = updatedPersons.firstWhere(
+                              (element) => element.id == selectedPerson!.id,
+                              orElse: () => selectedPerson!,
+                            );
+
+                            setState(() {
+                              selectedPerson = p;
+                            });
+
+                            _loadLedger();
+                          }
+                        } else {
+                          if (mounted) {
+                            UiHelper.showToast(context, "Please enter an amount", type: 2);
+                          }
                         }
-                      } else {
-                        if (mounted) {
-                          UiHelper.showToast(context, "Please enter an amount", type: 2);
-                        }
-                      }
-                    },
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 370,
-            top: 0,
-            right: 0,
-            bottom: 0,
-            child: Hero(
-              tag: "main_page",
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: Container(
-                  color: MyColors.mainBg,
-                  height: double.infinity,
-                  width: double.infinity,
-                  child: Stack(
-                    children: [
-                      CustomScrollView(
-                        slivers: [
-                          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-                          if (isLoading)
-                            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-                          else
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: Center(
-                                  child: RepaintBoundary(
-                                    key: _reportKey,
-                                    child: _buildLedgerView(),
+            Positioned(
+              left: 370,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              child: Hero(
+                tag: "main_page",
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Container(
+                    color: MyColors.mainBg,
+                    height: double.infinity,
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        CustomScrollView(
+                          slivers: [
+                            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                            if (isLoading)
+                              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                            else
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: RepaintBoundary(
+                                      key: _reportKey,
+                                      child: _buildLedgerView(),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          const SliverToBoxAdapter(child: SizedBox(height: 80)),
-                        ],
-                      ),
-                      if (selectedPerson != null)
-                        Align(
-                            alignment: .topCenter,
-                            child: _buildTopControls()),
-                      if (selectedPerson != null)
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: _buildBottomActions(),
+                            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                          ],
                         ),
-                    ],
+                        if (selectedPerson != null)
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: _buildTopControls(),
+                          ),
+                        if (selectedPerson != null)
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: _buildBottomActions(),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildTopControls() {
@@ -403,7 +606,7 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
         color: MyColors.sidebarBg,
       ),
       child: Row(
-        mainAxisAlignment: .center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           StatusSegmentedControl(
             fontSize: 14,
@@ -461,7 +664,6 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
     );
   }
 
-
   Future<void> _choosePerson() async {
     final person = await UiHelper.pushPage<Person?>(
       context: context,
@@ -514,7 +716,7 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
         .fold(0, (sum, item) => sum + (item['amount'] as num).toDouble());
     double closingBalance = ledgerEntries.isEmpty ? _openingBalance : (ledgerEntries.last['calculated_balance'] as double);
 
-    return LedgerReportBody(
+    final reportBody = LedgerReportBody(
       ledgerEntries: ledgerEntries,
       personName: selectedPerson?.name ?? '',
       fromDate: _fromDate,
@@ -524,34 +726,52 @@ class _LedgerPageState extends State<LedgerPage> with SingleTickerProviderStateM
       closingBalance: closingBalance,
       companyInfo: companyInfo,
     );
+
+    if (context.isPhone) {
+      return InteractiveViewer(
+        minScale: 0.8,
+        maxScale: 3.5,
+        clipBehavior: Clip.none,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.topCenter,
+          child: reportBody,
+        ),
+      );
+    }
+
+    return reportBody;
   }
 
   Widget _buildBottomActions() {
+    final isPhone = context.isPhone;
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: isPhone ? 8 : 20, vertical: isPhone ? 8 : 20),
       height: 45,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           UiHelper.myButton(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: isPhone ? 12 : 20),
             callback: _handleShare,
             title: "Share Ledger",
+            textSize: isPhone ? 12 : 14,
             child: isSharing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: MyColors.info))
-                : const Icon(Icons.share_rounded, size: 20, color: MyColors.info),
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: MyColors.info))
+                : const Icon(Icons.share_rounded, size: 18, color: MyColors.info),
             color: MyColors.info,
             borderRadius: 12,
             filled: false,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isPhone ? 8 : 12),
           UiHelper.myButton(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: isPhone ? 12 : 20),
             callback: _handleSave,
             title: "Save as Image",
+            textSize: isPhone ? 12 : 14,
             child: isSaving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.download_rounded, size: 20, color: Colors.white),
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.download_rounded, size: 18, color: Colors.white),
             color: MyColors.info,
             borderRadius: 12,
             filled: true,

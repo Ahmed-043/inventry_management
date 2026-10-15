@@ -7,6 +7,7 @@ import 'package:inventry_management/Database/retrieve_products.dart';
 import 'package:inventry_management/Home_Page/Dashboard_Panel/stock_alerts.dart';
 import 'package:inventry_management/Shared_Widgets/horizontal_scroll.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 
 import '../../Database/dashboard_info.dart';
 import '../../Database/database.dart';
@@ -17,7 +18,6 @@ import '../Orders_panel/New_Order_Page/new_order_page.dart';
 
 import '../Transactions_Panels/new_transaction_button.dart';
 import '../Transactions_Panels/new_transaction_page.dart';
-import '../profile.dart';
 import 'bar_chart.dart';
 import 'donut_chart.dart';
 import 'info_chip.dart';
@@ -40,13 +40,13 @@ class _DashboardState extends State<Dashboard> {
   List<SalesData> salesData = [], paymentInfo = [], mostSolds = [];
   int back = 14;
   bool dailySales = true;
-  
+
   PageController pageController = PageController();
   PageController dashboardController = PageController();
 
   final int _totalPages = 2;
-  late double pendingPayment;
-  bool compress = false, isLoading = false ;
+  late double pendingPayment = 0;
+  bool compress = false, isLoading = false;
 
   @override
   void initState() {
@@ -56,7 +56,6 @@ class _DashboardState extends State<Dashboard> {
     });
 
     _loadSettings().then((_) {
-      // Defer heavy database work until after the frame is rendered
       WidgetsBinding.instance.addPostFrameCallback((_) {
         SchedulerBinding.instance.endOfFrame.then((_) {
           if (!mounted) return;
@@ -93,7 +92,6 @@ class _DashboardState extends State<Dashboard> {
     try {
       final now = DateTime.now();
 
-      // -------- Dashboard chips + sales --------
       final start = DateTime(now.year, now.month - 1, now.day);
       chipData = await loadDashboardChipData(
         currentDB!,
@@ -102,7 +100,7 @@ class _DashboardState extends State<Dashboard> {
         msg: 'from last month',
       );
 
-      if(dailySales){
+      if (dailySales) {
         final past = DateTime(
           now.year,
           now.month,
@@ -117,8 +115,7 @@ class _DashboardState extends State<Dashboard> {
           endTimestamp: now.millisecondsSinceEpoch,
           positiveOnly: !current[0],
         );
-      }
-      else{
+      } else {
         final past = DateTime(
           now.year,
           now.month - back,
@@ -137,7 +134,6 @@ class _DashboardState extends State<Dashboard> {
 
       mostSolds = await getTop10MostSold(currentDB!);
 
-      // -------- Stock data --------
       lowStockProducts = await getProductsPage(
         currentDB!,
         0,
@@ -148,7 +144,6 @@ class _DashboardState extends State<Dashboard> {
         sortMode: 4,
       );
 
-      // -------- Order / payment data --------
       paymentInfo = await getOrderStatusSalesData(
         currentDB!,
         sale: !current[1],
@@ -164,7 +159,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-
   void loadDashboard() async {
     try {
       if (currentDB != null) {
@@ -178,8 +172,7 @@ class _DashboardState extends State<Dashboard> {
           msg: 'from last month',
         );
 
-
-        if(dailySales){
+        if (dailySales) {
           final past = DateTime(
             now.year,
             now.month,
@@ -194,8 +187,7 @@ class _DashboardState extends State<Dashboard> {
             endTimestamp: now.millisecondsSinceEpoch,
             positiveOnly: !current[0],
           );
-        }
-        else{
+        } else {
           final past = DateTime(
             now.year,
             now.month - back,
@@ -254,7 +246,6 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     searchController.dispose();
     pageController.dispose();
     dashboardController.dispose();
@@ -263,148 +254,269 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    compress =
-        (MediaQuery.of(context).size.height <
-        (lowStockProducts.isNotEmpty ? 650 : 550));
-    return isLoading
-        ? Center(
-          child: SizedBox(
-            width: 300,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.7, end: 1.0),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOut,
-              builder: (context, value, _) {
-                return LinearProgressIndicator(
-                  value: value,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(4),
-                  backgroundColor: Colors.grey[300],
-                  valueColor: AlwaysStoppedAnimation<Color>(MyColors.primary),
-                );
-              },
+    final isPhone = context.isPhone;
+    compress = (MediaQuery.of(context).size.height < (lowStockProducts.isNotEmpty ? 650 : 550)) || isPhone;
+
+    if (isLoading) {
+      return Center(
+        child: SizedBox(
+          width: 250,
+          child: LinearProgressIndicator(
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(MyColors.primary),
+          ),
+        ),
+      );
+    }
+
+    if (isPhone) {
+      return SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            _topbarPhone(),
+            const SizedBox(height: 4),
+            _welcomePhone(),
+            const SizedBox(height: 6),
+            HorizontalScroll(
+              speed: 1.5,
+              child: DashboardChipsWidget(
+                chips: chipData,
+                current: current,
+                onChange: () {
+                  _saveSettings();
+                  loadDashboard();
+                },
+                onChange1: () {
+                  loadOrderData();
+                  _saveSettings();
+                },
+                onChange2: () {
+                  _saveSettings();
+                  setState(() {});
+                },
+                onChange3: () {
+                  _saveSettings();
+                  loadStockData();
+                  loadDashboard();
+                },
+              ),
+            ),
+            if (lowStockProducts.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              SizedBox(
+                height: 44,
+                child: StockAlerts(
+                  lowStockProducts: lowStockProducts,
+                  onSave: () {
+                    loadAllDashboardData();
+                  },
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 280,
+              child: lineChart(),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 230,
+              child: DonutChart(data: paymentInfo),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 230,
+              child: BarChartWidget(data: mostSolds),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          SizedBox(height: 50, child: _topbar()),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 0),
+              child: Listener(
+                onPointerSignal: (pointerSignal) {
+                  if (pointerSignal is PointerScrollEvent) {
+                    dashboardController.position.moveTo(
+                      dashboardController.position.pixels +
+                          pointerSignal.scrollDelta.dy * 10,
+                    );
+                  }
+                },
+                child: PageView(
+                  controller: dashboardController,
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Column(
+                      children: [
+                        _welcome(),
+                        HorizontalScroll(
+                          speed: 1.5,
+                          child: DashboardChipsWidget(
+                            chips: chipData,
+                            current: current,
+                            onChange: () {
+                              _saveSettings();
+                              if (!compress) {
+                                final prevPage = (pageController.page ?? 0).toInt() - 1;
+                                if (prevPage >= 0 && !compress) {
+                                  pageController.animateToPage(
+                                    prevPage,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                }
+                              }
+                              loadDashboard();
+                            },
+                            onChange1: () {
+                              if (!compress) {
+                                final nextPage = (pageController.page ?? 0).toInt() + 1;
+                                if (nextPage < _totalPages && !compress) {
+                                  pageController.animateToPage(
+                                    nextPage,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                }
+                              }
+                              loadOrderData();
+                              _saveSettings();
+                            },
+                            onChange2: () {
+                              _saveSettings();
+                              setState(() {});
+                            },
+                            onChange3: () {
+                              _saveSettings();
+                              loadStockData();
+                              loadDashboard();
+                            },
+                          ),
+                        ),
+                        if (lowStockProducts.isNotEmpty)
+                          SizedBox(
+                            height: 80,
+                            child: StockAlerts(
+                              lowStockProducts: lowStockProducts,
+                              onSave: () {
+                                loadAllDashboardData();
+                              },
+                            ),
+                          ),
+                        if (!compress) Expanded(child: _graphWidget()),
+                        if (compress)
+                          Expanded(
+                            child: Center(
+                              child: IconButton(
+                                iconSize: 50,
+                                icon: const Icon(Icons.chevron_right_rounded),
+                                onPressed: () {
+                                  dashboardController.animateToPage(
+                                    1,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (compress) lineChart(),
+                    if (compress) pieBarCharts(),
+                  ],
+                ),
+              ),
             ),
           ),
-    )
-        : SizedBox(
-            width: double.infinity,
-            child: Column(
-              children: [
-                SizedBox(height: 50, child: _topbar()),
-                //Divider(thickness: 2, height: 5, color: MyColors.lightGrey),
-                if (!isLoading)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 0,),
-                      child: Listener(
-                        onPointerSignal: (pointerSignal) {
-                          if (pointerSignal is PointerScrollEvent) {
-                            dashboardController.position.moveTo(
-                              dashboardController.position.pixels +
-                                  pointerSignal.scrollDelta.dy * 10,
-                            );
-                          }
-                        },
-                        child: PageView(
-                          controller: dashboardController,
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            Column(
-                              children: [
-                                _welcome(),
-                                HorizontalScroll(
-                                  speed: 1.5,
-                                  child: DashboardChipsWidget(
-                                    chips: chipData,
-                                    current: current,
-                                    onChange: () {
-                                      _saveSettings();
-                                      if (!compress) {
-                                        final prevPage =
-                                            (pageController.page ?? 0).toInt() -
-                                            1;
-                                        if (prevPage >= 0 && !compress) {
-                                          pageController.animateToPage(
-                                            prevPage,
-                                            duration: const Duration(
-                                              milliseconds: 300,
-                                            ),
-                                            curve: Curves.easeInOut,
-                                          );
-                                        }
-                                      }
-                                      loadDashboard();
-                                    },
-                                    onChange1: () {
-                                      if (!compress) {
-                                        final nextPage =
-                                            (pageController.page ?? 0).toInt() +
-                                            1;
-                                        if (nextPage < _totalPages && !compress) {
-                                          pageController.animateToPage(
-                                            nextPage,
-                                            duration: const Duration(
-                                              milliseconds: 300,
-                                            ),
-                                            curve: Curves.easeInOut,
-                                          );
-                                        }
-                                      }
-                                      loadOrderData();
-                                      _saveSettings();
-                                    },
-                                    onChange2: () {
-                                      _saveSettings();
-                                      setState(() {});
-                                    },
-                                    onChange3: () {
-                                      _saveSettings();
-                                      loadStockData();
-                                      loadDashboard();
-                                    },
-                                  ),
-                                ),
-                                if (lowStockProducts.isNotEmpty)
-                                  SizedBox(
-                                    height: 80,
-                                    child: StockAlerts(
-                                        lowStockProducts: lowStockProducts,
-                                        onSave: (){
-                                          loadAllDashboardData();
-                                        },
-                                    ),
-                                  ),
-                                if (!compress) Expanded(child: _graphWidget()),
-                                if (compress)
-                                  Expanded(
-                                    child: Center(
-                                      child: IconButton(
-                                        iconSize: 50,
-                                        icon: Icon(Icons.chevron_right_rounded),
-                                        onPressed: () {
-                                          dashboardController.animateToPage(
-                                            1,
-                                            duration: const Duration(
-                                              milliseconds: 300,
-                                            ),
-                                            curve: Curves.easeInOut,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            if (compress) lineChart(),
-                            if (compress) pieBarCharts(),
-                          ],
-                        ),
-                      ),
+        ],
+      ),
+    );
+  }
+
+  Widget _topbarPhone() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Dashboard",
+            style: MyFont.bold(22, color: MyColors.textMain),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add_shopping_cart_rounded, color: MyColors.primary),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewOrderPage(sell: true, callback: () {}),
                     ),
-                  ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded, color: MyColors.textSecondary),
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _welcomePhone() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RichText(
+            text: TextSpan(
+              style: MyFont.bold(18, color: MyColors.textMain),
+              children: [
+                const TextSpan(text: "Welcome, "),
+                TextSpan(
+                  text: "${widget.info?.dbName}!",
+                  style: MyFont.bold(18, color: MyColors.sidebarSelected),
+                ),
               ],
             ),
-          );
+          ),
+          if (pendingPayment != 0) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  "Pending: ",
+                  style: MyFont.medium(12, color: MyColors.textSecondary),
+                ),
+                Text(
+                  "${pendingPayment < 0 ? '-' : ''}Rs. ${NumberFormat.decimalPattern().format(pendingPayment.abs())}",
+                  style: MyFont.bold(14, color: pendingPayment > 0 ? MyColors.success : MyColors.error),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _topbar() {
@@ -424,12 +536,11 @@ class _DashboardState extends State<Dashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        NewOrderPage(sell: true, callback: () {}),
+                    builder: (context) => NewOrderPage(sell: true, callback: () {}),
                   ),
                 );
               },
-              child: Icon(Icons.add, color: Colors.white, size: 18),
+              child: const Icon(Icons.add, color: Colors.white, size: 18),
               title: "Create new order",
               textSize: 14,
               filled: true,
@@ -525,8 +636,7 @@ class _DashboardState extends State<Dashboard> {
       onPointerSignal: (pointerSignal) {
         if (pointerSignal is PointerScrollEvent) {
           pageController.position.moveTo(
-            pageController.position.pixels +
-                pointerSignal.scrollDelta.dy * 10,
+            pageController.position.pixels + pointerSignal.scrollDelta.dy * 10,
           );
         }
       },
@@ -540,15 +650,16 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget lineChart() {
+    final isPhone = context.isPhone;
     return Container(
-      margin: const EdgeInsets.only(top: 8,right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 24,vertical: 10),
+      margin: EdgeInsets.only(top: 8, right: isPhone ? 4 : 8, left: isPhone ? 4 : 0),
+      padding: EdgeInsets.symmetric(horizontal: isPhone ? 10 : 24, vertical: isPhone ? 4 : 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -557,87 +668,166 @@ class _DashboardState extends State<Dashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "KEY PERFORMANCE VISUALS",
-                    style: MyFont.bold(12, color: MyColors.textSecondary),
+          if (isPhone) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Sales' : 'Purchase'} Trend",
+                  style: MyFont.bold(14, color: MyColors.textMain),
+                ),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      current[0] = !current[0];
+                      _saveSettings();
+                      loadDashboard();
+                    });
+                  },
+                  child: Text(
+                    'Switch (${current[0] ? 'Sales' : 'Purchase'})',
+                    style: MyFont.medium(11, color: MyColors.primary),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Sales' : 'Purchase'} Trend",
-                    style: MyFont.bold(20, color: MyColors.textMain),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          if (back < 30) {
-                            back++;
-                            _saveSettings();
-                            loadDashboard();
-                          } else if (dailySales) {
-                            dailySales = false;
-                            back = 5;
-                            _saveSettings();
-                            loadDashboard();
-                          }
-                        },
-                        icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary),
-                      ),
-                      Text(
-                        "Last $back ${dailySales ? "Days" : "Months"}",
-                        style: MyFont.medium(14, color: MyColors.textSecondary),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          if (back > 5) {
-                            back--;
-                            _saveSettings();
-                            loadDashboard();
-                          } else if (!dailySales) {
-                            dailySales = true;
-                            back = 30;
-                            _saveSettings();
-                            loadDashboard();
-                          }
-                        },
-                        icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      hoverColor: MyColors.textSecondary.withOpacity(0.1),
-                      onTap: () {
-                        setState(() {
-                          current[0] = !current[0];
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "KEY VISUALS",
+                  style: MyFont.bold(10, color: MyColors.textSecondary),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (back < 30) {
+                          back++;
                           _saveSettings();
                           loadDashboard();
-                        });
+                        } else if (dailySales) {
+                          dailySales = false;
+                          back = 5;
+                          _saveSettings();
+                          loadDashboard();
+                        }
                       },
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text('Switch to ${current[0] ? 'Sales' : 'Purchase'} Data',
-                            style: MyFont.medium(14, color: MyColors.textSecondary)),
+                      icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary, size: 20),
+                    ),
+                    Text(
+                      "Last $back ${dailySales ? "d" : "m"}",
+                      style: MyFont.medium(11, color: MyColors.textSecondary),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (back > 5) {
+                          back--;
+                          _saveSettings();
+                          loadDashboard();
+                        } else if (!dailySales) {
+                          dailySales = true;
+                          back = 30;
+                          _saveSettings();
+                          loadDashboard();
+                        }
+                      },
+                      icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary, size: 20),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "KEY PERFORMANCE VISUALS",
+                      style: MyFont.bold(12, color: MyColors.textSecondary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${dailySales ? "Daily" : "Monthly"} ${!current[0] ? 'Sales' : 'Purchase'} Trend",
+                      style: MyFont.bold(20, color: MyColors.textMain),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (back < 30) {
+                              back++;
+                              _saveSettings();
+                              loadDashboard();
+                            } else if (dailySales) {
+                              dailySales = false;
+                              back = 5;
+                              _saveSettings();
+                              loadDashboard();
+                            }
+                          },
+                          icon: Icon(Icons.chevron_left_rounded, color: MyColors.textSecondary),
+                        ),
+                        Text(
+                          "Last $back ${dailySales ? "Days" : "Months"}",
+                          style: MyFont.medium(14, color: MyColors.textSecondary),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            if (back > 5) {
+                              back--;
+                              _saveSettings();
+                              loadDashboard();
+                            } else if (!dailySales) {
+                              dailySales = true;
+                              back = 30;
+                              _saveSettings();
+                              loadDashboard();
+                            }
+                          },
+                          icon: Icon(Icons.chevron_right_rounded, color: MyColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        hoverColor: MyColors.textSecondary.withValues(alpha: 0.1),
+                        onTap: () {
+                          setState(() {
+                            current[0] = !current[0];
+                            _saveSettings();
+                            loadDashboard();
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Switch to ${current[0] ? 'Sales' : 'Purchase'} Data',
+                            style: MyFont.medium(14, color: MyColors.textSecondary),
+                          ),
+                        ),
                       ),
                     ),
-                  )
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+                  ],
+                ),
+              ],
+            ),
+          ],
+          SizedBox(height: isPhone ? 8 : 24),
           Expanded(
             child: SalesTrendChart(data: salesData),
           ),
@@ -651,8 +841,8 @@ class _DashboardState extends State<Dashboard> {
       children: [
         Expanded(
           child: Container(
-            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             decoration: BoxDecoration(
               boxShadow: UiHelper.myBoxShadow(),
               border: UiHelper.myBorder(),
@@ -660,16 +850,16 @@ class _DashboardState extends State<Dashboard> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
-              crossAxisAlignment: .start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Order Status Overview",
                   overflow: TextOverflow.ellipsis,
                   style: MyFont.bold(24, color: MyColors.blue),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: .start,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       "${current[1] ? "Buying" : "Selling"} Orders",
@@ -682,11 +872,10 @@ class _DashboardState extends State<Dashboard> {
             ),
           ),
         ),
-
         Expanded(
           child: Container(
-            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             decoration: BoxDecoration(
               boxShadow: UiHelper.myBoxShadow(),
               border: UiHelper.myBorder(),
@@ -694,14 +883,13 @@ class _DashboardState extends State<Dashboard> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
-              crossAxisAlignment: .start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Most Selling Items",
                   overflow: TextOverflow.ellipsis,
                   style: MyFont.bold(24, color: MyColors.blue),
                 ),
-
                 Expanded(child: BarChartWidget(data: mostSolds)),
               ],
             ),

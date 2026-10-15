@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 
 import '../../Database/database.dart';
 import '../../Database/retrieve_products.dart';
@@ -156,29 +157,27 @@ class _InputNewProductState extends State<InputNewProduct>
   }
 
   Widget _buildMainSection() {
+    final isPhone = context.isPhone;
+    final formWidth = isPhone ? (MediaQuery.of(context).size.width - 60) : 500.0;
     return Center(
       child: Wrap(
         alignment: WrapAlignment.center,
-        spacing: 20,
-        runSpacing: 20,
+        spacing: isPhone ? 12 : 20,
+        runSpacing: isPhone ? 12 : 20,
         children: [
           // Image Upload Section
           SizedBox(
-            width: 280,
+            width: isPhone ? formWidth : 280,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Product Image',
-                  style: MyFont.bold(16, color: MyColors.dark),
+                  style: MyFont.bold(isPhone ? 14 : 16, color: MyColors.dark),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 SizedBox(
-                  height: 280,
-                  // decoration: BoxDecoration(
-                  //   borderRadius: BorderRadius.circular(12),
-                  //   border: Border.all(color: MyColors.lightGrey),
-                  // ),
+                  height: isPhone ? 220 : 280,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: UploadBox(
@@ -193,9 +192,9 @@ class _InputNewProductState extends State<InputNewProduct>
           ),
           // Form Fields Section
           SizedBox(
-            width: 500,
+            width: formWidth,
             child: Column(
-              crossAxisAlignment: .start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Product Details',
@@ -673,70 +672,121 @@ class _InputNewProductState extends State<InputNewProduct>
 
   Widget _buildFooter() {
     final total = controller.calculateTotals();
+    final isPhone = context.isPhone;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24,vertical: 15),
+      padding: EdgeInsets.symmetric(horizontal: isPhone ? 12 : 24, vertical: isPhone ? 10 : 15),
       decoration: BoxDecoration(
         color: MyColors.translucent.withAlpha(30),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
         border: Border(top: BorderSide(color: MyColors.lightGrey, width: 2)),
       ),
-      child: Row(
-        children: [
-          // Totals
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Total Price: Rs. ${total['price']!.toStringAsFixed(2)}',
-                style: MyFont.semiBold(15, color: MyColors.dark),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Total Weight: ${total['weight']!.toStringAsFixed(2)} Kg',
-                style: MyFont.normal(13, color: MyColors.grey),
-              ),
-            ],
-          ),
-
-          Spacer(),
-
-          // Buttons
-          SizedBox(
-            width: 140,
-            height: 50,
-            child: UiHelper.myButton(
-              title: 'Cancel',
-              callback: () => Navigator.pop(context),
-              textSize: 15,
-            ),
-          ),
-
-          SizedBox(width: 12),
-
-          SizedBox(
-            width: 160,
-            height: 50,
-            child: UiHelper.myButton(
-              title: controller.isLoading ? null : 'Save Product',
-              filled: true,
-              textSize: 15,
-              child: controller.isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
+      child: isPhone
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total: Rs. ${total['price']!.toStringAsFixed(2)}',
+                      style: MyFont.semiBold(13, color: MyColors.dark),
+                    ),
+                    Text(
+                      'Weight: ${total['weight']!.toStringAsFixed(2)} Kg',
+                      style: MyFont.normal(12, color: MyColors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 38,
+                        child: UiHelper.myButton(
+                          title: 'Cancel',
+                          callback: () => Navigator.pop(context),
+                          textSize: 13,
+                        ),
                       ),
-                    )
-                  : null,
-              callback: controller.isLoading ? () {} : _handleSave,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 38,
+                        child: UiHelper.myButton(
+                          title: controller.isLoading ? null : 'Save Product',
+                          filled: true,
+                          textSize: 13,
+                          child: controller.isLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : null,
+                          callback: controller.isLoading ? () {} : _handleSave,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Total Price: Rs. ${total['price']!.toStringAsFixed(2)}',
+                      style: MyFont.semiBold(15, color: MyColors.dark),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Total Weight: ${total['weight']!.toStringAsFixed(2)} Kg',
+                      style: MyFont.normal(13, color: MyColors.grey),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 120,
+                  height: 44,
+                  child: UiHelper.myButton(
+                    title: 'Cancel',
+                    callback: () => Navigator.pop(context),
+                    textSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 140,
+                  height: 44,
+                  child: UiHelper.myButton(
+                    title: controller.isLoading ? null : 'Save Product',
+                    filled: true,
+                    textSize: 14,
+                    child: controller.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : null,
+                    callback: controller.isLoading ? () {} : _handleSave,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

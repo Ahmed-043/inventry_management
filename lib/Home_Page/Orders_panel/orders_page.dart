@@ -10,6 +10,8 @@ import 'package:inventry_management/Home_Page/Orders_panel/new_order_button.dart
 import 'package:inventry_management/Home_Page/Orders_panel/order_card.dart';
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/filter_button.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 
@@ -141,9 +143,160 @@ class _OrdersPageState extends State<OrdersPage> {
     searchController.dispose();
   }
 
+  Widget _buildMobileFilterBar() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          if (selectedPerson != null) ...[
+            InkWell(
+              onTap: () {
+                setState(() {
+                  selectedPerson = null;
+                  _loadOrders();
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: MyColors.sidebarSelected,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      selectedPerson!.name,
+                      style: MyFont.bold(12, color: Colors.white),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.close, size: 14, color: Colors.white),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ] else ...[
+            InkWell(
+              onTap: _choosePerson,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: MyColors.lightGrey),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person_add_alt_1_rounded, size: 14, color: MyColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      "Filter Person",
+                      style: MyFont.medium(12, color: MyColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          UiHelper.mySelectableButton(
+            title: selected == 0 ? 'Sales' : 'Buys',
+            isSelected: true,
+            onPressed: () {
+              setState(() {
+                selected = selected == 0 ? 1 : 0;
+                _loadOrders();
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    compress = MediaQuery.of(context).size.width < 1000;
+    final isPhone = context.isPhone;
+    compress = context.isCompact;
+
+    if (isPhone) {
+      final ordersList = selected == 0 ? sellingOrders : buyingOrders;
+      return Column(
+        children: [
+          MobilePageHeader(
+            title: "Orders",
+            actionButton: actionButtons(),
+            searchController: searchController,
+            searchHint: "Search Order ID, Customer...",
+            onSearchChanged: (_) {
+              _searchTimer?.cancel();
+              _searchTimer = Timer(const Duration(milliseconds: 500), () {
+                _loadOrders();
+              });
+            },
+            filterWidget: _buildMobileFilterBar(),
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                          onRefresh: () async => _loadOrders(),
+                          child: ordersList.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    "No orders found",
+                                    style: MyFont.medium(14, color: MyColors.textSecondary),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(bottom: 60),
+                                  itemCount: ordersList.length,
+                                  itemBuilder: (context, index) {
+                                    final order = ordersList[index];
+                                    return OrderCard(
+                                      order: order,
+                                      callBack: () => _loadOrders(),
+                                    );
+                                  },
+                                ),
+                        ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  left: 12,
+                  right: 12,
+                  child: PaginationBar(
+                    page: pageNo - 1,
+                    pageSize: pageSize,
+                    itemCount: ordersList.length,
+                    onPrevious: () {
+                      if (pageNo > 1) {
+                        setState(() {
+                          pageNo--;
+                          _loadOrders();
+                        });
+                      }
+                    },
+                    onNext: () {
+                      setState(() {
+                        pageNo++;
+                        _loadOrders();
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     double spacing = compress ? 6 : 12;
     return Padding(
       padding: EdgeInsets.only(top:12),

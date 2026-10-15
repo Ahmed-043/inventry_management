@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/sections/order_sidebar.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/invoice/reciept_card.dart';
 import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/sections/order_back_card.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -110,21 +111,26 @@ class _NewOrderPageState extends State<NewOrderPage> {
   Widget build(BuildContext context) {
     debugPrint(selectedPerson?.name);
 
+    final isPhone = context.isPhone;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 1300;
+    final isCompact = screenWidth < 1300 || isPhone;
+
+    if (isPhone) {
+      return Scaffold(
+        backgroundColor: MyColors.mainBg,
+        body: SafeArea(
+          child: selectedPerson == null
+              ? _buildSidebarPanel()
+              : _buildProductsPanel(),
+        ),
+      );
+    }
+
     final showSidebar = screenWidth > 800 || selectedPerson == null;
     final showInvoice = !isCompact && selectedPerson != null;
 
     return Scaffold(
       backgroundColor: MyColors.mainBg,
-      // appBar: AppBar(
-      //   title: Text(
-      //     widget.sell ? "Sell Order" : "Receive Order",
-      //     style: MyFont.semiBold(22, color: MyColors.translucent),
-      //   ),
-      //   backgroundColor: widget.sell ? MyColors.darkBlue : MyColors.primary,
-      //   foregroundColor: Colors.white,
-      // ),
       body: Row(
         children: [
           if (showSidebar) _buildSidebarPanel(),

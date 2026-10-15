@@ -6,9 +6,10 @@ import 'package:inventry_management/Home_Page/Reports_Page/reports_utils.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import '../../Database/Reports_Data/stock_snapshot_logic.dart';
-import '../../Shared_Widgets/fonts.dart';
-import '../../Shared_Widgets/main_ui_helper.dart';
-import '../../colors.dart';
+import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
+import 'package:inventry_management/colors.dart';
 import 'data_cells.dart';
 
 /// Custom ScrollBehavior to enable mouse dragging and other devices
@@ -83,6 +84,7 @@ class _ReportsTableState extends State<ReportsTable> {
       }
     }
 
+    final isPhone = context.isPhone;
     final int columnCount = 3 + days.length + 1; // Product, Price, Total + Days + Current
     final int rowCount = widget.matrix.length + 1; // Header + Data
 
@@ -95,16 +97,17 @@ class _ReportsTableState extends State<ReportsTable> {
         child: TableView.builder(
           verticalDetails: ScrollableDetails.vertical(controller: _verticalController),
           horizontalDetails: ScrollableDetails.horizontal(controller: _horizontalController),
-          diagonalDragBehavior: .weightedEvent,
+          diagonalDragBehavior: .weightedContinuous,
           rowCount: rowCount,
           columnCount: columnCount,
           pinnedRowCount: 1,
-          pinnedColumnCount: 3,
+          pinnedColumnCount: isPhone ? 1 : 3,
           columnBuilder: (index) {
-            double width = ReportsConstants.dataColWidth;
-            if (index == 0) width = ReportsConstants.productColWidth;
-            if (index == 2) width = ReportsConstants.totalValueWidth;
-            if (index >  2) width = ReportsConstants.dataColWidth + 20;
+            double width = isPhone ? 75.0 : ReportsConstants.dataColWidth;
+            if (index == 0) width = isPhone ? 110.0 : ReportsConstants.productColWidth;
+            if (index == 1 && isPhone) width = 70.0;
+            if (index == 2) width = isPhone ? 80.0 : ReportsConstants.totalValueWidth;
+            if (index > 2 && !isPhone) width = ReportsConstants.dataColWidth + 20;
             return TableSpan(
               extent: FixedTableSpanExtent(width),
               foregroundDecoration: TableSpanDecoration(
@@ -120,7 +123,7 @@ class _ReportsTableState extends State<ReportsTable> {
           rowBuilder: (index) {
             if (index == 0) {
               return TableSpan(
-                extent: const FixedTableSpanExtent(ReportsConstants.headerHeight),
+                extent: FixedTableSpanExtent(isPhone ? 32.0 : ReportsConstants.headerHeight),
                 backgroundDecoration: TableSpanDecoration(
                   color: MyColors.blue.withAlpha(20),
                 ),
@@ -136,7 +139,7 @@ class _ReportsTableState extends State<ReportsTable> {
             }
 
             bool hasSeparator = categoryChangeIndices.contains(index - 1);
-            double height = ReportsConstants.rowHeight + (hasSeparator ? 0.7 : 0);
+            double height = (isPhone ? 30.0 : ReportsConstants.rowHeight) + (hasSeparator ? 0.7 : 0);
 
             return TableSpan(
               extent: FixedTableSpanExtent(height),
@@ -151,7 +154,6 @@ class _ReportsTableState extends State<ReportsTable> {
                       : BorderSide.none,
                 ),
               ),
-
             );
           },
           cellBuilder: (context, vicinity) {
@@ -203,7 +205,7 @@ class _ReportsTableState extends State<ReportsTable> {
         alignment: Alignment.center,
         child: Text(
           text,
-          style: MyFont.semiBold(col == 2 ? 14 : 14, color: MyColors.darkBlue),
+          style: MyFont.semiBold(context.isPhone ? 11 : col == 2 ? 14 : 14, color: MyColors.darkBlue),
           textAlign: TextAlign.center,
           overflow: TextOverflow.ellipsis,
         ),
@@ -224,7 +226,7 @@ class _ReportsTableState extends State<ReportsTable> {
         alignment: Alignment.centerLeft,
         child: Text(
           row.productName,
-          style: MyFont.semiBold(13, color: MyColors.darkBlue),
+          style: MyFont.semiBold(context.isPhone ? 10 :13, color: MyColors.darkBlue),
           maxLines: 3,
         ),
       );
@@ -234,7 +236,7 @@ class _ReportsTableState extends State<ReportsTable> {
         alignment: Alignment.center,
         child: Text(
           NumberFormat.decimalPattern().format(stockVal?.basePrice ?? 0.0),
-          style: MyFont.semiBold(14, color: MyColors.darkBlue),
+          style: MyFont.semiBold(context.isPhone ? 10 :14, color: MyColors.darkBlue),
         ),
       );
     } else if (col == 2) {
@@ -243,7 +245,7 @@ class _ReportsTableState extends State<ReportsTable> {
         alignment: Alignment.center,
         child: Text(
           NumberFormat.decimalPattern().format(stockVal?.totalValue ?? 0.0),
-          style: MyFont.semiBold(14, color: MyColors.darkBlue),
+          style: MyFont.semiBold(context.isPhone ? 10 :14, color: MyColors.darkBlue),
         ),
       );
     } else if (col < 3 + days.length) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Home_Page/Products_Panel/delete_confirmation.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../Database/category.dart';
@@ -188,11 +189,12 @@ class _SortMenuState extends State<SortMenu> {
 
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 420,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        width: isPhone ? (MediaQuery.of(context).size.width - 24) : 420,
+        padding: EdgeInsets.symmetric(horizontal: isPhone ? 12 : 16, vertical: isPhone ? 12 : 16),
         decoration: UiHelper.myDecoration(),
         child: Column(
           mainAxisSize: MainAxisSize.min,

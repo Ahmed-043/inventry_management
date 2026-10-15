@@ -9,7 +9,9 @@ import 'package:inventry_management/Home_Page/Transactions_Panels/transactions_c
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/filter_button.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
 import 'package:inventry_management/Shared_Widgets/pagination_bar.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 
 import '../../Database/database.dart';
@@ -132,7 +134,79 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    compress = MediaQuery.of(context).size.width < 1000;
+    final isPhone = context.isPhone;
+    compress = context.isCompact;
+
+    if (isPhone) {
+      return Column(
+        children: [
+          MobilePageHeader(
+            title: "Transactions",
+            actionButton: Hero(
+              tag: 'newTransaction',
+              child: UiHelper.myButton(
+                callback: () {
+                  UiHelper.pushPage(
+                    context: context,
+                    opaque: false,
+                    barrierColor: Colors.black54,
+                    page: AddNewTransactionDialog(
+                      action: NewTransactionDialog(
+                        onSave: () => _loadTransactions(),
+                      ),
+                    ),
+                  );
+                },
+                title: "Add",
+                textSize: 13,
+                filled: true,
+                color: MyColors.sidebarSelected,
+                borderRadius: 10,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              ),
+            ),
+            searchController: searchController,
+            searchHint: "Search transactions...",
+            onSearchChanged: (_) {
+              _debounce?.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                if (mounted) _loadTransactions();
+              });
+            },
+            filterWidget: searchBar(),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : TransactionsCards(
+                    transactions: transactions,
+                    persons: persons,
+                    onSave: () => _loadTransactions(),
+                  ),
+          ),
+          PaginationBar(
+            page: pageNo,
+            pageSize: pageSize,
+            itemCount: transactionCount,
+            onPrevious: () {
+              if (pageNo > 0) {
+                setState(() {
+                  pageNo--;
+                  _loadTransactions();
+                });
+              }
+            },
+            onNext: () {
+              setState(() {
+                pageNo++;
+                _loadTransactions();
+              });
+            },
+          ),
+        ],
+      );
+    }
+
     padding = 12.0;
     spacing = compress ? 6 : 12;
 

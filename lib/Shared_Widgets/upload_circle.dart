@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/colors.dart';
 import 'dart:typed_data';
 
@@ -137,7 +138,7 @@ class _UploadCircleState extends State<UploadCircle> {
                     height: 20,
                     child: Text(
                       "Image",
-                      style: MyFont.bold(15, color: MyColors.blue),
+                      style: MyFont.bold(context.isPhone ? 12 : 15, color: MyColors.blue),
                     ),
                   ),
                 ),
@@ -156,7 +157,7 @@ class _UploadCircleState extends State<UploadCircle> {
                       isCompressing ?  Text(
                         "Compressing Image",
                         textAlign: TextAlign.center,
-                        style: MyFont.bold(14, color: MyColors.blue),
+                        style: MyFont.bold(context.isPhone ? 12 : 14, color: MyColors.blue),
                       )
                           :Column(
                         children: [
@@ -164,14 +165,14 @@ class _UploadCircleState extends State<UploadCircle> {
                             "Drag & Drop Image Here",
                             textAlign: TextAlign.center,
                             style: MyFont.normal(
-                              14,
+                              context.isPhone ? 10 : 14,
                               color: MyColors.grey,
                             ),
                           ),
                           Text(
                             " or Click to Upload",
                             textAlign: TextAlign.center,
-                            style: MyFont.bold(14, color: MyColors.blue),
+                            style: MyFont.bold(context.isPhone ? 10 : 14, color: MyColors.blue),
                           ),
                         ],
                       ),

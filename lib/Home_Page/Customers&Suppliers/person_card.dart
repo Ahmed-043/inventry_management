@@ -68,16 +68,22 @@ class _PersonCardState extends State<PersonCard> {
             onTapDown: (TapDownDetails details) async {
               final tapPosition = details.globalPosition;
               final screenSize = MediaQuery.of(context).size;
-              const double dialogWidth = 570;
+              final double dialogWidth = (screenSize.width - 20).clamp(280.0, 570.0);
               const double dialogHeight = 220;
 
-              double left = (tapPosition.dx - (dialogWidth / 2)).clamp(10.0, screenSize.width - dialogWidth - 10.0);
-              double top = tapPosition.dy;
+              double minLeft = 10.0;
+              double maxLeft = (screenSize.width - dialogWidth - 10.0);
+              if (maxLeft < minLeft) maxLeft = minLeft;
+              double left = (tapPosition.dx - (dialogWidth / 2)).clamp(minLeft, maxLeft);
 
+              double top = tapPosition.dy;
               if (top + dialogHeight > screenSize.height) {
                 top = tapPosition.dy - dialogHeight - 10;
               }
-              top = top.clamp(10.0, screenSize.height - dialogHeight - 10.0);
+              double minTop = 10.0;
+              double maxTop = (screenSize.height - dialogHeight - 10.0);
+              if (maxTop < minTop) maxTop = minTop;
+              top = top.clamp(minTop, maxTop);
 
               await PersonPaymentDialog.show(
                 context: context,

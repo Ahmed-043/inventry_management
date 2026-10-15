@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense.dart';
 import 'package:inventry_management/Database/Expense_Tracking/expense_category.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../../colors.dart';
 
 class ExpenseCards extends StatelessWidget {
@@ -19,6 +20,20 @@ class ExpenseCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
+
+    if (isPhone) {
+      return ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 60),
+        itemCount: expenses.length,
+        itemBuilder: (context, i) {
+          final expense = expenses[i];
+          return mobileExpenseCard(context, expense);
+        },
+      );
+    }
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -26,7 +41,7 @@ class ExpenseCards extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -47,12 +62,86 @@ class ExpenseCards extends StatelessWidget {
                     children: [
                       expenseCard(context, expense),
                       if (i + 1 < expenses.length)
-                        Divider(height: 1, color: MyColors.textSecondary.withOpacity(0.2)),
+                        Divider(height: 1, color: MyColors.textSecondary.withValues(alpha: 0.2)),
                     ],
                   );
                 },
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget mobileExpenseCard(BuildContext context, Expense expense) {
+    final date = DateTime.fromMillisecondsSinceEpoch(expense.expenseDate);
+    final formattedDate = DateFormat('dd MMM yyyy').format(date);
+    final isIn = expense.amount > 0;
+
+    final category = categories.firstWhere(
+      (c) => c.id == expense.categoryId,
+      orElse: () => ExpenseCategory(name: 'Uncategorized', icon: ''),
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: MyColors.lightGrey.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: (isIn ? MyColors.success : MyColors.primary).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  category.name,
+                  style: MyFont.bold(11, color: isIn ? MyColors.success : MyColors.primary),
+                ),
+              ),
+              Text(
+                '${isIn ? '+' : '-'} Rs. ${NumberFormat('#,##0.00').format(expense.amount.abs())}',
+                style: MyFont.bold(14, color: isIn ? MyColors.success : MyColors.error),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            expense.title.isEmpty ? 'Expense #${expense.id}' : expense.title,
+            style: MyFont.bold(14, color: MyColors.darkBlue),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (expense.personName.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Person: ${expense.personName}',
+              style: MyFont.medium(12, color: MyColors.textSecondary),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                formattedDate,
+                style: MyFont.normal(11, color: MyColors.grey),
+              ),
+              Text(
+                expense.paymentMethod ?? 'Other',
+                style: MyFont.semiBold(11, color: MyColors.darkBlue),
+              ),
+            ],
           ),
         ],
       ),
@@ -78,7 +167,7 @@ class ExpenseCards extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: MyColors.textSecondary.withOpacity(0.5)),
+          bottom: BorderSide(color: MyColors.textSecondary.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -87,7 +176,7 @@ class ExpenseCards extends StatelessWidget {
             flex: flexValues[i],
             child: Text(
               titles[i],
-              textAlign: i == 0 || i == 2 || i == 3 || i == 4 ? .start : TextAlign.center,
+              textAlign: i == 0 || i == 2 || i == 3 || i == 4 ? TextAlign.start : TextAlign.center,
               style: MyFont.bold(12, color: MyColors.textSecondary),
             ),
           );
@@ -112,66 +201,50 @@ class ExpenseCards extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          // Edit logic if needed
-        },
+        onTap: () {},
         hoverColor: MyColors.mainBg,
         child: Container(
           height: 60,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              // Expense ID
               Expanded(
                 flex: 1,
                 child: Text(
-                  expense.id != null ? '#${expense.id}' : '-',
-                  style: MyFont.bold(textSize, color: MyColors.textSecondary),
+                  '#${expense.id}',
+                  style: MyFont.semiBold(textSize, color: MyColors.textSecondary),
                 ),
               ),
-              // Type
               Expanded(
                 flex: 1,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: statusColor.withOpacity(0.3)),
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      isIn ? "IN" : "OUT",
-                      style: MyFont.bold(10, color: statusColor),
+                      isIn ? 'Income' : 'Expense',
+                      style: MyFont.bold(12, color: statusColor),
                     ),
                   ),
                 ),
               ),
-              // Category
               Expanded(
                 flex: 2,
-                child: Row(
-                  children: [
-                    Icon(_getCategoryIcon(category.name), size: 18, color: MyColors.textSecondary),
-                    const SizedBox(width: 8),
-                    Text(
-                      category.name,
-                      style: MyFont.bold(textSize, color: MyColors.textMain),
-                    ),
-                  ],
+                child: Text(
+                  category.name,
+                  style: MyFont.medium(textSize, color: MyColors.textMain),
                 ),
               ),
-              // Title
               Expanded(
                 flex: 2,
                 child: Text(
                   expense.title,
-                  style: MyFont.medium(textSize, color: MyColors.textMain),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  style: MyFont.bold(textSize, color: MyColors.textMain),
                 ),
               ),
-              // Person
               Expanded(
                 flex: 1,
                 child: Text(
@@ -179,52 +252,36 @@ class ExpenseCards extends StatelessWidget {
                   style: MyFont.medium(textSize, color: MyColors.textMain),
                 ),
               ),
-              // Amount
               Expanded(
                 flex: 1,
-                child: Center(
-                  child: Text(
-                    'Rs. ${NumberFormat.decimalPattern().format(expense.amount.abs())}',
-                    style: MyFont.bold(textSize, color: statusColor),
-                  ),
+                child: Text(
+                  'Rs. ${NumberFormat('#,##0').format(expense.amount.abs())}',
+                  textAlign: TextAlign.center,
+                  style: MyFont.bold(textSize, color: statusColor),
                 ),
               ),
-              // Date
               Expanded(
                 flex: 1,
-                child: Center(
-                  child: Text(
-                    formattedDate,
-                    style: MyFont.medium(textSize, color: MyColors.textSecondary),
-                  ),
+                child: Text(
+                  formattedDate,
+                  textAlign: TextAlign.center,
+                  style: MyFont.medium(textSize, color: MyColors.textSecondary),
                 ),
               ),
-              // Payment Method
               Expanded(
                 flex: 1,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      expense.paymentMethod,
-                      style: MyFont.bold(12, color: MyColors.textSecondary),
-                    ),
-                  ),
+                child: Text(
+                  expense.paymentMethod ?? 'Other',
+                  textAlign: TextAlign.center,
+                  style: MyFont.medium(textSize, color: MyColors.textMain),
                 ),
               ),
-              // Remark
               Expanded(
                 flex: 2,
                 child: Text(
-                  expense.remark,
+                  expense.remark.isEmpty ? '-' : expense.remark,
+                  textAlign: TextAlign.center,
                   style: MyFont.medium(textSize, color: MyColors.textSecondary),
-                  maxLines: 2,
-                  textAlign: .center,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -232,19 +289,5 @@ class ExpenseCards extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _getCategoryIcon(String name) {
-    name = name.toLowerCase();
-    if (name.contains('beverage') || name.contains('coffee') || name.contains('drink')) return Icons.local_cafe_rounded;
-    if (name.contains('transport') || name.contains('fuel') || name.contains('travel') || name.contains('car')) return Icons.directions_car_rounded;
-    if (name.contains('software') || name.contains('tech') || name.contains('subscription')) return Icons.laptop_rounded;
-    if (name.contains('groceries') || name.contains('shopping') || name.contains('market')) return Icons.shopping_cart_rounded;
-    if (name.contains('food') || name.contains('restaurant') || name.contains('meal')) return Icons.restaurant_rounded;
-    if (name.contains('rent') || name.contains('office') || name.contains('home')) return Icons.home_rounded;
-    if (name.contains('salary') || name.contains('wage') || name.contains('pay')) return Icons.payments_rounded;
-    if (name.contains('bill') || name.contains('electricity') || name.contains('water')) return Icons.receipt_long_rounded;
-    if (name.contains('health') || name.contains('medical')) return Icons.medical_services_rounded;
-    return Icons.category_outlined;
   }
 }

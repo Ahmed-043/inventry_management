@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
-import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 
@@ -29,15 +28,14 @@ class _UploadBoxState extends State<UploadBox> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
-@override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
 
+  @override
+  void dispose() {
+    super.dispose();
   }
+
   void _onTap() async {
     if (!mounted) return;
     setState(() {
@@ -45,25 +43,23 @@ class _UploadBoxState extends State<UploadBox> {
       isHovered = false;
     });
     Uint8List? file;
-    try{
-     file  = await imagePicker(compress: false);
-     setState(() {
-       isCompressing = true;
-     });
-     if(file == null ){
-       setState(() {
-         isLoading = false;
-         isCompressing = false;
-       });
-       return;
-     }
-     file = await compute(compressImage,file);
-     //file = await compressImage(file);
-   //  if (!mounted) return; // page may have closed
+    try {
+      file = await imagePicker(compress: false);
+      setState(() {
+        isCompressing = true;
+      });
+      if (file == null) {
+        setState(() {
+          isLoading = false;
+          isCompressing = false;
+        });
+        return;
+      }
+      file = await compute(compressImage, file);
 
-     setState(() => selectedFile = file);
-     widget.onFileSelected?.call(file);
-       }catch(e){
+      setState(() => selectedFile = file);
+      widget.onFileSelected?.call(file);
+    } catch (e) {
       debugPrint("Upload Box Tap error: ${e.toString()}");
       setState(() {
         isLoading = false;
@@ -77,10 +73,7 @@ class _UploadBoxState extends State<UploadBox> {
       isLoading = false;
       isCompressing = false;
     });
-
-    debugPrint("Tap");
   }
-
 
   void _onDrop(List<XFile> files) async {
     setState(() {
@@ -88,7 +81,7 @@ class _UploadBoxState extends State<UploadBox> {
       isCompressing = true;
     });
     if (files.isNotEmpty) {
-      final file = await handleDrop(files.first.path); // from file_utils.dart
+      final file = await handleDrop(files.first.path);
       if (file != null) {
         setState(() => selectedFile = file);
         widget.onFileSelected?.call(file);
@@ -101,6 +94,21 @@ class _UploadBoxState extends State<UploadBox> {
     });
   }
 
+  Widget _buildImageWidget() {
+    final imageChild = ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      child: Image.memory(selectedFile!, fit: BoxFit.fitHeight),
+    );
+
+    if (widget.heroTag != null && widget.heroTag!.isNotEmpty && widget.heroTag != "null") {
+      return Hero(
+        tag: widget.heroTag!,
+        child: imageChild,
+      );
+    }
+    return imageChild;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaledContainer(
@@ -109,29 +117,28 @@ class _UploadBoxState extends State<UploadBox> {
         onDragEntered: (_) => setState(() => isDragging = true),
         onDragExited: (_) => setState(() => isDragging = false),
         child: DottedBorder(
-          options: RoundedRectDottedBorderOptions(
+          options: const RoundedRectDottedBorderOptions(
             dashPattern: [6, 3],
             strokeWidth: 1,
             radius: Radius.circular(12),
             color: Colors.grey,
-            //padding: EdgeInsets.all(4),
           ),
           child: selectedFile == null
               ? SizedBox(
                   height: selectedFile != null ? null : double.infinity,
-                  width: selectedFile != null ? null : double.infinity ,
+                  width: selectedFile != null ? null : double.infinity,
                   child: InkWell(
                     onTap: _onTap,
                     child: Stack(
                       children: [
                         Positioned(
-                          top: 5,
-                          left:10,
+                          top: 4,
+                          left: 8,
                           child: SizedBox(
-                            height: 20,
+                            height: 18,
                             child: Text(
                               "Image",
-                              style: MyFont.bold(15, color: MyColors.blue),
+                              style: MyFont.bold(12, color: MyColors.blue),
                             ),
                           ),
                         ),
@@ -140,35 +147,36 @@ class _UploadBoxState extends State<UploadBox> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               isLoading
-                                  ? CircularProgressIndicator(color: MyColors.darkBlue,)
-                                  : Icon(
+                                  ? const CircularProgressIndicator(color: MyColors.darkBlue)
+                                  : const Icon(
                                       Icons.camera_alt_outlined,
-                                      size: 40,
+                                      size: 28,
                                       color: Colors.grey,
                                     ),
-                              SizedBox(height: 8),
-                              isCompressing ?  Text(
-                                "Compressing Image",
-                                textAlign: TextAlign.center,
-                                style: MyFont.bold(14, color: MyColors.blue),
-                              )
-                                  :Column(
-                                children: [
-                                  Text(
-                                    "Drag & Drop Image Here",
-                                    textAlign: TextAlign.center,
-                                    style: MyFont.normal(
-                                      14,
-                                      color: MyColors.grey,
+                              const SizedBox(height: 4),
+                              isCompressing
+                                  ? Text(
+                                      "Compressing Image",
+                                      textAlign: TextAlign.center,
+                                      style: MyFont.bold(11, color: MyColors.blue),
+                                    )
+                                  : Column(
+                                      children: [
+                                        Text(
+                                          "Drag & Drop Image Here",
+                                          textAlign: TextAlign.center,
+                                          style: MyFont.normal(
+                                            11,
+                                            color: MyColors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          " or Click to Upload",
+                                          textAlign: TextAlign.center,
+                                          style: MyFont.bold(11, color: MyColors.blue),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  Text(
-                                    " or Click to Upload",
-                                    textAlign: TextAlign.center,
-                                    style: MyFont.bold(14, color: MyColors.blue),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
@@ -179,13 +187,13 @@ class _UploadBoxState extends State<UploadBox> {
               : SizedBox(
                   width: double.infinity,
                   height: double.infinity,
-      
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: (){
-                        setState(() {selectedFile = null;
-                        widget.onFileSelected?.call(null);
+                      onTap: () {
+                        setState(() {
+                          selectedFile = null;
+                          widget.onFileSelected?.call(null);
                         });
                       },
                       child: MouseRegion(
@@ -194,26 +202,20 @@ class _UploadBoxState extends State<UploadBox> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Hero(
-                              tag: "${widget.heroTag}",
-                              child: ClipRRect(
-                                                      borderRadius : BorderRadius.all(Radius.circular(12)),
-                                  child: Image.memory(selectedFile!, fit: BoxFit.fitHeight)),
-                            ),
-                            if(isLoading) CircularProgressIndicator(),
+                            _buildImageWidget(),
+                            if (isLoading) const CircularProgressIndicator(),
                             if (isHovered && !isLoading)
                               Container(
                                 height: double.infinity,
                                 width: double.infinity,
                                 decoration: BoxDecoration(
-                                  color: MyColors.light.withAlpha((255*0.3).toInt()),
-                                  borderRadius:BorderRadius.circular(12),
+                                  color: MyColors.light.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-      
-                                child: Icon(
+                                child: const Icon(
                                   Icons.delete_outline,
                                   color: MyColors.error,
-                                  size: 40,
+                                  size: 32,
                                 ),
                               ),
                           ],

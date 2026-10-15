@@ -7,6 +7,7 @@ import 'package:inventry_management/Shared_Widgets/app_cursor_overlay.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 
 import '../../../Database/retrieve_products.dart';
 import '../../../Shared_Widgets/fonts.dart';

@@ -1,10 +1,9 @@
-
 import 'dart:ui';
 import 'package:inventry_management/colors.dart';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../Database/database.dart';
 import 'app_cursor_overlay.dart';
 import 'main_ui_helper.dart';
@@ -20,21 +19,18 @@ class Topbar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        //const SizedBox(width: 20),
         Text(
           title,
           style: TextStyle(
             color: MyColors.blue,
-            fontSize: 30,
+            fontSize: context.isPhone ? 22 : 30,
             fontWeight: FontWeight.w600,
             fontFamily: 'Roboto',
           ),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 15),
         button,
-        Expanded(child: SizedBox()),
-
-
+        const Expanded(child: SizedBox()),
       ],
     );
   }
@@ -50,9 +46,9 @@ class ReusableTopBar extends StatelessWidget {
   final List<Map<String, dynamic>> stockButtons;
   final int selectedIndex;
   final Function(int index) onButtonSelect;
-  final applyBlur;
+  final bool applyBlur;
 
-   const ReusableTopBar({
+  const ReusableTopBar({
     super.key,
     required this.title,
     this.searchHint = "Search",
@@ -69,22 +65,25 @@ class ReusableTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scrollController = ScrollController();
-    final backgroundColor =  (plainUi && !applyBlur) ? MyColors.lightestGrey : Colors.transparent;
-    bool compress = MediaQuery.of(context).size.width < 600;
+    final backgroundColor = (plainUi && !applyBlur) ? MyColors.lightestGrey : Colors.transparent;
+    final isPhone = context.isPhone;
+    final isCompact = context.isCompact;
+
     return Container(
-      height: compress ? 100 : 60,
-     // padding: EdgeInsets.symmetric(horizontal: 10),
-      color: (plainUi && !applyBlur) ? MyColors.lightestGrey : Colors.transparent ,
+      height: isPhone ? 110 : (isCompact ? 100 : 60),
+      color: (plainUi && !applyBlur) ? MyColors.lightestGrey : Colors.transparent,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if(applyBlur) ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 2),
-              child: Container(color: backgroundColor),
+          if (applyBlur)
+            ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 2),
+                child: Container(color: backgroundColor),
+              ),
             ),
-          ),
           Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
                 height: 50,
@@ -93,48 +92,50 @@ class ReusableTopBar extends StatelessWidget {
                   children: [
                     // LEFT SECTION (Title + Custom Button)
                     Expanded(
-                      flex: 4,
+                      flex: isPhone ? 6 : 4,
                       child: Row(
                         children: [
-                          if(title.isNotEmpty)
-                          SizedBox(
-                            width: title == 'Orders' ? 100 : 160,
-                            child: Text(
-                              title,
-                              style: MyFont.bold(30,color: MyColors.blue)
+                          if (title.isNotEmpty)
+                            SizedBox(
+                              width: isPhone ? 85 : (title == 'Orders' ? 100 : 160),
+                              child: Text(
+                                title,
+                                overflow: TextOverflow.ellipsis,
+                                style: MyFont.bold(isPhone ? 22 : 30, color: MyColors.blue),
+                              ),
+                            ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: actionButton,
                             ),
                           ),
-                          //const SizedBox(width: 15),
-                          Expanded(child: Padding(
-                            padding: EdgeInsets.symmetric(vertical:5),
-                            child: actionButton,
-                          )),
                         ],
                       ),
                     ),
 
                     const SizedBox(width: 5),
 
-                    // CENTER (Search Bar)
-                    if(!compress)
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        margin: const EdgeInsets.only(top: 5),
-                        child: UiHelper.mySearchBar(
-                          controller: searchController,
-                          hint: searchHint,
-                          onChange: onSearch,
-                          onCancel: onClear,
+                    // CENTER (Search Bar - Desktop/Wide)
+                    if (!isCompact)
+                      Expanded(
+                        flex: 4,
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 5),
+                          child: UiHelper.mySearchBar(
+                            controller: searchController,
+                            hint: searchHint,
+                            onChange: onSearch,
+                            onCancel: onClear,
+                          ),
                         ),
                       ),
-                    ),
 
                     const SizedBox(width: 10),
 
                     // RIGHT (Filter Buttons)
                     Expanded(
-                      flex: 4,
+                      flex: isPhone ? 6 : 4,
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Listener(
@@ -156,8 +157,8 @@ class ReusableTopBar extends StatelessWidget {
                               children: List.generate(stockButtons.length, (i) {
                                 final btn = stockButtons[i];
                                 return MouseRegion(
-                                  onEnter: (_)  {
-                                    isClickable =true;
+                                  onEnter: (_) {
+                                    isClickable = true;
                                   },
                                   onExit: (_) {
                                     isClickable = false;
@@ -166,7 +167,8 @@ class ReusableTopBar extends StatelessWidget {
                                     padding: const EdgeInsets.only(right: 5),
                                     child: Tooltip(
                                       message:
-                                      "${btn['title']}${btn['count'].toString().contains(RegExp(r'[^0-9]')) ? '\n' : ' '}${btn['count'].toString().replaceAll(RegExp(r'[\{\}\[\]]'), '').replaceAll(':', ' ').replaceAll(',', '\n')}".trim(),
+                                          "${btn['title']}${btn['count'].toString().contains(RegExp(r'[^0-9]')) ? '\n' : ' '}${btn['count'].toString().replaceAll(RegExp(r'[\{\}\[\]]'), '').replaceAll(':', ' ').replaceAll(',', '\n')}"
+                                              .trim(),
                                       child: UiHelper.mySelectableButton(
                                         title: btn['title'],
                                         isSelected: selectedIndex == i,
@@ -184,19 +186,19 @@ class ReusableTopBar extends StatelessWidget {
                   ],
                 ),
               ),
-              if(compress)
-              SizedBox(
-                height: 45,
-                child: Container(
-                  margin: const EdgeInsets.only(top: 5,right: 10,left:10),
-                  child: UiHelper.mySearchBar(
-                    controller: searchController,
-                    hint: searchHint,
-                    onChange: onSearch,
-                    onCancel: onClear,
+              if (isCompact)
+                SizedBox(
+                  height: 45,
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 5, right: 10, left: 10),
+                    child: UiHelper.mySearchBar(
+                      controller: searchController,
+                      hint: searchHint,
+                      onChange: onSearch,
+                      onCancel: onClear,
+                    ),
                   ),
                 ),
-              )
             ],
           ),
         ],

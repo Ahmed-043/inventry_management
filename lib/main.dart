@@ -34,7 +34,7 @@ void main() async {
     // Set up window options
     WindowOptions options = const WindowOptions(
       title: 'Odventory',
-      minimumSize: Size(650, 500),
+      minimumSize: Size(60, 50),
       center: true,
       backgroundColor: Colors.white,
       titleBarStyle: TitleBarStyle.hidden,

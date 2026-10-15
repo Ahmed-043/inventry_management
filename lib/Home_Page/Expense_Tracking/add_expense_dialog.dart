@@ -6,6 +6,7 @@ import 'package:inventry_management/Home_Page/Orders_panel/New_Order_Page/dialog
 import 'package:inventry_management/Shared_Widgets/date_time.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/Shared_Widgets/scaled_container.dart';
 import 'package:inventry_management/colors.dart';
 import 'add_expense_logic.dart';
@@ -42,30 +43,36 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 800,
-      height: 600,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildMainSection(),
-                ],
+    final isPhone = context.isPhone;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = isPhone ? (screenWidth - 24) : 800.0;
+
+    return Center(
+      child: Container(
+        width: dialogWidth,
+        height: isPhone ? (MediaQuery.of(context).size.height * 0.88) : 600,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(isPhone ? 12 : 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMainSection(),
+                  ],
+                ),
               ),
             ),
-          ),
-          _buildFooter(),
-        ],
-      )
+            _buildFooter(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -91,17 +98,20 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   }
 
   Widget _buildMainSection() {
+    final isPhone = context.isPhone;
+    final columnWidth = isPhone ? (MediaQuery.of(context).size.width - 60) : 350.0;
+    final gap = isPhone ? 12.0 : 24.0;
+
     return Wrap(
-      spacing: 24,
-      runSpacing: 24,
+      spacing: gap,
+      runSpacing: gap,
       children: [
         // Left Column
         SizedBox(
-          width: 350,
+          width: columnWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Row(
                 children: [
                   _typeButton('Expense', !controller.isIncome, MyColors.error),
@@ -109,53 +119,51 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                   _typeButton('Income', controller.isIncome, MyColors.success),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               UiHelper.myTextField(
                 label: 'Title',
                 controller: controller.title,
                 hint: 'Enter title (e.g. Office Rent)',
-                fontSize: 15,
+                fontSize: isPhone ? 13 : 15,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               UiHelper.myTextField(
                 label: 'Amount',
                 controller: controller.amount,
                 hint: '0.00',
                 prefixText: 'Rs. ',
-                fontSize: 15,
+                fontSize: isPhone ? 13 : 15,
                 textType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               UiHelper.myTextArea(
                 label: 'Remark',
                 controller: controller.remark,
                 hint: 'Additional notes...',
-                maxLines: 3,
-                fontSize: 15,
+                maxLines: 2,
+                fontSize: isPhone ? 13 : 15,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               _buildTransactionCheckbox(),
             ],
           ),
         ),
         // Right Column
         SizedBox(
-          width: 350,
+          width: columnWidth,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               _buildDatePicker(),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               _buildCategoryDropdown(),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               _buildPersonPicker(),
-              const SizedBox(height: 24),
+              SizedBox(height: gap),
               _buildPaymentMethodPicker(),
-
             ],
           ),
         ),

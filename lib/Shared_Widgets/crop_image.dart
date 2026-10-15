@@ -64,101 +64,103 @@ Future<Uint8List?> showManualCropDialog(
                       ],
                     ),
                   ),
-
+              
                   // Content
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: cropMode
-                                ? Crop(
-                                    image: bytes,
-                                    baseColor: Colors.transparent,
-                                    maskColor: Colors.black.withAlpha(100),
-                                    controller: cropController,
-                                    aspectRatio: 1,
-                                    onCropped: (cropResult) {
-                                      if (cropResult is CropSuccess) {
-                                        Navigator.pop(
-                                          context,
-                                          cropResult.croppedImage,
-                                        );
-                                      }
-                                    },
-                                  )
-                                : Container(
-                                    decoration: BoxDecoration(
-                                      color: padColor,
-                                      image: DecorationImage(
-                                        image: MemoryImage(bytes),
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        UiHelper.switchTile(
-                          title: 'Crop Image',
-                          value: cropMode,
-                          onChanged: (v) => setState(() => cropMode = v),
-                        ),
-                        if (!cropMode) ...[
-                          const SizedBox(height: 15),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Padding Color',
-                              style: MyFont.bold(16, color: MyColors.dark),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              for (final c in {
-                                Colors.white,
-                                Colors.black,
-                                Colors.grey,
-                                ...?extractedColors,
-                              })
-                                GestureDetector(
-                                  onTap: () => setState(() => padColor = c),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: c == padColor
-                                            ? MyColors.primary
-                                            : Colors.grey.shade300,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Container(
-                                      margin: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(
-                                        color: c,
-                                        shape: BoxShape.circle,
-                                      ),
-
-                                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: cropMode
+                                  ? Crop(
+                                image: bytes,
+                                baseColor: Colors.transparent,
+                                maskColor: Colors.black.withAlpha(100),
+                                controller: cropController,
+                                aspectRatio: 1,
+                                onCropped: (cropResult) {
+                                  if (cropResult is CropSuccess) {
+                                    Navigator.pop(
+                                      context,
+                                      cropResult.croppedImage,
+                                    );
+                                  }
+                                },
+                              )
+                                  : Container(
+                                decoration: BoxDecoration(
+                                  color: padColor,
+                                  image: DecorationImage(
+                                    image: MemoryImage(bytes),
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                            ],
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 15),
+                          UiHelper.switchTile(
+                            title: 'Crop Image',
+                            value: cropMode,
+                            onChanged: (v) => setState(() => cropMode = v),
+                          ),
+                          if (!cropMode) ...[
+                            const SizedBox(height: 15),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Padding Color',
+                                style: MyFont.bold(16, color: MyColors.dark),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                for (final c in {
+                                  Colors.white,
+                                  Colors.black,
+                                  Colors.grey,
+                                  ...?extractedColors,
+                                })
+                                  GestureDetector(
+                                    onTap: () => setState(() => padColor = c),
+                                    child: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: c == padColor
+                                              ? MyColors.primary
+                                              : Colors.grey.shade300,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Container(
+                                        margin: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: c,
+                                          shape: BoxShape.circle,
+                                        ),
+
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-
+              
                   // Footer
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
@@ -202,11 +204,11 @@ Future<Uint8List?> showManualCropDialog(
                                 final result = Uint8List.fromList(
                                   img.encodeJpg(padded, quality: 85),
                                 );
-
+              
                                 // Return padded image
                                 Navigator.pop(context, result);
                               },
-                              title: 'Pad to Square',
+                              title: 'Save',
                               filled: true,
                               textSize: 15,
                             ),

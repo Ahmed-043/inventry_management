@@ -197,7 +197,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
                             builder: (context) => Dialog(
                               backgroundColor: Colors.transparent,
                               insetPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                                horizontal: 0,
                               ),
                               child: ProfileSettings(
                                 info: widget.info!,

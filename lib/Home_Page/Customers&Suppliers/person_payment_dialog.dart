@@ -9,6 +9,7 @@ import 'package:inventry_management/Home_Page/home_page.dart';
 import 'package:inventry_management/Home_Page/Ledger_Panel/ledger_page.dart';
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import 'package:inventry_management/colors.dart';
 
 class PersonPaymentDialog extends StatefulWidget {
@@ -120,9 +121,11 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
 
   Widget _buildPaymentOptions() {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isPhone = context.isPhone || screenWidth < 520;
+
     return Container(
-      width: 570.clamp(0.0, screenWidth - 20).toDouble(),
-      padding: const EdgeInsets.all(15),
+      width: isPhone ? (screenWidth - 24) : 570,
+      padding: EdgeInsets.all(isPhone ? 12 : 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -133,10 +136,10 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
           Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: isPhone ? 40 : 50,
+                height: isPhone ? 40 : 50,
                 decoration: BoxDecoration(
-                  color: MyColors.primary.withOpacity(0.1),
+                  color: MyColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: widget.person.image != null
@@ -149,23 +152,23 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
                     : Center(
                         child: Text(
                           _getInitials(widget.person.name),
-                          style: MyFont.bold(18, color: MyColors.primary),
+                          style: MyFont.bold(isPhone ? 15 : 18, color: MyColors.primary),
                         ),
                       ),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.person.name,
-                      style: MyFont.bold(18, color: MyColors.darkBlue),
+                      style: MyFont.bold(isPhone ? 15 : 18, color: MyColors.darkBlue),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       widget.person.phone ?? "No phone",
-                      style: MyFont.normal(14, color: MyColors.grey),
+                      style: MyFont.normal(12, color: MyColors.grey),
                     ),
                   ],
                 ),
@@ -174,40 +177,157 @@ class _PersonPaymentDialogState extends State<PersonPaymentDialog> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Pending Receivable: ',
-                        style: MyFont.bold(14, color: MyColors.textSecondary),
-                      ),
-                      Text(
-                        "Rs. ${NumberFormat().format(widget.person.incoming)}",
-                        style: MyFont.bold(16, color: MyColors.success),
-                      ),
-                    ],
+                  Text(
+                    "Receivable: Rs. ${NumberFormat().format(widget.person.incoming)}",
+                    style: MyFont.bold(isPhone ? 11 : 14, color: MyColors.success),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Pending Payable: ',
-                        style: MyFont.bold(14, color: MyColors.textSecondary),
-                      ),
-                      Text(
-                        "Rs. ${NumberFormat().format(widget.person.outgoing)}",
-                        style: MyFont.bold(16, color: MyColors.error),
-                      ),
-                    ],
+                  const SizedBox(height: 2),
+                  Text(
+                    "Payable: Rs. ${NumberFormat().format(widget.person.outgoing)}",
+                    style: MyFont.bold(isPhone ? 11 : 14, color: MyColors.error),
                   ),
                 ],
               ),
             ],
           ),
           const Divider(),
-          const SizedBox(height: 10),
-          Row(
+          const SizedBox(height: 6),
+          isPhone
+              ? Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 36,
+                            child: UiHelper.myButton(
+                              title: "Orders",
+                              filled: false,
+                              textSize: 11,
+                              color: MyColors.darkBlue,
+                              callback: () {
+                                Navigator.pop(context);
+                                widget.homePage?.navigateTo(4, person: widget.person);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: SizedBox(
+                            height: 36,
+                            child: UiHelper.myButton(
+                              title: "Transactions",
+                              filled: false,
+                              textSize: 11,
+                              color: MyColors.darkBlue,
+                              callback: () {
+                                Navigator.pop(context);
+                                widget.homePage?.navigateTo(5, person: widget.person);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: SizedBox(
+                            height: 36,
+                            child: UiHelper.myButton(
+                              title: "Ledger",
+                              filled: true,
+                              textSize: 11,
+                              color: MyColors.primary,
+                              callback: () {
+                                Navigator.pop(context);
+                                UiHelper.pushPage(
+                                  context: context,
+                                  blurBackground: false,
+                                  page: LedgerPage(initialPerson: widget.person, onBack: widget.onPaymentSaved),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 36,
+                            child: UiHelper.myTextField(
+                              label: "Receive",
+                              controller: receiveController,
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              onChange: () {
+                                final double receiveAmount = double.tryParse(receiveController.text) ?? 0.0;
+                                if (receiveAmount > widget.person.incoming) {
+                                  receiveController.text = widget.person.incoming.toString();
+                                }
+                              },
+                              textType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                              ],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 36,
+                            child: UiHelper.myTextField(
+                              label: "Pay",
+                              controller: payController,
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              onChange: () {
+                                final double payAmount = double.tryParse(payController.text) ?? 0.0;
+                                if (payAmount > widget.person.outgoing) {
+                                  payController.text = widget.person.outgoing.toString();
+                                }
+                              },
+                              textType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                              ],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 36,
+                          width: 80,
+                          child: UiHelper.myButton(
+                            title: "Save",
+                            filled: true,
+                            textSize: 13,
+                            color: MyColors.primary,
+                            callback: () async {
+                              final double receive = double.tryParse(receiveController.text) ?? 0.0;
+                              final double pay = double.tryParse(payController.text) ?? 0.0;
+
+                              if (receive > 0 || pay > 0) {
+                                await distributePayments(
+                                  currentDB!,
+                                  personId: widget.person.id!,
+                                  receive: receive,
+                                  pay: pay,
+                                );
+                              }
+                              widget.onPaymentSaved?.call();
+                              if (mounted) Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 

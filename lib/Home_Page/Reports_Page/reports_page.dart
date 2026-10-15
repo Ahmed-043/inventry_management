@@ -9,6 +9,8 @@ import '../../Database/category.dart';
 import '../../Database/database.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
+import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../../colors.dart';
 import 'reports_table.dart';
 import 'reports_utils.dart';
@@ -162,8 +164,51 @@ class _ReportsPageState extends State<ReportsPage> {
   }
   double padding = 10;
 
+  Widget _buildMobileFilterWidget() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 140,
+            child: _buildCategoryDropdown(),
+          ),
+          const SizedBox(width: 8),
+          _DateButton(
+            label: 'From: ${DateFormat('dd MMM').format(_fromDate)}',
+            onTap: _selectFromDate,
+            onScroll: (delta) => _onDateScroll(delta, true),
+          ),
+          const SizedBox(width: 8),
+          _DateButton(
+            label: 'To: ${DateFormat('dd MMM').format(_toDate)}',
+            onTap: _selectToDate,
+            onScroll: (delta) => _onDateScroll(delta, false),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _searchController.text = '';
+                _selectedCategoryId = null;
+                _fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+                _toDate = DateTime.now();
+              });
+              _loadData();
+            },
+            child: Text(
+              "Reset",
+              style: MyFont.bold(12, color: MyColors.sidebarSelected),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isPhone = context.isPhone;
     padding = 12.0;
 
     Widget emptyState() {
@@ -178,6 +223,41 @@ class _ReportsPageState extends State<ReportsPage> {
                   ? "Loading Data..."
                   : "No data available",
               style: MyFont.semiBold(20, color: MyColors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isPhone) {
+      return Scaffold(
+        backgroundColor: MyColors.mainBg,
+        body: Column(
+          children: [
+            MobilePageHeader(
+              title: "Reports",
+              actionButton: IconButton(
+                icon: const Icon(Icons.download_rounded, color: MyColors.primary),
+                onPressed: () {
+                  ReportsUtils.exportToCSV(context, _matrix, _stockValues);
+                },
+              ),
+              searchController: _searchController,
+              searchHint: "Search Product...",
+              onSearchChanged: (_) => _onSearchChanged(),
+              filterWidget: _buildMobileFilterWidget(),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? emptyState()
+                  : ReportsTable(
+                      matrix: _matrix!,
+                      stockValues: _stockValues ?? [],
+                      db: currentDB,
+                      onChange: () {
+                        _loadData();
+                      },
+                    ),
             ),
           ],
         ),
