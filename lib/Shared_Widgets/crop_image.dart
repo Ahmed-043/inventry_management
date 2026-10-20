@@ -4,7 +4,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:image/image.dart' as img;
 import 'package:inventry_management/Shared_Widgets/fonts.dart';
 import 'package:inventry_management/Shared_Widgets/main_ui_helper.dart';
-
+import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../colors.dart';
 
 Future<Uint8List?> showManualCropDialog(
@@ -32,11 +32,17 @@ Future<Uint8List?> showManualCropDialog(
               }
             });
           }
+          final isPhone = context.isPhone;
+          final screenWidth = MediaQuery.of(context).size.width;
+
           return Dialog(
             backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            insetPadding: EdgeInsets.symmetric(horizontal: isPhone ? 12 : 20, vertical: isPhone ? 16 : 24),
             child: Container(
-              width: 380,
+              width: isPhone ? (screenWidth - 24) : 380,
+              constraints: BoxConstraints(
+                maxHeight: isPhone ? (MediaQuery.of(context).size.height * 0.85) : 650,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -47,7 +53,7 @@ Future<Uint8List?> showManualCropDialog(
                 children: [
                   // Header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: isPhone ? 16 : 24, vertical: isPhone ? 8 : 10),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -55,10 +61,10 @@ Future<Uint8List?> showManualCropDialog(
                     ),
                     child: Row(
                       children: [
-                        Text('Adjust Image', style: MyFont.bold(24, color: MyColors.dark)),
+                        Text('Adjust Image', style: MyFont.bold(isPhone ? 18 : 24, color: MyColors.dark)),
                         const Spacer(),
                         IconButton(
-                          icon: Icon(Icons.close, color: Colors.grey.shade600),
+                          icon: Icon(Icons.close, color: Colors.grey.shade600, size: isPhone ? 20 : 24),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],

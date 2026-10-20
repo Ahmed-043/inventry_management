@@ -267,8 +267,7 @@ class _StockDashboardState extends State<StockDashboard> {
               physics: _isTopBarHovered
                   ? const NeverScrollableScrollPhysics()
                   : const BouncingScrollPhysics(),
-              clipBehavior:
-                  Clip.none, // 🔑 Allows slivers to overflow the Viewport
+              clipBehavior: Clip.none, // 🔑 Allows slivers to overflow the Viewport
               slivers: [
                 SliverAppBar(
                   floating: true,
@@ -495,7 +494,7 @@ class _StockDashboardState extends State<StockDashboard> {
           });
         },
         filterWidget: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(15),
 
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,

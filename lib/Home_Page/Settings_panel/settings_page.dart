@@ -44,19 +44,15 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   width: isPhone ? double.infinity : 1050,
                   child: Padding(
                     padding: EdgeInsets.all(isPhone ? 6.0 : 10.0),
-                    child: Column(
-                      children: [
-                        ScalingSettings(),
-                        const SizedBox(height: 16),
-                        PerformanceSettings(),
-                        const SizedBox(height: 16),
-                        SidebarSettings(update: widget.update, refresh: () => setState(() {})),
-                        const SizedBox(height: 16),
-                        PaginationSettingsWidget(),
-                        const SizedBox(height: 16),
-                        DataBackup(),
-                        const SizedBox(height: 30),
-                      ],
+                    child: Center(
+                      child: Wrap(
+                        runSpacing: 16,
+                        spacing: 16,
+                        children: [
+                          leftHalfSettings(),
+                          rightHalfSettings(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -90,6 +86,36 @@ class _SettingsPanelState extends State<SettingsPanel> {
               style: MyFont.bold(context.isPhone ? 22 : 30, color: MyColors.blue),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget leftHalfSettings(){
+    return SizedBox(
+      width: 500,
+      child: Column(
+        children: [
+          ScalingSettings(),
+          const SizedBox(height: 16),
+          PerformanceSettings(),
+          const SizedBox(height: 16),
+          SidebarSettings(update: widget.update, refresh: () => setState(() {})),
+        ],
+      ),
+    );
+  }
+
+
+  Widget rightHalfSettings(){
+    return SizedBox(
+      width: 500,
+      child: Column(
+        children: [
+          PaginationSettingsWidget(),
+          const SizedBox(height: 16),
+          DataBackup(),
+          const SizedBox(height: 30),
         ],
       ),
     );

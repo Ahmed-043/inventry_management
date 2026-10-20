@@ -28,7 +28,6 @@ class MobilePageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       decoration: BoxDecoration(
         color: MyColors.mainBg,
         borderRadius: BorderRadius.circular(16),

@@ -295,7 +295,7 @@ class MobileBottomNav extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: blurEffects ? 0.7 : 0.95),
+              color: Colors.white.withValues(alpha: blurEffects ? 0.65 : 0.95),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
               boxShadow: [

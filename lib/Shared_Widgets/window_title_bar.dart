@@ -14,7 +14,7 @@ class WindowTitleBar extends StatelessWidget {
       color: MyColors.sidebarBg, // You can change this to any color you want
       child: WindowCaption(
         brightness: Brightness.dark,
-        backgroundColor: Colors.transparent,
+        backgroundColor:MyColors.sidebarBg,
         title: Row(
           children: [
             SvgPicture.asset(

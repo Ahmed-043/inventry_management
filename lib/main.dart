@@ -58,7 +58,13 @@ void main() async {
       });
     });
   }else{
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
   }
 
   // Initialize FFI (works only on non-web)
@@ -89,7 +95,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           navigatorKey: navigatorKey,
           title: 'ODVENTORY',
-          debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: true,
           home: SplashScreen(),
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();

@@ -151,15 +151,12 @@ class HomePageState extends State<HomePage> {
     final collapsed = isPhone;
     final vCollapse = MediaQuery.of(context).size.height < 525;
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        padding: EdgeInsets.zero,
-        viewPadding: EdgeInsets.zero,
-        viewInsets: EdgeInsets.zero,
-      ),
-      child: Scaffold(
-        backgroundColor: MyColors.mainBg,
-        body: KeyboardListener(
+    return Scaffold(
+      backgroundColor: MyColors.mainBg,
+      body: SafeArea(
+        top: isPhone,
+        bottom: false,
+        child: KeyboardListener(
           focusNode: _focusNode,
           autofocus: true,
           onKeyEvent: (event) {
@@ -181,7 +178,7 @@ class HomePageState extends State<HomePage> {
           child: Container(
             width: double.infinity,
             height: double.infinity,
-            color: isPhone ? MyColors.mainBg : MyColors.sidebarBg,
+            color:  MyColors.sidebarBg,
             child: Stack(
               children: [
                 if (!collapsed)
@@ -232,8 +229,8 @@ class HomePageState extends State<HomePage> {
                         Positioned.fill(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              left: isPhone ? 0 : 10,
-                              right: isPhone ? 0 : 10,
+                              left: isPhone ? 6 : 10,
+                              right: isPhone ? 6 : 10,
                             ),
                             child: _getPage(selectedIndex),
                           ),
