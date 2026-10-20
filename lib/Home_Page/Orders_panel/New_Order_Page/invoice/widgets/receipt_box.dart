@@ -45,7 +45,7 @@ class ReceiptBox extends StatelessWidget {
                         ),
                       ),
                 Text(info.dbName, style: MyFont.bold(22, color: MyColors.info)),
-                Text("Order Invoice #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}", style: MyFont.normal(16)),
+                Text("Order Invoice #${order.refPage ?? order.id}", style: MyFont.normal(16)),
                 const SizedBox(height: 8),
                 Text(info.location, textAlign: TextAlign.center, style: MyFont.normal(14)),
                 Text("Phone: ${info.phone}", style: MyFont.normal(14)),

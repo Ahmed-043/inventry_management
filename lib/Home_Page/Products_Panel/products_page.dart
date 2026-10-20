@@ -294,7 +294,7 @@ class _StockDashboardState extends State<StockDashboard> {
             ),
             Positioned(
               bottom: context.isPhone ? 80 : 10,
-              right: 12,
+              right: 10,
               child: Builder(
                 builder: (context) => MouseRegion(
                   onEnter: (_) {

@@ -180,7 +180,7 @@ class _OrdersPageState extends State<OrdersPage> {
             InkWell(
               onTap: _choosePerson,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -202,13 +202,33 @@ class _OrdersPageState extends State<OrdersPage> {
             const SizedBox(width: 8),
           ],
           UiHelper.mySelectableButton(
-            title: selected == 0 ? 'Sales' : 'Buys',
-            isSelected: true,
+            title: 'Sales',
+            isSelected: selected == 0,
+            textSize: 12,
+
             onPressed: () {
-              setState(() {
-                selected = selected == 0 ? 1 : 0;
-                _loadOrders();
-              });
+              if (selected != 0) {
+                setState(() {
+                  selected = 0;
+                  pageNo = 1;
+                  _loadOrders();
+                });
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          UiHelper.mySelectableButton(
+            title: 'Buys',
+            isSelected: selected == 1,
+            textSize: 12,
+            onPressed: () {
+              if (selected != 1) {
+                setState(() {
+                  selected = 1;
+                  pageNo = 1;
+                  _loadOrders();
+                });
+              }
             },
           ),
         ],

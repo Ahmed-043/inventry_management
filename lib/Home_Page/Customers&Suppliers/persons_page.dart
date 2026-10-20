@@ -179,7 +179,7 @@ class _PersonsPageState extends State<PersonsPage> {
           ),
           if(!context.isPhone)
           Positioned(
-            bottom: 80,
+            bottom: 10,
             right: 10,
             child: MouseRegion(
               onEnter: (_)  {

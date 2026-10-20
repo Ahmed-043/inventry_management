@@ -46,7 +46,7 @@ pw.Widget buildReceiptBoxPdf({
           ),
           pw.Center(
             child: pw.Text(
-              "Order Invoice #${order.id}${order.refPage != null ? " (Page: ${order.refPage})" : ""}",
+              "Order Invoice #${order.refPage ?? order.id}",
               style: const pw.TextStyle(fontSize: 8),
             ),
           ),

@@ -628,15 +628,31 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
               child: Material(
                 color: MyColors.black.withAlpha(100),
                 child: SizedBox(
-                  width: 400,
+                  width: (Platform.isAndroid || Platform.isIOS)
+                      ? MediaQuery.of(context).size.width
+                      : 400,
                   height: double.infinity,
-                  child: InvoiceScreen(
-                    key: ValueKey('invoice_screen_modal_${widget.order.id}'),
-                    order: widget.order,
-                    selectedProducts: widget.selectedProducts,
-                    sell: widget.sell,
-                    info: widget.info,
-                    callback: widget.callback,
+                  child: Dismissible(
+                    key: ValueKey('receipt_dismiss_${widget.order.id}'),
+                    direction: DismissDirection.startToEnd,
+                    onDismissed: (_) {
+                      Navigator.of(context).pop();
+                    },
+                    child: GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        if (details.primaryVelocity != null && details.primaryVelocity! > 150) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: InvoiceScreen(
+                        key: ValueKey('invoice_screen_modal_${widget.order.id}'),
+                        order: widget.order,
+                        selectedProducts: widget.selectedProducts,
+                        sell: widget.sell,
+                        info: widget.info,
+                        callback: widget.callback,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -680,45 +696,59 @@ class _OrderProductsCardState extends State<OrderProductsCard> {
                           ? double.infinity
                           : 350,
                       height: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          top: 10,
-                          bottom: 10,
-                          left: 10,
-                          right: 5,
-                        ),
-                        child: Column(
-                          children: [
-                            OrderBackCard(
-                              heroTag: widget.sell ? 'sellOrderHero' : 'buyOrderHero',
-                              title: "${widget.sell ? "Selling Order" : "Receive Order"}${widget.order.editable ? "" : " (Confirmed)"}",
-                              sell: widget.sell,
-                              editable: widget.order.editable,
-                              showDeleteIcon: false,
-                              onPressed: () async {
-                                Navigator.pop(context);
-                                await Future.delayed(const Duration(milliseconds: 500));
-                              },
+                      child: Dismissible(
+                        key: ValueKey('sidebar_dismiss_${widget.order.id}'),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (_) {
+                          Navigator.of(context).pop();
+                        },
+                        child: GestureDetector(
+                          onHorizontalDragEnd: (details) {
+                            if (details.primaryVelocity != null && details.primaryVelocity! < -150) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              top: 10,
+                              bottom: 10,
+                              left: 10,
+                              right: 5,
                             ),
-                            Expanded(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.vertical,
-                                child: OrderSidebar(
-                                  key: ValueKey('order_sidebar_modal_${widget.order.id}'),
+                            child: Column(
+                              children: [
+                                OrderBackCard(
+                                  heroTag: widget.sell ? 'sellOrderHero' : 'buyOrderHero',
+                                  title: "${widget.sell ? "Selling Order" : "Receive Order"}${widget.order.editable ? "" : " (Confirmed)"}",
                                   sell: widget.sell,
-                                  selectedProducts: widget.selectedProducts,
-                                  callback: () => setState(() {}),
-                                  order: widget.order,
-                                  info: widget.info,
-                                  selectedPerson: widget.selectedPerson,
-                                  onPersonSelected: (person) {
-                                    widget.onPersonSelected(person);
-                                    state(() {});
+                                  editable: widget.order.editable,
+                                  showDeleteIcon: false,
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+                                    await Future.delayed(const Duration(milliseconds: 500));
                                   },
                                 ),
-                              ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.vertical,
+                                    child: OrderSidebar(
+                                      key: ValueKey('order_sidebar_modal_${widget.order.id}'),
+                                      sell: widget.sell,
+                                      selectedProducts: widget.selectedProducts,
+                                      callback: () => setState(() {}),
+                                      order: widget.order,
+                                      info: widget.info,
+                                      selectedPerson: widget.selectedPerson,
+                                      onPersonSelected: (person) {
+                                        widget.onPersonSelected(person);
+                                        state(() {});
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),

@@ -448,7 +448,8 @@ class UiHelper {
         elevation: 0,
         backgroundColor: bgColor,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
