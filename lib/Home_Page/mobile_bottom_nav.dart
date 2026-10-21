@@ -244,11 +244,13 @@ class MobileBottomNav extends StatelessWidget {
                       //Navigator.pop(ctx);
                       UiHelper.pushPage(
                         opaque: false,
-                          barrierDismissible:  true,
-                          context: context, page: ProfileSettings(
-                        info: info!,
-                        onSave: () {},
-                      ));
+                        barrierDismissible: true,
+                        context: context,
+                        page: ProfileSettings(
+                          info: info!,
+                          onSave: () {},
+                        ),
+                      );
                     },
                   ),
                 ListTile(

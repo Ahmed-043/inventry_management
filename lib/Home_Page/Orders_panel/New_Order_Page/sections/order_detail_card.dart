@@ -74,11 +74,7 @@ class _OrderDetailsCard extends State<OrderDetailsCard> {
         }
       });
     } else {
-      if (mounted) {
-        setState(() {
-          render = true;
-        });
-      }
+      render = true;
     }
   }
 

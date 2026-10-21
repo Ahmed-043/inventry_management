@@ -822,7 +822,7 @@ class UiHelper {
       return Navigator.of(context).push<T>(
         PageRouteBuilder(
           opaque: opaque,
-          barrierColor: blurBackground ? Colors.transparent : barrierColor,
+          barrierColor: barrierColor,
           barrierDismissible: barrierDismissible,
           transitionDuration: const Duration(milliseconds: 500), // slower transition
           reverseTransitionDuration: const Duration(milliseconds: 350), // pop
@@ -830,7 +830,7 @@ class UiHelper {
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,
-              child: (blurBackground && blurEffects)
+              child: (blurEffects)
                   ? ClipRect(
                       child: BackdropFilter(
                         filter: ui.ImageFilter.blur(

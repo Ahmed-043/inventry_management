@@ -202,8 +202,7 @@ class _SidebarPanelState extends State<SidebarPanel> {
                               child: ProfileSettings(
                                 info: widget.info!,
                                 onSave: () {
-                                  Navigator.pop(context);
-                                  setState(() {});
+                                  if (mounted) setState(() {});
                                 },
                               ),
                             ),

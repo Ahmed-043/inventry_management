@@ -105,6 +105,8 @@ class _WindowTitleBarState extends State<WindowTitleBar> with WindowListener {
               Expanded(
                 child: DragToMoveArea(
                   child: Container(
+                    height: double.infinity,
+                    alignment: Alignment.centerLeft,
                     color: Colors.transparent,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(

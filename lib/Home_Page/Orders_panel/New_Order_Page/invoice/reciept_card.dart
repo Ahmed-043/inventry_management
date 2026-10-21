@@ -55,20 +55,16 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
     // TODO: implement initState
     super.initState();
     _scrollToBottom();
-    if(!render && !widget.order.editable) {
+    if (!render && !widget.order.editable) {
       Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          render = true;
-        });
-      }
-    });
-    }else{
-      if (mounted) {
-        setState(() {
-          render = true;
-        });
-      }
+        if (mounted) {
+          setState(() {
+            render = true;
+          });
+        }
+      });
+    } else {
+      render = true;
     }
   }
 

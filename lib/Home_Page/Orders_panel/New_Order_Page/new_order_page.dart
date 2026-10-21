@@ -69,8 +69,9 @@ class _NewOrderPageState extends State<NewOrderPage> {
   }
 
   Future<void> _suggestRefPage() async {
+    if (currentDB == null) return;
     final lastPage = await getLastOrderRefPage(currentDB!);
-    if (lastPage != null) {
+    if (lastPage != null && mounted) {
       setState(() {
         order.refPage = lastPage + 1;
       });
@@ -80,15 +81,19 @@ class _NewOrderPageState extends State<NewOrderPage> {
   Future<void> _initAsync() async {
     await _loadInfo(); // load info first
     await _loadProductItems(); // then load products
-    await getPaymentMethod(currentDB!,order.id??0);
-    setState(() {}); // refresh UI after data is ready
+    if (currentDB != null) {
+      await getPaymentMethod(currentDB!, order.id ?? 0);
+    }
+    if (mounted) setState(() {}); // refresh UI after data is ready
   }
 
   Future<void> _loadInfo() async {
+    if (currentDB == null) return;
     info = await getDBInfo(currentDB!);
   }
 
   _loadProductItems() async {
+    if (currentDB == null || order.id == null) return;
     selectedProducts = await getOrderItemsByOrderId(currentDB!, order.id!);
     selectedProducts = selectedProducts.map((item) {
       item.price = item.price.abs();
@@ -134,7 +139,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
       body: Row(
         children: [
           if (showSidebar) _buildSidebarPanel(),
-          if (selectedPerson != null) _buildProductsPanel(),
+          Expanded(child: _buildProductsPanel()),
           if (showInvoice) _buildInvoicePanel(screenWidth),
         ],
       ),
@@ -177,20 +182,18 @@ class _NewOrderPageState extends State<NewOrderPage> {
   }
 
   Widget _buildProductsPanel() {
-    return Expanded(
-      child: OrderProductsCard(
-        key: ValueKey('order_products_card_${order.id ?? "new"}'),
-        selectedProducts: selectedProducts,
-        order: order,
-        selectedPerson: selectedPerson,
-        info: info,
-        sell: widget.sell,
-        showContent: showContent,
-        callback: () {
-          setState(() {});
-        },
-        onPersonSelected: _handlePersonSelected,
-      ),
+    return OrderProductsCard(
+      key: ValueKey('order_products_card_${order.id ?? "new"}'),
+      selectedProducts: selectedProducts,
+      order: order,
+      selectedPerson: selectedPerson,
+      info: info,
+      sell: widget.sell,
+      showContent: showContent,
+      callback: () {
+        setState(() {});
+      },
+      onPersonSelected: _handlePersonSelected,
     );
   }
 
