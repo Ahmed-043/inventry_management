@@ -12,6 +12,7 @@ import '../../Shared_Widgets/main_ui_helper.dart';
 import 'package:inventry_management/Shared_Widgets/mobile_page_header.dart';
 import 'package:inventry_management/Shared_Widgets/responsive.dart';
 import '../../colors.dart';
+import 'reports_pdf_page.dart';
 import 'reports_table.dart';
 import 'reports_utils.dart';
 
@@ -236,12 +237,7 @@ class _ReportsPageState extends State<ReportsPage> {
           children: [
             MobilePageHeader(
               title: "Reports",
-              actionButton: IconButton(
-                icon: const Icon(Icons.download_rounded, color: MyColors.primary),
-                onPressed: () {
-                  ReportsUtils.exportToCSV(context, _matrix, _stockValues);
-                },
-              ),
+              actionButton: _buildExportDropdown(isMobile: true),
               searchController: _searchController,
               searchHint: "Search Product...",
               onSearchChanged: (_) => _onSearchChanged(),
@@ -303,18 +299,7 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
         Row(
           children: [
-            UiHelper.myButton(
-              callback: () {
-                ReportsUtils.exportToCSV(context, _matrix, _stockValues);
-              },
-              child: const Icon(Icons.download, color: Colors.white, size: 18),
-              title: "Export to Excel",
-              textSize: 14,
-              filled: true,
-              color: Colors.blueGrey,
-              borderRadius: 10,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
+            _buildExportDropdown(isMobile: false),
             const SizedBox(width: 12),
             IconButton(
               onPressed: () {},
@@ -323,6 +308,71 @@ class _ReportsPageState extends State<ReportsPage> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildExportDropdown({bool isMobile = false}) {
+    return PopupMenuButton<String>(
+      tooltip: 'Export Options',
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: (value) {
+        if (value == 'csv') {
+          ReportsUtils.exportToCSV(context, _matrix, _stockValues);
+        } else if (value == 'pdf') {
+          UiHelper.pushPage(
+            context: context,
+            page: ReportsPdfPage(
+              db: currentDB,
+              selectedCategoryId: _selectedCategoryId,
+              searchString: _searchController.text,
+            ),
+          );
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'csv',
+          child: Row(
+            children: [
+              const Icon(Icons.table_chart_outlined, color: Colors.green, size: 20),
+              const SizedBox(width: 10),
+              Text("Export to CSV", style: MyFont.medium(14, color: MyColors.textMain)),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'pdf',
+          child: Row(
+            children: [
+              const Icon(Icons.picture_as_pdf_outlined, color: Colors.red, size: 20),
+              const SizedBox(width: 10),
+              Text("Export to PDF", style: MyFont.medium(14, color: MyColors.textMain)),
+            ],
+          ),
+        ),
+      ],
+      child: isMobile
+          ? const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Icon(Icons.download_rounded, color: MyColors.primary),
+            )
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.download, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text("Export", style: MyFont.medium(14, color: Colors.white)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
+                ],
+              ),
+            ),
     );
   }
 
