@@ -150,7 +150,7 @@ class _ReportsTableState extends State<ReportsTable> {
                     width: ReportsConstants.borderWidth,
                   ),
                   leading: hasSeparator
-                      ? BorderSide(color: MyColors.info.withAlpha(150), width: 0.7)
+                      ? BorderSide(color: MyColors.info.withAlpha(200), width: 1)
                       : BorderSide.none,
                 ),
               ),

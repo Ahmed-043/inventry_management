@@ -2,15 +2,17 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../Database/category.dart';
 import '../../Database/db_info.dart';
-import '../../Database/pdf.dart';
 import '../../Database/retrieve_products.dart';
 import '../../Shared_Widgets/fonts.dart';
 import '../../Shared_Widgets/main_ui_helper.dart';
@@ -39,7 +41,65 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
   DBInfo? companyInfo;
   bool _isSharing = false;
   bool _isSaving = false;
-  final GlobalKey _reportKey = GlobalKey();
+  final Map<int, Uint8List?> _thumbnailCache = {};
+  Uint8List? _compressedCompanyLogo;
+
+  Uint8List? _getCompressedImage(Product p) {
+    if (p.imageData == null || p.imageData!.isEmpty) return null;
+    if (_thumbnailCache.containsKey(p.id)) {
+      return _thumbnailCache[p.id];
+    }
+    try {
+      final decoded = img.decodeImage(p.imageData!);
+      if (decoded == null) {
+        _thumbnailCache[p.id] = p.imageData;
+        return p.imageData;
+      }
+      if (decoded.width <= 96 && decoded.height <= 96) {
+        _thumbnailCache[p.id] = p.imageData;
+        return p.imageData;
+      }
+      final resized = img.copyResize(
+        decoded,
+        width: decoded.width > decoded.height ? 96 : null,
+        height: decoded.height >= decoded.width ? 96 : null,
+        interpolation: img.Interpolation.average,
+      );
+      final compressed = Uint8List.fromList(img.encodeJpg(resized, quality: 70));
+      _thumbnailCache[p.id] = compressed;
+      return compressed;
+    } catch (_) {
+      _thumbnailCache[p.id] = p.imageData;
+      return p.imageData;
+    }
+  }
+
+  Uint8List? _getCompressedCompanyLogo() {
+    if (companyInfo?.image == null || companyInfo!.image!.isEmpty) return null;
+    if (_compressedCompanyLogo != null) return _compressedCompanyLogo;
+    try {
+      final decoded = img.decodeImage(companyInfo!.image!);
+      if (decoded == null) {
+        _compressedCompanyLogo = companyInfo!.image;
+        return companyInfo!.image;
+      }
+      if (decoded.width <= 150 && decoded.height <= 150) {
+        _compressedCompanyLogo = companyInfo!.image;
+        return companyInfo!.image;
+      }
+      final resized = img.copyResize(
+        decoded,
+        width: decoded.width > decoded.height ? 150 : null,
+        height: decoded.height >= decoded.width ? 150 : null,
+        interpolation: img.Interpolation.average,
+      );
+      _compressedCompanyLogo = Uint8List.fromList(img.encodeJpg(resized, quality: 80));
+      return _compressedCompanyLogo;
+    } catch (_) {
+      _compressedCompanyLogo = companyInfo!.image;
+      return companyInfo!.image;
+    }
+  }
 
   @override
   void initState() {
@@ -226,6 +286,7 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
   }
 
   pw.Widget _buildPdfHeader(String currentDateStr) {
+    final logoBytes = _getCompressedCompanyLogo();
     return pw.Container(
       padding: const pw.EdgeInsets.only(bottom: 10),
       decoration: const pw.BoxDecoration(
@@ -234,12 +295,12 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          if (companyInfo?.image != null && companyInfo!.image!.isNotEmpty)
+          if (logoBytes != null && logoBytes.isNotEmpty)
             pw.Container(
               margin: const pw.EdgeInsets.only(right: 15),
               width: 55,
               height: 55,
-              child: pw.Image(pw.MemoryImage(companyInfo!.image!), fit: pw.BoxFit.cover),
+              child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.cover),
             ),
           pw.Expanded(
             child: pw.Column(
@@ -343,12 +404,13 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
 
   pw.TableRow _buildTableRow(Product p, int srNo, NumberFormat priceFormat) {
     pw.Widget imageWidget;
-    if (p.imageData != null && p.imageData!.isNotEmpty) {
+    final compressedBytes = _getCompressedImage(p);
+    if (compressedBytes != null && compressedBytes.isNotEmpty) {
       try {
         imageWidget = pw.Container(
           width: 24,
           height: 24,
-          child: pw.Image(pw.MemoryImage(p.imageData!), fit: pw.BoxFit.contain),
+          child: pw.Image(pw.MemoryImage(compressedBytes), fit: pw.BoxFit.contain),
         );
       } catch (_) {
         imageWidget = pw.SizedBox(width: 24, height: 24);
@@ -396,16 +458,36 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
   Future<void> _handleShare() async {
     setState(() => _isSharing = true);
     try {
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-        await captureAndShareReceipt(_reportKey, 'StockReport');
+      final bytes = await _generatePdf(PdfPageFormat.a4);
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'Stock_Report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+      final pdfFile = File('${tempDir.path}/$fileName');
+      await pdfFile.writeAsBytes(bytes);
+
+      if (Platform.isWindows) {
+        final windowsPath = pdfFile.path.replaceAll('/', '\\');
+        await Process.run('powershell', [
+          '-Command',
+          "Add-Type -AssemblyName System.Windows.Forms; \$col = New-Object System.Collections.Specialized.StringCollection; \$col.Add('$windowsPath'); [System.Windows.Forms.Clipboard]::SetFileDropList(\$col); Set-Clipboard -Path '$windowsPath'"
+        ]);
         if (mounted) {
-          UiHelper.showToast(context, 'Image copied to clipboard!', type: 1);
+          UiHelper.showToast(context, 'PDF file copied to clipboard!', type: 1);
+        }
+      } else if (Platform.isLinux) {
+        await Process.run('xclip', ['-selection', 'clipboard', '-t', 'application/pdf', '-i', pdfFile.path]);
+        if (mounted) {
+          UiHelper.showToast(context, 'PDF file copied to clipboard!', type: 1);
+        }
+      } else if (Platform.isMacOS) {
+        await Process.run('osascript', ['-e', 'set the clipboard to (read (POSIX file "${pdfFile.path}") as PDF picture)']);
+        if (mounted) {
+          UiHelper.showToast(context, 'PDF file copied to clipboard!', type: 1);
         }
       } else {
-        await captureAndShareReceipt(_reportKey, 'StockReport');
+        await Share.shareXFiles([XFile(pdfFile.path)], text: 'Stock Report PDF');
       }
     } catch (e) {
-      if (mounted) UiHelper.showToast(context, "Error sharing report: $e", type: 3);
+      if (mounted) UiHelper.showToast(context, "Error copying PDF: $e", type: 3);
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -484,7 +566,7 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
         children: [
           const Icon(Icons.zoom_out, size: 16, color: MyColors.textSecondary),
           SizedBox(
-            width: 90,
+            width: 150,
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
@@ -497,7 +579,7 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
               child: Slider(
                 value: _zoomLevel,
                 min: 0.4,
-                max: 1.4,
+                max: 1.5,
                 onChanged: (val) {
                   setState(() {
                     _zoomLevel = val;
@@ -519,52 +601,67 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
 
   Widget _buildCustomHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: MyColors.mainBg,
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 8),
-          Text("Stock Report", style: MyFont.bold(20, color: Colors.black)),
-          const SizedBox(width: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildDropdownFilter(
-                    value: _sortOption,
-                    items: const [
-                      DropdownMenuItem(value: 'name_asc', child: Text('Name (A - Z)')),
-                      DropdownMenuItem(value: 'name_desc', child: Text('Name (Z - A)')),
-                      DropdownMenuItem(value: 'stock_asc', child: Text('Stock (Low to High)')),
-                      DropdownMenuItem(value: 'stock_desc', child: Text('Stock (High to Low)')),
-                      DropdownMenuItem(value: 'price_asc', child: Text('Unit Price (Low to High)')),
-                      DropdownMenuItem(value: 'price_desc', child: Text('Unit Price (High to Low)')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setState(() => _sortOption = val);
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  _buildDropdownFilter(
-                    value: _categoryLayout,
-                    items: const [
-                      DropdownMenuItem(value: 'pages', child: Text('Divide pages by category')),
-                      DropdownMenuItem(value: 'list', child: Text('Divide list by categories')),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setState(() => _categoryLayout = val);
-                    },
-                  ),
-                  const SizedBox(width: 14),
-                  _buildZoomSlider(),
-                ],
-              ),
+          // Left: Back button + Title
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(width: 8),
+                Text("Stock Report", style: MyFont.bold(20, color: Colors.black)),
+              ],
             ),
+          ),
+
+          // Center: Filter Dropdowns
+          Align(
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDropdownFilter(
+                  value: _sortOption,
+                  items: const [
+                    DropdownMenuItem(value: 'name_asc', child: Text('Name (A - Z)')),
+                    DropdownMenuItem(value: 'name_desc', child: Text('Name (Z - A)')),
+                    DropdownMenuItem(value: 'stock_asc', child: Text('Stock (Low to High)')),
+                    DropdownMenuItem(value: 'stock_desc', child: Text('Stock (High to Low)')),
+                    DropdownMenuItem(value: 'price_asc', child: Text('Unit Price (Low to High)')),
+                    DropdownMenuItem(value: 'price_desc', child: Text('Unit Price (High to Low)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _sortOption = val);
+                  },
+                ),
+                const SizedBox(width: 10),
+                _buildDropdownFilter(
+                  value: _categoryLayout,
+                  items: const [
+                    DropdownMenuItem(value: 'pages', child: Text('Divide pages by category')),
+                    DropdownMenuItem(value: 'list', child: Text('Divide list by categories')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _categoryLayout = val);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Right: Zoom Slider
+          Align(
+            alignment: Alignment.centerRight,
+            child: _buildZoomSlider(),
           ),
         ],
       ),
@@ -640,19 +737,17 @@ class _ReportsPdfPageState extends State<ReportsPdfPage> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: RepaintBoundary(
-                      key: _reportKey,
-                      child: PdfPreview(
-                        key: ValueKey('pdf_preview_${_sortOption}_$_categoryLayout'),
-                        build: _generatePdf,
-                        useActions: false,
-                        shouldRepaint: true,
-                        maxPageWidth: 800 * _zoomLevel,
-                        canChangeOrientation: false,
-                        canChangePageFormat: false,
-                        canDebug: false,
-                        loadingWidget: const Center(child: CircularProgressIndicator()),
-                      ),
+                    child: PdfPreview(
+                      key: ValueKey('pdf_preview_${_sortOption}_$_categoryLayout'),
+                      build: _generatePdf,
+                      useActions: false,
+                      shouldRepaint: true,
+                      maxPageWidth: 800 * _zoomLevel,
+                      scrollViewDecoration: const BoxDecoration(color: MyColors.mainBg),
+                      canChangeOrientation: false,
+                      canChangePageFormat: false,
+                      canDebug: false,
+                      loadingWidget: const Center(child: CircularProgressIndicator()),
                     ),
                   ),
                   Align(
